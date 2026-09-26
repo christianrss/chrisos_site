@@ -1,0 +1,15 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  ChrisVM -> Machine;
+  Machine -> Backend;
+  Backend -> ChrisCPU;
+  Backend -> ChrisHV;
+  Machine -> Memory;
+  Machine -> IOBus;
+  Machine -> MMIOBus;
+  IOBus -> Devices;
+  MMIOBus -> Devices;
+  ChrisCPU -> Fetch;
+  Fetch -> Decode -> Execute -> ArchitecturalState;
+}

@@ -1,0 +1,9 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  App -> Scene;
+  Scene -> SoftwareRasterizer -> Present;
+  Scene -> VirGLBackend -> VirtIOGPU -> QEMU -> Virglrenderer -> HostOpenGL;
+  Present -> Framebuffer;
+  Present -> VirtIOGPU;
+}

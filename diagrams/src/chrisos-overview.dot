@@ -1,0 +1,20 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  ChrisOS -> Kernel;
+  ChrisOS -> Compiler;
+  ChrisOS -> ChrisVM;
+  Kernel -> Metal;
+  Kernel -> Storage;
+  Kernel -> Graphics;
+  Kernel -> Network;
+  Kernel -> Desktop;
+  Compiler -> ChrisC;
+  Compiler -> CLVM;
+  Compiler -> JIT;
+  Compiler -> NativeToolchain;
+  ChrisVM -> ChrisCPU;
+  ChrisVM -> Buses;
+  ChrisVM -> Devices;
+  ChrisVM -> Machine;
+}

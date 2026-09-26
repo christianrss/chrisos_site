@@ -1,0 +1,15 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.2", nodesep="0.35", ranksep="0.5"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  edge [color="#333333"];
+  Matter -> Semiconductors -> Transistors -> Logic -> CPU -> ISA -> Firmware -> Bootloader -> Kernel;
+  Kernel -> Drivers;
+  Kernel -> Processes;
+  Kernel -> Filesystems;
+  Kernel -> Runtime;
+  Runtime -> Languages;
+  Kernel -> Graphics;
+  Languages -> Applications;
+  Graphics -> Desktop;
+  Applications -> Desktop;
+}

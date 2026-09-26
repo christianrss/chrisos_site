@@ -1,0 +1,5 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  Power -> Firmware -> Limine -> ELF -> kstart -> EarlyCPU -> PMM -> MM -> Heap -> SMP -> Storage -> ChrisFS -> CLVM -> Desktop;
+}

@@ -1,0 +1,25 @@
+references:
+  intel-sdm:
+    title: Intel 64 and IA-32 Architectures Software Developer's Manual
+    organization: Intel
+    class: architecture-manual
+  amd-apm:
+    title: AMD64 Architecture Programmer's Manual
+    organization: AMD
+    class: architecture-manual
+  virtio:
+    title: Virtual I/O Device (VIRTIO) Specification
+    organization: OASIS
+    class: specification
+  uefi:
+    title: Unified Extensible Firmware Interface Specification
+    organization: UEFI Forum
+    class: specification
+  elf:
+    title: System V Application Binary Interface
+    organization: System V ABI
+    class: specification
+  pci:
+    title: PCI Express Base Specification
+    organization: PCI-SIG
+    class: specification

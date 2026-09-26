@@ -1,0 +1,8 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  Source -> Lexing -> Parsing -> Semantics -> IR -> Codegen -> Object -> Linker -> Executable;
+  ChrisC -> CLVM [style=dashed];
+  KCC -> ChrisO [style=dashed];
+  ChrisO -> ChrisLd [style=dashed];
+}

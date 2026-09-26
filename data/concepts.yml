@@ -1,0 +1,55 @@
+concepts:
+  atom:
+    title: Atom and electrical charge
+    layer: physical
+  semiconductor:
+    title: Semiconductor physics
+    layer: physical
+  mosfet:
+    title: MOSFET
+    layer: device
+  logic-gate:
+    title: Logic gate
+    layer: digital
+  sequential-logic:
+    title: Sequential logic
+    layer: digital
+  cpu:
+    title: Central processing unit
+    layer: architecture
+  isa:
+    title: Instruction-set architecture
+    layer: architecture
+  privilege:
+    title: Privilege and protection
+    layer: architecture
+  interrupt:
+    title: Interrupt
+    layer: architecture
+  physical-memory:
+    title: Physical memory
+    layer: architecture
+  virtual-memory:
+    title: Virtual memory
+    layer: operating-system
+  process:
+    title: Process
+    layer: operating-system
+  syscall:
+    title: System call
+    layer: operating-system
+  filesystem:
+    title: Filesystem
+    layer: operating-system
+  compiler:
+    title: Compiler
+    layer: language
+  virtual-machine:
+    title: Virtual machine
+    layer: emulation
+  rasterization:
+    title: Rasterization
+    layer: graphics
+  gpu:
+    title: Graphics processing unit
+    layer: graphics

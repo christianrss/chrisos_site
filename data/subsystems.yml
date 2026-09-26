@@ -1,0 +1,22 @@
+subsystems:
+  kernel-metal:
+    path: kernel/metal
+    purpose: CPU, memory, process, interrupt and low-level kernel foundations.
+  kernel-fs:
+    path: kernel/fs
+    purpose: Block devices, storage discovery, ChrisFS and installation.
+  kernel-gfx:
+    path: kernel/gfx
+    purpose: Software graphics, framebuffer, VirtIO-GPU and VirGL.
+  kernel-net:
+    path: kernel/net
+    purpose: Network device and protocol paths.
+  kernel-wm:
+    path: kernel/wm
+    purpose: Desktop, windows and interaction.
+  compiler:
+    path: compiler
+    purpose: ChrisC, CLVM, JIT, debugger and native toolchain.
+  chrisvm:
+    path: chrisvm
+    purpose: Machine model, ChrisCPU emulator, buses, devices, frontend and tests.

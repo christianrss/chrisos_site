@@ -1,0 +1,9 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="filled", fillcolor="#f4f3ec", color="#333333", fontname="Courier"];
+  VirtualAddress -> TLB;
+  TLB -> PhysicalFrame [label=" hit"];
+  TLB -> PML4 [label=" miss"];
+  PML4 -> PDPT -> PD -> PT -> PhysicalFrame;
+  CR3 -> PML4;
+}
