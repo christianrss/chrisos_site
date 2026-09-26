@@ -15,7 +15,7 @@ sources:
   - kernel/metal/idt.c
   - kernel/metal/irq.c
   - kernel/fs/fs.c
-  - kernel/input/input.c
+  - kernel/gfx/input.c
 symbols:
   - proc_create
   - proc_destroy
