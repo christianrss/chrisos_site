@@ -61,10 +61,13 @@ Chapter length is an editorial signal, not a claim that the curriculum is comple
 ```bash
 python scripts/check_arithmetic.py --source .source
 python scripts/check_instruction_contracts.py --source .source
+python scripts/check_mmu.py --source .source
 ```
 
 This optional local probe (also run by the Pages workflow) compiles the checked-out ChrisCPU `flags.c` with a host C compiler supporting `unsigned __int128`. It verifies 752,270 arithmetic cases, 1,024 condition-code cases and nine null-output calls using an independent integer-range reference model. Temporary binaries are removed automatically. The command prints the source SHA-256 so evidence can be tied to the exact file. This is helper-level coverage, not decoder, guest-boot, device or physical-timing validation.
 
 The instruction probe compiles the actual decoder and operand helpers. It verifies 20 literal instruction fixtures, 69 truncations, 80 register cases, two invalid register indices, four effective addresses and one UD classification. Its rejecting memory stubs exclude guest execution. Architecture chapters explicitly record eager-fetch, fault-order, segment-base, address-override and privilege-check limitations; passing this probe does not close those gaps.
+
+The MMU probe compiles the real walker against synthetic physical memory and stubbed exception delivery. It verifies 22 translation/wrapper contracts and characterizes three known gaps: NX contamination of 4 KiB physical addresses, ignored accessed-bit write failures, and retained first chunks after cross-page write faults. A changed characterization requires source and documentation review; reproducing a known gap is not a conformance pass. It does not test guest exception-handler entry or kernel boot.
 
 The foundations pages distinguish physical circuit models, mathematical contracts and inspected source behavior. Their diagrams are rebuilt from DOT and deterministic analytical SVG generators; junction profiles are dimensionless calculations, not device measurements. Both language editions share source dependencies and prerequisite IDs.

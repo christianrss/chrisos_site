@@ -1,0 +1,22 @@
+digraph paging {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3", nodesep="0.4", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial", fontsize=12, margin="0.3,0.18"];
+  edge [fontname="Arial", fontsize=10];
+  root [label="CR3 + PML4 index"];
+  check [label="Present and permission checks"];
+  next [label="Next physical table"];
+  leaf [label="4 KiB / 2 MiB / 1 GiB leaf"];
+  phys [label="Frame base + page offset"];
+  fault [label="Fault classification"];
+  wrapper [label="Memory wrapper"];
+  backing [label="RAM / MMIO / unmapped"];
+  root -> check;
+  check -> next [label="allowed nonleaf"];
+  next -> check [label="next index"];
+  check -> leaf [label="allowed leaf"];
+  check -> fault [label="denied or absent"];
+  leaf -> phys;
+  phys -> wrapper;
+  fault -> wrapper;
+  wrapper -> backing [label="translation succeeded"];
+}

@@ -22,10 +22,11 @@ This volume defines the terminology and relationships required before implementa
 2. [Machine code and relocatable meaning](machine-code.md)
 3. [Registers, aliases and flags](x86-registers-flags.md)
 4. [Instruction encoding and decoding](x86-instruction-encoding.md)
-5. [x86-64 memory and privilege](x86-64-memory-privilege.md) — expansion pending.
-6. [Buses, MMIO and DMA](buses-mmio-dma.md) — expansion pending.
+5. [x86-64 memory and privilege](x86-64-memory-privilege.md)
+6. [Privilege rings and controlled entry](privilege-rings.md)
+7. [Buses, MMIO and DMA](buses-mmio-dma.md) — expansion pending.
 
-The [curriculum](../learning-path.md) also tracks unwritten prerequisites and subsequent chapters on privilege, caches, coherence, atomics, PCI and ACPI. A linked page is not a declaration of complete coverage.
+The [curriculum](../learning-path.md) also tracks unwritten prerequisites and subsequent chapters on caches, coherence, atomics, PCI and ACPI. A linked page is not a declaration of complete coverage.
 
 ## Reading rule
 

@@ -22,10 +22,11 @@ O volume define a terminologia e as relações necessárias antes de entrar em d
 2. [Código de máquina e significado relocável](machine-code.md)
 3. [Registradores, aliases e flags](x86-registers-flags.md)
 4. [Codificação e decodificação de instruções](x86-instruction-encoding.md)
-5. [Memória e privilégio x86-64](x86-64-memory-privilege.md) — expansão pendente.
-6. [Barramentos, MMIO e DMA](buses-mmio-dma.md) — expansão pendente.
+5. [Memória e privilégio x86-64](x86-64-memory-privilege.md)
+6. [Anéis de privilégio e entrada controlada](privilege-rings.md)
+7. [Barramentos, MMIO e DMA](buses-mmio-dma.md) — expansão pendente.
 
-O [currículo](../learning-path.md) também registra pré-requisitos ainda não escritos e capítulos posteriores sobre privilégios, caches, coerência, operações atômicas, PCI e ACPI. A presença de uma página vinculada não declara cobertura completa.
+O [currículo](../learning-path.md) também registra pré-requisitos ainda não escritos e capítulos posteriores sobre caches, coerência, operações atômicas, PCI e ACPI. A presença de uma página vinculada não declara cobertura completa.
 
 ## Regra de leitura
 

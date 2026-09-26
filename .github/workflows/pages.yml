@@ -60,7 +60,11 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_instruction_contracts.py --source .source
 
-      - name: Build static site with strict validation
+      - name: Verify MMU contracts and documented limitations
+        working-directory: docs-repo
+        run: python scripts/check_mmu.py --source .source
+
+      - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
 
