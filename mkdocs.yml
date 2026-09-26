@@ -1,6 +1,6 @@
 site_name: ChrisOS Research Project
 site_description: Technical documentation of ChrisOS, computing systems, kernel engineering, compilers, graphics and emulation.
-site_url: https://christianrss.github.io/chrisos_site/
+site_url: https://os.christiansoftware.org/
 repo_url: https://github.com/christianrss/ChrisOS
 edit_uri: https://github.com/christianrss/chrisos_site/edit/main/docs/
 

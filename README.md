@@ -40,4 +40,4 @@ The resulting `.context/<page-id>/` contains only the page, declared source file
 
 Every push to `main` runs the deterministic documentation pipeline and deploys GitHub Pages.
 
-https://christianrss.github.io/chrisos_site/
+https://os.christiansoftware.org/
