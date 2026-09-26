@@ -1,0 +1,22 @@
+digraph Arithmetic {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial"];
+  edge [fontname="Arial"];
+  bits [label="a, b, carry in / entrada"];
+  pg [label="p = a XOR b\ng = a AND b"];
+  sum [label="s = p XOR c"];
+  carry [label="c next = g OR (p AND c)"];
+  word [label="w-bit result / resultado de w bits\nmodulo 2^w"];
+  unsigned [label="CF\nunsigned range / intervalo sem sinal"];
+  signed [label="OF\nsigned range / intervalo com sinal"];
+  predicates [label="Condition / condição\nunsigned < : CF\nsigned < : SF XOR OF"];
+  bits -> pg;
+  pg -> sum;
+  pg -> carry;
+  sum -> word;
+  carry -> unsigned;
+  word -> signed [label="signs / sinais"];
+  bits -> signed;
+  unsigned -> predicates;
+  signed -> predicates;
+}

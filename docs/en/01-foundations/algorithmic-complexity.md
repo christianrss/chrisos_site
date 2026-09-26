@@ -3,15 +3,22 @@ id: algorithmic-complexity
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- kernel/gfx/virtq.c
+- kernel/gfx/virtq.h
+symbols:
+- virtq_alloc
+- virtq_publish
+- virtq_take
+- virtq_reclaim
+- virtq_init
 depends_on:
-  - data-representation-layout
+- data-representation-layout
 related:
-  - data-structures
-  - systems-algorithms
+- data-structures
+- systems-algorithms
 ---
 
 # Algorithm analysis and systems cost models
@@ -321,3 +328,24 @@ Every implementation-facing chapter in this corpus should, when applicable, reco
 The table does not replace explanation. It makes hidden performance and concurrency contracts visible.
 
 The following chapter introduces the core data structures used to realize these algorithms.
+
+## A source-derived queue cost model
+
+In `kernel/gfx/virtq.c`, `virtq_alloc(q, n, head)` does not obtain an arbitrary chain in constant time. It walks n software links, assigns NEXT flags and detaches those descriptors from the free list. Its local work is O(n), while its rejection of n greater than `nfree` happens before traversal. `virtq_publish` writes one ring entry and advances one index, so its local work is O(1). `virtq_take` returns at most one completion per call. `virtq_reclaim` follows the allocated chain, costing O(n) for a valid n-descriptor chain.
+
+| Operation | Scaling parameter | Local work | External wait included? |
+|---|---|---|---|
+| Initialize | Queue capacity Q | O(Q) | No |
+| Allocate chain | Descriptor count n | O(n) | No |
+| Set one descriptor | Fixed 16-byte layout | O(1) | No |
+| Publish one head | One ring entry | O(1) | No |
+| Take one completion | One used entry | O(1) | No |
+| Reclaim valid chain | Descriptor count n | O(n) | No |
+
+For a request using n descriptors, the bookkeeping sum is O(n) even though publication alone is constant-time. Device processing, bus traffic, interrupt delivery and caller polling add separate terms. If a caller polls until completion, an unbounded device delay can produce an unbounded number of O(1) calls. Constant cost per poll does not establish a completion deadline.
+
+The arrays reserve capacity for `VQ_MAX = 128`, so the shipped implementation has a fixed upper storage bound. Describing the family as O(Q) remains useful for understanding what changes if that bound is raised. Treating every bounded program as O(1) would hide the difference between touching one descriptor and touching all 128. Both the parameterized model and the actual bound belong in the documentation.
+
+Locality differs from allocation behavior. These helpers allocate no host heap memory themselves, and descriptor bytes are contiguous. Nevertheless, traversing software links and publishing to device-shared memory can have different cache and synchronization costs. The source does not explain a measured throughput advantage over every alternative, so no such conclusion is justified without a workload and measurement.
+
+An alternative bitmap could search for free descriptors and reduce link metadata, but obtaining a chain would still require identifying n entries and establishing ownership. A larger batched submission API could amortize publication barriers over several heads, at the cost of a different latency and synchronization contract. These are design alternatives, not claims that the current implementation already performs batching. Complexity analysis is most useful when it states which contract an optimization would change.

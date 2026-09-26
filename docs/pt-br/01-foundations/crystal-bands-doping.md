@@ -3,15 +3,15 @@ id: crystal-bands-doping
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-  - atom-semiconductor
+- atom-semiconductor
 related:
-  - pn-junction
-  - transistor-cmos
+- pn-junction
+- transistor-cmos
 ---
 
 # Estrutura cristalina, bandas de energia e dopagem
@@ -149,3 +149,29 @@ Lógica digital precisa de regiões com tipos de portador previsíveis e de regi
     portas digitais
 
 O próximo capítulo combina regiões dopadas para derivar região de depleção, potencial interno, polarização direta e reversa e a relação entre junções físicas e o comportamento de diodos.
+
+## Resolver compensação em vez de presumir a densidade majoritária
+
+A aproximação n ≈ N_D não define material tipo n. Em uma região homogênea e eletricamente neutra, com doadores e aceitadores completamente ionizados, a neutralidade fornece p + N_D = n + N_A. Combinada com a relação de equilíbrio np = n_i², resulta em n − p = Δ, com Δ = N_D − N_A. A solução quadrática é n = (Δ + sqrt(Δ² + 4n_i²))/2 e p = n_i²/n. Em uma região fortemente dominada por aceitadores, resolver simetricamente para p evita subtrair números quase iguais em ponto flutuante ao calcular o pequeno valor de n.
+
+A derivação separa duas hipóteses: neutralidade trata do balanço de carga, enquanto a relação de ação das massas trata da estatística de equilíbrio no regime não degenerado. Perto de uma região de depleção, a neutralidade local não vale. Sob iluminação ou injeção elétrica fora do equilíbrio, um único nível de Fermi de equilíbrio geralmente não descreve as duas populações. Aplicar a equação quadrática em toda parte eliminaria justamente a carga espacial necessária para explicar uma junção.
+
+Como modelo numérico hipotético, sejam N_D = 1,2 × 10^16 cm⁻³, N_A = 2 × 10^15 cm⁻³ e n_i = 10^10 cm⁻³. Então Δ = 10^16 cm⁻³, n é aproximadamente 10^16 cm⁻³ e p aproximadamente 10^4 cm⁻³. Somar as densidades de doadores e aceitadores preveria incorretamente 1,4 × 10^16 portadores majoritários. Se Δ fosse comparável a n_i, a população minoritária não poderia mais ser desprezada. Os valores ilustram equações; não são uma receita de fabricação para um processador do ChrisOS.
+
+| Grandeza | Significado | Unidade utilizada no modelo |
+|---|---|---|
+| N_D, N_A | Densidade de impurezas ionizadas sob a hipótese declarada | cm⁻³ |
+| n, p | Densidade de portadores móveis | cm⁻³ |
+| q | Módulo positivo da carga elementar | coulomb |
+| Mobilidade | Velocidade de deriva dividida pelo campo | cm²/(V·s) |
+| Condutividade | Densidade de corrente dividida pelo campo | S/cm |
+
+Usar q em coulombs, densidade em cm⁻³ e mobilidade em cm²/(V·s) produz condutividade em S/cm. Misturar densidade por metro cúbico com mobilidade baseada em centímetros introduz grande erro numérico mesmo quando a expressão simbólica parece correta. Verificação dimensional faz parte do argumento físico, assim como verificar larguras faz parte da aritmética de palavras finitas.
+
+## Ocupação, temperatura e fronteiras do modelo
+
+Na aproximação não degenerada, n = N_C exp(−(E_C − E_F)/(kT)) e p = N_V exp(−(E_F − E_V)/(kT)). N_C e N_V resumem os estados disponíveis nas bandas e a escala de ocupação térmica. Aproximar E_F da banda de condução aumenta exponencialmente a densidade de elétrons. E_F é um parâmetro de potencial químico em equilíbrio, não uma afirmação de que todos os elétrons ocupam a mesma energia ou de que um fio tem tensão numericamente igual à energia do gap.
+
+A aproximação exponencial falha quando a ocupação perto da borda da banda deixa de ser pequena; é necessário preservar a estatística de Fermi–Dirac. Em temperatura suficientemente baixa, a ionização incompleta invalida a aproximação de dopantes completamente ionizados. Em temperatura suficientemente alta, a geração intrínseca pode competir com a população líquida de dopantes. A mobilidade também muda com espalhamento; aumentar dopagem não implica melhoria de condutividade indefinidamente proporcional.
+
+Esses limites explicam por que um modelo útil declara temperatura, faixa de dopagem e regime operacional. A documentação utiliza semicondutores como pré-requisito para CMOS e células de memória; o software ChrisOS não escolhe o perfil de impurezas da fábrica nem resolve estatísticas de portadores durante a execução normal de instruções. As [notas do MIT 6.012](https://ocw.mit.edu/courses/6-012-microelectronic-devices-and-circuits-spring-2009/pages/lecture-notes/) indicam o material primário correspondente sobre portadores, compensação e transporte.

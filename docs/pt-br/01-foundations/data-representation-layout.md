@@ -3,20 +3,29 @@ id: data-representation-layout
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
-  - chrisvm/chris_arch.h
-  - compiler/chrisld/chriso.h
-  - kernel/fs/cfs_format.h
+- chrisvm/chris_arch.h
+- compiler/chrisld/chriso.h
+- kernel/fs/cfs_format.h
+- kernel/gfx/virtq.c
+- kernel/gfx/virtq.h
 symbols:
-  - ChrisArchitectureState
-  - ChrisoImage
+- ChrisArchitectureState
+- ChrisoImage
+- virtq_set
+- virtq_bytes
+- virtq_publish
+- cfs_get16
+- cfs_get32
+- cfs_put16
+- cfs_put32
 depends_on:
-  - clock-timing
+- clock-timing
 related:
-  - data-structures
-  - cpu-datapath-isa
+- data-structures
+- cpu-datapath-isa
 ---
 
 # Representação de dados, layout de memória e ponteiros
@@ -308,3 +317,30 @@ A árvore atual mostra várias classes:
 A representação já é parte do algoritmo. Um PMM com um bit por frame possui comportamento diferente de um alocador que mantém objetos completos por frame; ring buffers dependem de índices modulares; parsers dependem de tokens.
 
 Os capítulos seguintes passam de representação para modelos de custo e depois para organizações estruturadas de dados.
+
+## Reconstrução de um descritor byte por byte
+
+`virtq_set` fornece um exemplo concreto de serialização. Cada descritor ocupa dezesseis bytes em um buffer compartilhado. A função calcula seu início como o deslocamento da base mais dezesseis vezes o índice. Depois escreve endereço, tamanho, flags e próximo índice com funções little-endian explícitas. O layout independe de um compilador C inserir padding em uma estrutura equivalente.
+
+| Deslocamentos no descritor | Largura | Significado | Bytes de exemplo, menor endereço primeiro |
+|---|---|---|---|
+| 0–7 | 64 bits | Endereço do buffer visível ao dispositivo | `88 77 66 55 44 33 22 11` |
+| 8–11 | 32 bits | Tamanho, aqui 4096 | `00 10 00 00` |
+| 12–13 | 16 bits | Flags, aqui NEXT | `01 00` |
+| 14–15 | 16 bits | Próximo descritor, aqui 7 | `07 00` |
+
+O endereço codificado é `0x1122334455667788`. Trata-se de um valor ilustrativo, não de uma alocação válida ou mapeamento DMA fornecido pelo projeto. A ordem de bytes define a representação do número; nada diz sobre a permissão do dispositivo para acessar esse endereço. Tradução, tempo de vida e propriedade exigem contratos adicionais.
+
+Para uma fila de oito entradas, os descritores ocupam 8 × 16 = 128 bytes. A área available consome 4 + 2 × 8 + 2 = 22 bytes. A implementação alinha a área used seguinte a quatro bytes, iniciando-a no deslocamento 152 em vez de 150. Essa área ocupa 4 + 8 × 8 + 2 = 70 bytes, totalizando 222. Os dois bytes de padding decorrem do layout, não são entradas extras. Os cálculos seguem `virtq_bytes`; escolher uma estrutura packed arbitrária não os explicaria.
+
+## Um objeto em memória não é sua imagem serializada
+
+`ChrisoImage` contém ponteiros de seções, tamanhos e arrays limitados de símbolos e relocações. Um ponteiro de seção pertence ao espaço de endereços do processo hospedeiro. Escrever os bytes crus da estrutura em arquivo preservaria endereços sem significado para outro processo. Em contraste, `ChrisoSym` e `ChrisoRel` têm asserções explícitas de tamanho de 80 e 20 bytes no cabeçalho inspecionado. Essas asserções restringem tamanho, mas não provam ordem de bytes, índices válidos ou a gramática completa do arquivo.
+
+A distinção também aparece no CFS. `CfsSuper` e `CfsInode` são representações úteis em memória, enquanto `cfs_get16`, `cfs_get32`, `cfs_put16` e `cfs_put32` montam ou distribuem bytes explicitamente. Converter um ponteiro arbitrário de bytes em ponteiro para inteiro multibyte pode acrescentar hipóteses de alinhamento e aliasing. Operações explícitas tornam a ordem visível e evitam presumir que todo buffer externo possui alinhamento de objeto nativo.
+
+## Limites, tempo de vida e publicação são provas separadas
+
+Antes de acessar um campo de tamanho L no deslocamento O de um buffer com tamanho N, deve-se provar O ≤ N e depois L ≤ N − O. A forma com subtração evita overflow em O + L. Em arrays, é preciso provar o limite do índice e a representabilidade da multiplicação pelo stride antes de formar o endereço. Após essas verificações, a alocação subjacente ainda precisa estar viva e sob responsabilidade de quem possui permissão de acesso.
+
+Por fim, publicar memória compartilhada exige ordenação: um consumidor não pode observar o novo índice antes de os bytes correspondentes estarem prontos. `virtq_publish` coloca barreiras ao redor da publicação, mas o serializador de descritores não bloqueia a fila nem valida o mapeamento do dispositivo. Bytes corretos, limites válidos, tempo de vida estável e sincronização correta são quatro obrigações distintas. Um exemplo de serialização aprovado demonstra apenas a primeira, a menos que as demais sejam verificadas explicitamente.

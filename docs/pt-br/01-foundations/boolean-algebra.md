@@ -3,14 +3,17 @@ id: boolean-algebra
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- chrisvm/cpu/emulator/flags.c
+symbols:
+- chris_cc_true
+- write_status
 depends_on:
-  - transistor-cmos
+- transistor-cmos
 related:
-  - combinational-logic
+- combinational-logic
 ---
 
 # Álgebra booleana e representação lógica
@@ -207,7 +210,7 @@ Conceitualmente:
 
 decode_ADD = opcode_match ∧ valid_mode ∧ ¬fault
 
-allow_write = supervisor ∨ user_permission
+select_result = operation_valid ∧ destination_enabled
 
 take_exception = fault_present ∧ exception_enabled
 
@@ -218,3 +221,33 @@ CPUs reais usam estruturas muito mais complexas, porém composição booleana co
 Álgebra booleana define qual relação deve existir. Lógica combinacional determina como essa relação será realizada por portas, caminhos de propagação e recursos físicos.
 
 O próximo capítulo introduz decoders, multiplexadores, encoders, comparadores e blocos aritméticos, transformando expressões simbólicas em datapaths conectados.
+
+## Decomposição de Shannon transforma uma função em seleção
+
+Fixe uma variável X de uma função booleana F. Defina F_0 como a função restante quando X = 0 e F_1 quando X = 1. Então F = (NOT X AND F_0) OR (X AND F_1). Exatamente um ramo é habilitado para cada valor booleano de X. A equação é uma prova de equivalência, não uma heurística: substituir qualquer valor reproduz o subconjunto correspondente das linhas da função original.
+
+Para F = A XOR B, escolher X = A dá F_0 = B e F_1 = NOT B. Um multiplexador que selecione B ou seu complemento implementa XOR. Repetir a decomposição cria uma árvore de decisão. Compartilhar funções residuais idênticas pode comprimi-la em um grafo, embora a ordem das variáveis possa alterar drasticamente seu tamanho. Uma expressão booleana compacta e um grafo compacto não necessariamente coincidem.
+
+A decomposição também esclarece por que um multiplexador físico não significa “executar um ramo de software”. Os dois circuitos de entrada podem avaliar fisicamente, enquanto o seletor controla o valor que chega à saída. Em C, uma expressão condicional avalia apenas a expressão de valor selecionada. Concordância funcional em entradas booleanas puras não implica concordância em efeitos colaterais, exceções, tráfego de barramento ou custo de avaliação.
+
+## Máscaras vetoriais e provas de preservação
+
+Para substituir bits selecionados, defina uma máscara M com uns exatamente nas posições a substituir. Então novo = (antigo AND NOT M) OR (valor AND M). Onde M é zero, a expressão reduz-se a antigo; onde M é um, reduz-se a valor. Essa prova por posição estabelece tanto a atualização quanto a preservação dos demais bits. É mais forte que conferir um exemplo hexadecimal.
+
+`write_status`, em `flags.c` do ChrisCPU, utiliza esse princípio limpando o conjunto de bits de estado antes de inserir as novas flags. O bit 1 é depois forçado explicitamente para um. A distinção entre bits preservados, substituídos e forçados integra a interface. Uma máscara com um bit extra acidental poderia alterar silenciosamente controle de interrupções ou outro campo mesmo com resultado aritmético correto.
+
+Os operadores lógicos `&&` e `||` de C normalizam valores de verdade e utilizam curto-circuito. Os operadores bit a bit `&` e `|` atuam em todas as posições e não fornecem esse contrato de curto-circuito. Assim, `pointer && pointer->field` pode proteger a desreferência, enquanto substituir `&&` por `&` não preserva a segurança. Reescritas algébricas de proposições puras não podem ser aplicadas cegamente a expressões que acessam memória ou alteram estado.
+
+## Condições implementadas pelo ChrisCPU
+
+`chris_cc_true` extrai CF, PF, ZF, SF e OF de uma palavra de flags e seleciona um predicado com `cc & 15`. Condições complementares formam pares adjacentes. Por exemplo, menor-ou-igual sem sinal é CF OR ZF, enquanto maior sem sinal é NOT CF AND NOT ZF. De Morgan demonstra a complementaridade para todas as combinações de flags, inclusive combinações não produzidas normalmente por uma instrução aritmética específica.
+
+| Relação após comparação | Predicado | Oposto |
+|---|---|---|
+| Menor sem sinal | CF | NOT CF |
+| Igual | ZF | NOT ZF |
+| Menor ou igual sem sinal | CF OR ZF | NOT CF AND NOT ZF |
+| Menor com sinal | SF XOR OF | SF igual a OF |
+| Menor ou igual com sinal | ZF OR (SF XOR OF) | NOT ZF AND (SF igual a OF) |
+
+São predicados concretos da função inspecionada, não uma política completa de permissões ou exceções. Comparação com sinal precisa de OF porque o sinal da subtração modular isolado é insuficiente. A derivação está em [Circuitos aritméticos](arithmetic-circuits.md). A verificação aritmética reproduzível cobre as 32 combinações das cinco flags contra as dezesseis condições, incluindo a seleção pelos quatro bits baixos. Isso estabelece esse mapeamento booleano finito; não estabelece a correção do decodificador que escolhe a condição nem do executor que aplica o destino do salto.

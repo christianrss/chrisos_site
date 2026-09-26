@@ -3,20 +3,29 @@ id: data-representation-layout
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
-  - chrisvm/chris_arch.h
-  - compiler/chrisld/chriso.h
-  - kernel/fs/cfs_format.h
+- chrisvm/chris_arch.h
+- compiler/chrisld/chriso.h
+- kernel/fs/cfs_format.h
+- kernel/gfx/virtq.c
+- kernel/gfx/virtq.h
 symbols:
-  - ChrisArchitectureState
-  - ChrisoImage
+- ChrisArchitectureState
+- ChrisoImage
+- virtq_set
+- virtq_bytes
+- virtq_publish
+- cfs_get16
+- cfs_get32
+- cfs_put16
+- cfs_put32
 depends_on:
-  - clock-timing
+- clock-timing
 related:
-  - data-structures
-  - cpu-datapath-isa
+- data-structures
+- cpu-datapath-isa
 ---
 
 # Data representation, memory layout and pointers
@@ -316,3 +325,30 @@ The current ChrisOS tree demonstrates several representation classes:
 The representation is part of the algorithm. A page allocator using one bit per frame behaves differently from an allocator storing full objects per frame; a ring buffer depends on modular indices; a parser depends on token representation.
 
 The next chapters therefore move from representation to cost models and then to structured organizations of data.
+
+## A descriptor reconstructed byte by byte
+
+`virtq_set` supplies a concrete serialization example. Each descriptor occupies sixteen bytes in a shared buffer. The function computes its start as descriptor-base offset plus sixteen times the index. It then writes the address, length, flags and next index using explicit little-endian helpers. This layout is independent of whether a host C compiler would insert padding into an equivalent structure.
+
+| Byte offsets within descriptor | Width | Meaning | Example bytes, lowest address first |
+|---|---|---|---|
+| 0–7 | 64 bits | Device-visible buffer address | `88 77 66 55 44 33 22 11` |
+| 8–11 | 32 bits | Length, here 4096 | `00 10 00 00` |
+| 12–13 | 16 bits | Flags, here NEXT | `01 00` |
+| 14–15 | 16 bits | Next descriptor, here 7 | `07 00` |
+
+The address example encodes `0x1122334455667788`. This is an illustrative address value, not a valid allocation or DMA mapping supplied by the project. Byte order says how a number is represented; it says nothing about whether the device is permitted to access that address. Address translation, lifetime and ownership require additional contracts.
+
+For an eight-entry queue, descriptor storage is 8 × 16 = 128 bytes. The available area consumes 4 + 2 × 8 + 2 = 22 bytes. The implementation aligns the following used area to four bytes, so it begins at offset 152 rather than 150. That area occupies 4 + 8 × 8 + 2 = 70 bytes, giving a total of 222. The two padding bytes are a layout consequence, not additional entries. These calculations follow `virtq_bytes`; choosing an arbitrary packed structure would not explain them.
+
+## An in-memory object is not its serialized image
+
+`ChrisoImage` holds section pointers, section sizes and bounded arrays of symbols and relocations. A section pointer belongs to the host process's address space. Writing the structure's raw bytes to a file would preserve meaningless addresses for a later process. In contrast, `ChrisoSym` and `ChrisoRel` have explicit size assertions of 80 and 20 bytes in the inspected header. Those assertions constrain size, but do not by themselves prove byte order, valid indices or the complete file grammar.
+
+The distinction also appears in CFS. `CfsSuper` and `CfsInode` are useful in-memory representations, while `cfs_get16`, `cfs_get32`, `cfs_put16` and `cfs_put32` explicitly assemble or scatter bytes. A cast from an arbitrary byte pointer to a multi-byte integer pointer can add alignment and aliasing assumptions. Explicit byte operations make the represented order visible and avoid assuming that every external buffer is aligned as a native object.
+
+## Bounds, lifetime and publication are separate proofs
+
+Before accessing a field of length L at offset O in a buffer of size N, first prove O ≤ N and then L ≤ N − O. The subtraction form avoids overflow in O + L. For arrays, prove the index bound and that stride multiplication is representable before forming the address. After those arithmetic checks, the backing allocation must still be alive and owned by a party permitted to access it.
+
+Finally, shared-memory publication needs ordering: a consumer must not observe a new index before the corresponding bytes are ready. `virtq_publish` places barriers around index publication, but the descriptor serializer itself does not lock the queue or validate a device mapping. Correct bytes, valid bounds, stable lifetime and correct synchronization are four distinct obligations. Passing a serialization example proves only the first unless the others are tested explicitly.

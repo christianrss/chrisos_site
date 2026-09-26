@@ -1,0 +1,13 @@
+digraph Queue {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial"];
+  edge [fontname="Arial"];
+  free [label="Free descriptors / descritores livres\nnfree + software links"];
+  owned [label="Driver owns chain / driver possui cadeia\nallocate + fill / alocar + preencher"];
+  publish [label="Publish / publicar\nslot = avail_idx mod qsz\navail_idx = (idx + 1) mod 65536"];
+  device [label="Device / dispositivo\nconsume chain / consumir cadeia"];
+  complete [label="Completion / conclusão\nused_idx differs from last_used"];
+  take [label="Take + reclaim / obter + recuperar\nlast_used = (last_used + 1) mod 65536"];
+  free -> owned -> publish -> device -> complete -> take;
+  take -> free [label="ownership returned\npropriedade devolvida"];
+}

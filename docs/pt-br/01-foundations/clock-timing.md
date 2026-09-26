@@ -15,6 +15,8 @@ symbols:
 - cpu_run
 depends_on:
 - logic-sequential
+- latches-flipflops
+- registers-counters
 related:
 - cpu-datapath-isa
 - timers

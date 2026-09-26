@@ -21,7 +21,10 @@ WORD_RE = re.compile(r"\b[\wÀ-ÿ][\wÀ-ÿ'’-]*\b", re.UNICODE)
 
 def word_count(body: str) -> int:
     body = re.sub(r"```.*?```", " ", body, flags=re.S)
-    body = re.sub(r"<[^>]+>", " ", body)
+    # A mathematical '<' followed by whitespace or '=' is not an HTML tag.
+    # The former broad pattern swallowed prose up to the next real tag.
+    body = re.sub(r"<!--[\s\S]*?-->", " ", body)
+    body = re.sub(r"</?[A-Za-z][A-Za-z0-9:-]*(?:\s+[^<>]*?)?\s*/?>", " ", body)
     return len(WORD_RE.findall(body))
 
 

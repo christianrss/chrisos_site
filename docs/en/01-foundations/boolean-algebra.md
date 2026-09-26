@@ -3,14 +3,17 @@ id: boolean-algebra
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- chrisvm/cpu/emulator/flags.c
+symbols:
+- chris_cc_true
+- write_status
 depends_on:
-  - transistor-cmos
+- transistor-cmos
 related:
-  - combinational-logic
+- combinational-logic
 ---
 
 # Boolean algebra and logic representation
@@ -207,7 +210,7 @@ Conceptually:
 
 decode_ADD = opcode_match ∧ valid_mode ∧ ¬fault
 
-allow_write = supervisor ∨ user_permission
+select_result = operation_valid ∧ destination_enabled
 
 take_exception = fault_present ∧ exception_enabled
 
@@ -218,3 +221,33 @@ Real CPUs use much richer structures, but Boolean composition remains the basis 
 Boolean algebra states what relation should hold; combinational logic determines how that relation is implemented using gates, propagation paths and physical constraints.
 
 The next chapter introduces decoders, multiplexers, encoders, comparators and arithmetic building blocks, turning symbolic expressions into connected datapaths.
+
+## Shannon decomposition turns a function into selection
+
+Fix a variable X in a Boolean function F. Define F_0 as the remaining function when X = 0 and F_1 when X = 1. Then F = (NOT X AND F_0) OR (X AND F_1). Exactly one branch is enabled for each Boolean value of X. The equation is therefore a proof of equivalence, not a heuristic: substituting either value reproduces the original function's corresponding row subset.
+
+For F = A XOR B, choosing X = A gives F_0 = B and F_1 = NOT B. A mux selecting B or its complement implements XOR. Repeating decomposition creates a decision tree. Sharing identical residual functions can compress that tree into a decision graph, although variable order can dramatically change its size. A compact Boolean expression and a compact decision graph are not guaranteed to coincide.
+
+This decomposition also clarifies why a hardware mux does not mean “run one software branch.” Both input circuits can physically evaluate, while the select signal controls which value reaches the output. In C, a conditional expression evaluates only its selected value expression. Functional agreement on pure Boolean inputs does not imply agreement on side effects, exceptions, bus traffic or evaluation cost.
+
+## Bit-vector masks and preservation proofs
+
+To replace selected bits in a word, define a mask M with ones exactly at the positions to replace. Then new = (old AND NOT M) OR (value AND M). At a position where M is zero, the expression reduces to old; where M is one, it reduces to value. This bitwise proof establishes both the update and the preservation of all other positions. It is stronger than checking one hexadecimal example.
+
+`write_status` in ChrisCPU's `flags.c` uses this principle by clearing the status-bit set before inserting newly computed flags. Bit 1 is then forced to one explicitly. The distinction between preserved, replaced and forced bits is part of the interface. A mask with one accidental extra bit could silently alter interrupt control or another unrelated field even when the arithmetic result is correct.
+
+Logical `&&` and `||` in C normalize truth values and short-circuit evaluation. Bitwise `&` and `|` operate on all bit positions and do not provide that short-circuit contract. Thus `pointer && pointer->field` can guard the dereference, while replacing `&&` with `&` does not preserve safety. Algebraic rewrites of pure propositions cannot be applied blindly to expressions that perform memory accesses or mutate state.
+
+## Conditions implemented by ChrisCPU
+
+`chris_cc_true` extracts CF, PF, ZF, SF and OF from an incoming flag word and selects a predicate using `cc & 15`. Complementary conditions form adjacent pairs. For example, unsigned-below-or-equal is CF OR ZF, while unsigned-above is NOT CF AND NOT ZF. De Morgan's law proves they are complements for every flag combination, including combinations not normally produced by one particular arithmetic instruction.
+
+| Relation after comparison | Predicate | Opposite |
+|---|---|---|
+| Unsigned below | CF | NOT CF |
+| Equal | ZF | NOT ZF |
+| Unsigned below or equal | CF OR ZF | NOT CF AND NOT ZF |
+| Signed less | SF XOR OF | SF equals OF |
+| Signed less or equal | ZF OR (SF XOR OF) | NOT ZF AND (SF equals OF) |
+
+These are concrete predicates from the inspected helper, not a complete permission or exception policy. Signed comparison needs OF because the sign of a wrapped subtraction alone is insufficient. The derivation is developed in [Arithmetic circuits](arithmetic-circuits.md). The reproducible arithmetic probe checks all 32 combinations of the five relevant flags against all sixteen conditions, including the selector's low-four-bit behavior. That establishes this finite Boolean mapping; it does not establish the correctness of a decoder choosing the condition or of a branch executor applying its destination.

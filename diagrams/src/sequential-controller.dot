@@ -1,0 +1,18 @@
+digraph Controller {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial"];
+  edge [fontname="Arial"];
+  reset [label="Reset", shape=oval];
+  idle [label="IDLE\nready / pronto"];
+  issue [label="ISSUE\nstart / iniciar"];
+  wait [label="WAIT\nbusy / ocupado"];
+  done [label="DONE\ncompletion held\nconclusão mantida"];
+  reset -> idle;
+  idle -> issue [label="request / requisição"];
+  idle -> idle [label="no request / sem requisição"];
+  issue -> wait [label="next event / próximo evento"];
+  wait -> wait [label="no result / sem resultado"];
+  wait -> done [label="error or completion\nerro ou conclusão"];
+  done -> done [label="request held\nrequisição mantida"];
+  done -> idle [label="request released\nrequisição liberada"];
+}

@@ -368,7 +368,8 @@ The trade-off is intentional loss of oldest history.
 | ChrisFS block find | bitmap + hint | O(B) | metadata update | CFS locking |
 | inode logical-block resolve | direct/indirect hierarchy | bounded depth | may allocate pointer/data blocks on growth | CFS locking |
 | journal replay | bounded record array | O(R) | bounded scratch | mount/update serialization |
-| VirtIO queue publish | split ring | O(chain length) | descriptor/resource dependent | barriers + queue ownership |
+| VirtIO allocate/fill chain | software links + descriptors | O(chain length) | bounded descriptor pool | caller ownership |
+| VirtIO publish one head | split ring | O(1) local work | no helper allocation | barriers + queue ownership |
 | z test | dense depth buffer | O(1)/fragment | buffer preallocated | tile ownership |
 | ChrisCPU decode | byte stream → ChrisInsn | bounded O(1)/instruction | none | CPU-local |
 | VM trace append | circular trace array | O(1) | none | CPU-local in current model |

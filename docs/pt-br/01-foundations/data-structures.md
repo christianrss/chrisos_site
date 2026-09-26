@@ -3,15 +3,18 @@ id: data-structures
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- kernel/metal/pmm.c
+symbols:
+- scan_usable_for_run
+- pmm_alloc
 depends_on:
-  - data-representation-layout
-  - algorithmic-complexity
+- data-representation-layout
+- algorithmic-complexity
 related:
-  - systems-algorithms
+- systems-algorithms
 ---
 
 # Estruturas de dados para software de sistemas
@@ -383,6 +386,14 @@ Um S.O pequeno não deve adotar tais técnicas apenas por sofisticação.
 Não é tabela normativa. Concorrência, locality e falha podem inverter a escolha.
 
 ## Princípio de sistemas
+
+### Uma fila limitada como prova de invariante
+
+Considere uma FIFO didática com capacidade oito, índice de leitura h, índice de escrita t e contagem c. Exigem-se 0 ≤ c ≤ 8, índices entre zero e sete e t = (h + c) mod 8. Fila vazia e cheia podem ter h e t iguais; a contagem as distingue. Inserir primeiro rejeita c = 8, escreve em t, avança t módulo oito e incrementa c. Remover primeiro rejeita c = 0, lê em h, avança h e decrementa c. Substituir cada atualização na equação demonstra a preservação do invariante.
+
+Essa prova sequencial não torna a fila concorrente. Se dois produtores lerem o mesmo t antes de qualquer atualização, poderão sobrescrever uma posição e corromper a contagem. Um lock pode serializar a transição completa; transformar cada campo isoladamente em atômico não produz automaticamente uma fila correta para múltiplos produtores. Publicar carga e índice também exige um contrato de ordenação para os leitores.
+
+O tempo de vida acrescenta outra obrigação. Um ponteiro enfileirado não mantém sozinho sua alocação viva. A fila pode possuir o objeto até a remoção, manter uma referência ou exigir que o chamador o preserve. A API deve escolher. Da mesma forma, devolver um nó livre duas vezes pode inserir o mesmo objeto repetidamente na estrutura de alocação, mesmo com todos os ponteiros dentro dos limites. Validade estrutural, concorrência e propriedade precisam de argumentos separados.
 
 A melhor estrutura é a que torna simples preservar os invariantes importantes sob as restrições reais.
 

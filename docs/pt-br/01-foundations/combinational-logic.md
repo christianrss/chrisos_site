@@ -3,15 +3,17 @@ id: combinational-logic
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- chrisvm/cpu/emulator/decode.c
+symbols:
+- read_modrm
 depends_on:
-  - boolean-algebra
+- boolean-algebra
 related:
-  - arithmetic-circuits
-  - logic-sequential
+- arithmetic-circuits
+- logic-sequential
 ---
 
 # Circuitos combinacionais
@@ -199,3 +201,31 @@ Um processador simples pode ser decomposto em armazenamento e blocos combinacion
 O tecido combinacional responde “quais devem ser os próximos valores?”. Armazenamento sequencial responde “quando esses valores se tornam o estado da máquina?”.
 
 Os próximos capítulos aprofundam as duas direções: circuitos aritméticos detalham os blocos de transformação; latches e flip-flops explicam como valores calculados são capturados e preservados.
+
+## Uma saída logicamente constante ainda pode apresentar glitch
+
+Considere F = AB OR (NOT A)C, implementada por dois caminhos AND que alimentam OR. Com B = C = 1, a álgebra dá F = A OR NOT A = 1. Porém, se A cair, o caminho AB pode cair antes de o inversor e o segundo AND subirem. A saída pode tornar-se zero brevemente. Esse é um hazard estático de um: a saída estabilizada desejada permanece um, mas a propagação desigual cria um zero transitório.
+
+Adicionar o termo de consenso BC produz F = AB OR (NOT A)C OR BC, logicamente equivalente. Com B = C = 1, BC mantém a saída alta durante a transição de A. O hardware adicional é redundante para a tabela verdade, mas útil nesse caso temporal de mudança de uma entrada. Não é uma solução universal para entradas simultâneas arbitrárias, travessias de clock ou qualquer tecnologia de portas.
+
+O exemplo demonstra por que minimização booleana e correção física são tarefas separadas. Uma ferramenta de síntese pode remover termos logicamente redundantes se o fluxo não preservar o tratamento temporal pretendido. Um receptor síncrono pode tolerar glitches internos quando a entrada estabiliza durante setup e hold; uma entrada de controle assíncrona pode reagir imediatamente. A interface consumidora determina se o transitório é inofensivo.
+
+## Profundidade de seleção e custo físico
+
+Um multiplexador de oito entradas pode ser construído como árvore balanceada de sete multiplexadores de duas entradas, com três estágios em cada caminho de dados. Uma cascata serial pode usar a mesma quantidade de elementos e ainda expor algumas entradas a mais estágios. Contagem de portas isolada não captura o desequilíbrio. Tempo de chegada e fanout do seletor também importam: um seletor atrasado pode dominar mesmo quando o caminho de dados parece curto.
+
+Um barrel shifter de 32 bits para deslocamentos de zero a 31 pode usar cinco estágios que selecionam deslocamentos de 1, 2, 4, 8 e 16 posições. Cada estágio escolhe entre a palavra intermediária inalterada e sua versão deslocada. Os cinco bits de controle codificam a quantidade em binário. A construção utiliza O(w log w) seleções elementares de bits para largura variável w, com profundidade O(log w). Um laço que desloca um bit por vez modela o mesmo resultado matemático sob regras adequadas, mas tem custo de execução diferente.
+
+## Extração de campos como decodificador de software
+
+Em `read_modrm` do ChrisCPU, um byte m é dividido em `mod = m >> 6`, `digit = (m >> 3) & 7` e `rm_field = m & 7`. As expressões selecionam campos disjuntos. Para m = `0xd9`, binário `11011001`, resultam mod = 3, digit = 3 e rm_field = 1. Bits de extensão REX são depois combinados com os campos de registrador; não devem ser confundidos com os três bits existentes no próprio m.
+
+| Posições no byte | Campo extraído | Faixa antes das extensões |
+|---|---|---|
+| 7:6 | mod | 0–3 |
+| 5:3 | digit | 0–7 |
+| 2:0 | rm_field | 0–7 |
+
+A função verifica bytes disponíveis antes de ler ModR/M e antes de consumir SIB ou deslocamento opcionais. Sua saída depende, portanto, de seleção de bits e limites do parser. Diferentemente de uma função combinacional pura, essa rotina C avança por um buffer e modifica uma estrutura de instrução decodificada. O vocabulário de circuitos explica os seletores; o contrato de software acrescenta segurança de memória, estado dos prefixos e retornos de falha.
+
+O código revisado implementa essas operações em C; disso não decorre decodificação em nível de portas ou temporização fiel ao hardware. Uma instrução válida também exige regras de opcode, modo e operandos além dessa separação. O exemplo de byte é intencionalmente mais restrito que afirmar suporte a toda instrução que contenha esses bits.

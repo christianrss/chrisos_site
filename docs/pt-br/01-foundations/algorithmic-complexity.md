@@ -3,15 +3,22 @@ id: algorithmic-complexity
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- kernel/gfx/virtq.c
+- kernel/gfx/virtq.h
+symbols:
+- virtq_alloc
+- virtq_publish
+- virtq_take
+- virtq_reclaim
+- virtq_init
 depends_on:
-  - data-representation-layout
+- data-representation-layout
 related:
-  - data-structures
-  - systems-algorithms
+- data-structures
+- systems-algorithms
 ---
 
 # Análise de algoritmos e modelos de custo de sistemas
@@ -319,3 +326,24 @@ Capítulos concretos devem registrar tabela semelhante:
 A tabela não substitui a explicação. Ela torna contratos ocultos de desempenho e concorrência visíveis.
 
 O capítulo seguinte apresenta as estruturas de dados fundamentais sobre as quais esses algoritmos são construídos.
+
+## Modelo de custo de fila derivado do código
+
+Em `kernel/gfx/virtq.c`, `virtq_alloc(q, n, head)` não obtém uma cadeia arbitrária em tempo constante. Percorre n links de software, atribui flags NEXT e retira os descritores da lista livre. O trabalho local é O(n), enquanto a rejeição de n maior que `nfree` ocorre antes do percurso. `virtq_publish` escreve uma entrada do anel e avança um índice, portanto seu trabalho local é O(1). `virtq_take` devolve no máximo uma conclusão por chamada. `virtq_reclaim` percorre a cadeia alocada e custa O(n) para uma cadeia válida de n descritores.
+
+| Operação | Parâmetro de escala | Trabalho local | Inclui espera externa? |
+|---|---|---|---|
+| Inicializar | Capacidade Q | O(Q) | Não |
+| Alocar cadeia | Quantidade n | O(n) | Não |
+| Preencher descritor | Layout fixo de 16 bytes | O(1) | Não |
+| Publicar cabeça | Uma entrada do anel | O(1) | Não |
+| Obter conclusão | Uma entrada used | O(1) | Não |
+| Recuperar cadeia válida | Quantidade n | O(n) | Não |
+
+Para uma requisição com n descritores, a soma do gerenciamento é O(n), embora a publicação isolada tenha custo constante. Processamento do dispositivo, tráfego do barramento, interrupção e polling do chamador acrescentam termos separados. Se o chamador consulta até concluir, um atraso ilimitado do dispositivo pode produzir uma quantidade ilimitada de chamadas O(1). Custo constante por consulta não estabelece prazo de conclusão.
+
+Os arrays reservam capacidade para `VQ_MAX = 128`, portanto a implementação distribuída tem limite fixo de armazenamento. Descrever a família como O(Q) continua útil para compreender o efeito de aumentar esse limite. Tratar todo programa limitado como O(1) esconderia a diferença entre tocar um descritor e tocar todos os 128. O modelo parametrizado e o limite concreto devem constar da documentação.
+
+Localidade difere de comportamento de alocação. As funções não alocam heap hospedeiro por conta própria e os bytes dos descritores são contíguos. Entretanto, percorrer links de software e publicar memória compartilhada com dispositivo podem ter custos distintos de cache e sincronização. O código não demonstra vantagem medida de vazão sobre toda alternativa; essa conclusão exigiria carga de trabalho e medição.
+
+Um bitmap alternativo poderia buscar descritores livres e reduzir metadados de links, mas obter uma cadeia ainda exigiria identificar n entradas e estabelecer propriedade. Uma API de submissão em lotes poderia amortizar barreiras de publicação entre várias cabeças, ao custo de outro contrato de latência e sincronização. São alternativas de projeto, não afirmações de que a implementação atual já faz publicação em lotes. A análise de complexidade é mais útil quando declara qual contrato a otimização mudaria.

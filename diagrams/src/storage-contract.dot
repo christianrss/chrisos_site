@@ -1,0 +1,17 @@
+digraph Storage {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial"];
+  edge [fontname="Arial"];
+  feedback [label="Feedback / realimentação\nphysical state / estado físico"];
+  latch [label="D latch\ntransparent while enabled\ntransparente quando habilitado"];
+  capture [label="Flip-flop\nedge capture / captura na borda"];
+  timing [label="Setup + hold\nvalid capture / captura válida"];
+  async [label="Asynchronous input\nentrada assíncrona"];
+  first [label="First stage / primeiro estágio\npossible metastability\npossível metaestabilidade"];
+  second [label="Second stage / segundo estágio\nresolution interval\nintervalo de resolução"];
+  protocol [label="Protocol / protocolo\nlevel, event, payload\nnível, evento, dados"];
+  feedback -> latch -> capture;
+  capture -> timing;
+  async -> first -> second -> protocol;
+  capture -> first [style=dashed, label="storage / armazenamento"];
+}

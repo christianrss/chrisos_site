@@ -3,14 +3,14 @@ id: pn-junction
 lang: pt-br
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-  - crystal-bands-doping
+- crystal-bands-doping
 related:
-  - transistor-cmos
+- transistor-cmos
 ---
 
 # Junções P-N e interfaces semicondutoras
@@ -136,3 +136,39 @@ Uma estrutura MOS aplica o mesmo raciocínio em geometria diferente. Em vez de d
     eletrostática da superfície MOS
 
 O capítulo de transistores pode então ser entendido como continuação desse mesmo modelo de campo, carga e portadores, e não como uma troca abrupta de assunto.
+
+## Derivação da largura de depleção pela equação de Poisson
+
+Considere uma junção abrupta com densidade uniforme de aceitadores N_A no lado p e de doadores N_D no lado n. A junção metalúrgica fica em x = 0. Na aproximação de depleção, desprezam-se portadores móveis entre −x_p e x_n, enquanto as regiões neutras adjacentes têm campo desprezível. Aceitadores ionizados contribuem com densidade −qN_A e doadores com +qN_D. Isso aproxima um perfil contínuo de portadores, não significa ausência literal de todos eles.
+
+A eletrostática unidimensional fornece dE/dx = rho/epsilon_s e E = −dphi/dx. Partindo de E = 0 na borda p da depleção, a integração dá E(x) = −qN_A(x + x_p)/epsilon_s no lado p. No lado n, E(x) = qN_D(x − x_n)/epsilon_s. A continuidade do campo em zero exige N_A x_p = N_D x_n: os módulos das cargas positivas e negativas descobertas devem coincidir.
+
+O campo é negativo nessa escolha de coordenadas, apontando de n para p. Integrar −E pela depleção produz uma elevação positiva do potencial de p para n. Seu módulo é V_dep = q(N_A x_p² + N_D x_n²)/(2 epsilon_s). Com W = x_p + x_n e balanço de carga, resulta W = sqrt((2 epsilon_s/q)(1/N_A + 1/N_D)V_dep). Também x_p = W N_D/(N_A + N_D) e x_n = W N_A/(N_A + N_D).
+
+![Carga, campo e potencial no modelo normalizado de junção abrupta](../../assets/diagrams/junction-profiles.svg)
+
+O lado menos dopado contém, portanto, maior largura de depleção. Larguras iguais só são corretas para dopagens iguais nesse modelo. O módulo máximo do campo é qN_A x_p/epsilon_s, equivalentemente qN_D x_n/epsilon_s. Seu valor e distribuição espacial importam para ruptura; a tensão total não especifica isoladamente a intensidade local do campo.
+
+## Exemplo dimensional e dependência da polarização
+
+Adotem-se entradas ilustrativas N_A = 10^16 cm⁻³, N_D = 10^15 cm⁻³, n_i = 10^10 cm⁻³, epsilon_s = 1,04 × 10⁻¹² F/cm, q = 1,602 × 10⁻¹⁹ C e V_T = 0,02585 V. A expressão ideal de equilíbrio dá V_bi = V_T ln(N_A N_D/n_i²), aproximadamente 0,655 V. A substituição produz W aproximadamente 0,967 micrômetros, sendo cerca de 0,088 no lado p e 0,879 no lado n. São exemplos calculados com entradas declaradas, não parâmetros medidos de hardware do ChrisOS.
+
+Sob polarização reversa moderada V_R, utiliza-se V_dep = V_bi + V_R. Três volts de polarização reversa aumentam a largura do exemplo para aproximadamente 2,285 micrômetros. Sob polarização direta V_F, a barreira eletrostática simples torna-se V_bi − V_F, mas extrapolar a fórmula até atravessar barreira zero é inválido. Injeção forte, resistência série e populações fora do equilíbrio exigem um modelo mais completo.
+
+O potencial interno é uma diferença eletrostática interna, não uma bateria gratuita disponível nos terminais em equilíbrio térmico. Potenciais de contato e condições eletroquímicas de equilíbrio também devem integrar a análise do circuito completo de medição. Ignorar essa distinção implicaria incorretamente uma fonte perpétua de corrente em uma junção sem alimentação.
+
+## Capacitância e condutância incrementais
+
+O módulo da carga por área de cada lado é Q_A = qN_A x_p = qN_D x_n. Derivando em relação ao módulo da polarização reversa, obtém-se capacitância de depleção por área C_A = epsilon_s/W para a junção abrupta. Conforme a polarização reversa amplia a depleção, a capacitância diminui. Multiplicar pela área fornece a capacitância total antes de efeitos de borda e parasitas.
+
+A condução direta introduz carga minoritária armazenada e, portanto, capacitância de difusão, um mecanismo diferente. Um modelo de pequenos sinais lineariza em torno de um ponto de operação. Para a exponencial ideal, a condutância incremental é g_d = I_S exp(V/(nV_T))/(nV_T), aproximadamente I/(nV_T) quando a corrente direta supera muito I_S. A resistência incremental correspondente é aproximadamente nV_T/I. Nenhuma delas é uma resistência constante do diodo em toda a faixa de tensão.
+
+| Regime | Aspecto dominante do modelo | Atalho inválido |
+|---|---|---|
+| Equilíbrio térmico | Balanço de deriva e difusão | Tratar barreira interna como fonte externa |
+| Reverso moderado | Ampliação da depleção e corrente de geração | Presumir corrente exatamente zero |
+| Direto com baixa injeção | Injeção e difusão de minoritários | Atribuir uma tensão universal de condução |
+| Direto intenso | Resistência série, aquecimento, alta injeção | Extrapolar indefinidamente a exponencial |
+| Ruptura | Campo alto, multiplicação ou tunelamento | Presumir qualquer tensão reversa não destrutiva |
+
+Essas distinções conectam junções aos elementos parasitas de CMOS e à carga vista por circuitos de comutação. Não estabelecem um simulador de diodos, modelo de processo ou proteção elétrica implementados pelo ChrisOS. A teoria é pré-requisito para interpretar dispositivos; afirmações de implementação posteriores devem retornar às próprias evidências de código. As [notas do MIT 6.012](https://ocw.mit.edu/courses/6-012-microelectronic-devices-and-circuits-spring-2009/pages/lecture-notes/) fornecem material primário sobre equilíbrio, características de terminais e capacitância de pequenos sinais.

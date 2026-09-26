@@ -3,15 +3,17 @@ id: combinational-logic
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- chrisvm/cpu/emulator/decode.c
+symbols:
+- read_modrm
 depends_on:
-  - boolean-algebra
+- boolean-algebra
 related:
-  - arithmetic-circuits
-  - logic-sequential
+- arithmetic-circuits
+- logic-sequential
 ---
 
 # Combinational circuits
@@ -199,3 +201,31 @@ A simple processor datapath can be decomposed into storage plus combinational bl
 The combinational fabric answers “what should the next values be?” Sequential storage answers “when do those values become the machine's state?”
 
 The next chapters therefore split in two directions: arithmetic circuits deepen the transformation blocks, while latches and flip-flops explain how computed values are captured and preserved.
+
+## A logically constant output can still glitch
+
+Consider F = AB OR (NOT A)C implemented as two AND paths feeding OR. When B = C = 1, algebra gives F = A OR NOT A = 1. However, if A falls, the AB path can fall before the inverter and second AND path rise. The output can briefly become zero. This is a static-one hazard: the desired settled output remains one, but unequal propagation creates a transient zero.
+
+Adding the consensus term BC gives F = AB OR (NOT A)C OR BC, which is logically equivalent. With B = C = 1, BC holds the output high during the A transition. The additional hardware is redundant for the truth table but useful for this single-input-transition timing case. It is not a universal cure for arbitrary simultaneous input changes, clock crossings or every gate technology.
+
+This example shows why Boolean minimization and physical correctness are separate tasks. A synthesis tool may remove logically redundant terms unless the design flow preserves the intended hazard treatment. A synchronous receiver can tolerate some internal glitches if its input is settled throughout capture setup and hold; an asynchronous control input may react to them immediately. The consuming interface determines whether a transient is harmless.
+
+## Selection depth and physical cost
+
+An eight-input mux can be assembled as a balanced tree of seven two-input muxes, with three selection stages on any data path. A serial cascade can use the same number of selection elements but expose some inputs to more stages. Gate count alone therefore misses path imbalance. Select-signal arrival time and fanout also matter: a late select can dominate even when the data path appears short.
+
+A 32-bit barrel shifter for shifts from zero through 31 can use five stages selecting shifts of 1, 2, 4, 8 and 16 positions. Each stage selects either the unchanged intermediate word or its shifted version. The five control bits encode the amount in binary. This construction uses O(w log w) elementary bit selections for variable width w, while depth is O(log w). A software loop that shifts one bit repeatedly models the same mathematical result under suitable rules but has a different execution cost.
+
+## Field extraction as a software decoder
+
+In ChrisCPU's `read_modrm`, an instruction byte m is split into `mod = m >> 6`, `digit = (m >> 3) & 7` and `rm_field = m & 7`. These expressions select disjoint bit fields. For m = `0xd9`, binary `11011001`, they produce mod = 3, digit = 3 and rm_field = 1. REX extension bits are subsequently combined with the register fields; they must not be confused with the three bits present in m itself.
+
+| Byte positions | Extracted field | Range before extensions |
+|---|---|---|
+| 7:6 | mod | 0–3 |
+| 5:3 | digit | 0–7 |
+| 2:0 | rm_field | 0–7 |
+
+The helper checks available bytes before reading the ModR/M byte and before consuming an optional SIB or displacement. Its output therefore depends on both bit selection and parser bounds. Unlike a pure combinational truth function, this C routine advances through an input buffer and mutates a decoded-instruction structure. The circuit vocabulary explains its selectors, while the software contract adds memory safety, prefix state and failure returns.
+
+The reviewed source implements these field operations in C; no claim of gate-level decoding or cycle-accurate hardware timing follows. A valid instruction also needs opcode, mode and operand rules beyond this field split. The concrete byte example is deliberately narrower than asserting that every instruction with those bits is supported.

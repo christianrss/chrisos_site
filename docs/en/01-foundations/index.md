@@ -29,12 +29,12 @@ The volume is not an introductory summary. It establishes the models required to
 4. MOSFETs and CMOS.
 5. Boolean algebra and logic representation.
 6. Combinational circuits.
-7. Sequential logic and stored state.
-8. Latches, flip-flops and metastability.
-9. Registers, counters and state machines.
-10. Adders, ALUs and binary arithmetic.
-11. SRAM, DRAM and memory cells.
-12. Clocking, propagation and timing.
+7. Adders, ALUs and binary arithmetic.
+8. Sequential logic and stored state.
+9. Latches, flip-flops and metastability.
+10. Registers, counters and state machines.
+11. Clocking, propagation and timing.
+12. SRAM, DRAM and memory cells.
 
 ## Software foundations sequence
 

@@ -3,14 +3,14 @@ id: pn-junction
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-  - crystal-bands-doping
+- crystal-bands-doping
 related:
-  - transistor-cmos
+- transistor-cmos
 ---
 
 # P-N junctions and semiconductor interfaces
@@ -138,3 +138,39 @@ The progression is:
     MOS surface electrostatics
 
 The next transistor chapter can therefore be read not as a jump to a new abstraction but as an extension of the same field-and-carrier model.
+
+## Deriving depletion width from Poisson's equation
+
+Consider an abrupt junction with uniform acceptor density N_A on the p side and donor density N_D on the n side. Put the metallurgical junction at x = 0. In the depletion approximation, mobile carriers are neglected between −x_p and x_n, while the adjacent neutral regions have negligible electric field. Ionized acceptors contribute charge density −qN_A and ionized donors contribute +qN_D. The assumption is an approximation to a continuous carrier profile, not a literal absence of all carriers.
+
+One-dimensional Poisson electrostatics gives dE/dx = rho/epsilon_s and E = −dphi/dx. Starting with E = 0 at the p-side depletion edge, integration gives E(x) = −qN_A(x + x_p)/epsilon_s on the p side. On the n side, E(x) = qN_D(x − x_n)/epsilon_s. Continuity of field at zero requires N_A x_p = N_D x_n: the positive and negative uncovered charge magnitudes must match.
+
+The field is negative with this coordinate choice, meaning it points from the n region toward the p region. Integrating −E across the depletion region gives a positive potential rise from p to n. Its magnitude is V_dep = q(N_A x_p² + N_D x_n²)/(2 epsilon_s). With W = x_p + x_n and charge balance, the width becomes W = sqrt((2 epsilon_s/q)(1/N_A + 1/N_D)V_dep). Also x_p = W N_D/(N_A + N_D) and x_n = W N_A/(N_A + N_D).
+
+![Charge, field and potential in a normalized abrupt-junction model](../../assets/diagrams/junction-profiles.svg)
+
+The less heavily doped side therefore contains more depletion width. Equal widths are correct only for equal dopant densities in this model. The peak field magnitude is qN_A x_p/epsilon_s, equivalently qN_D x_n/epsilon_s. Its value and spatial distribution matter for breakdown; the total voltage alone does not specify the local field stress.
+
+## A dimensioned example and bias dependence
+
+Take illustrative model inputs N_A = 10^16 cm⁻³, N_D = 10^15 cm⁻³, n_i = 10^10 cm⁻³, epsilon_s = 1.04 × 10⁻¹² F/cm, q = 1.602 × 10⁻¹⁹ C and V_T = 0.02585 V. The ideal equilibrium expression gives V_bi = V_T ln(N_A N_D/n_i²), approximately 0.655 V. Substitution gives W approximately 0.967 micrometres, of which about 0.088 micrometres lies on the p side and 0.879 on the n side. These are computed examples using declared inputs, not measured ChrisOS hardware parameters.
+
+Under moderate reverse bias V_R, use V_dep = V_bi + V_R in the depletion model. Three volts of reverse bias increase the example width to about 2.285 micrometres. Under forward bias V_F, the simple electrostatic barrier becomes V_bi − V_F, but extrapolating the depletion formula through zero barrier is invalid. Strong injection, series resistance and nonequilibrium carrier populations require a more complete model.
+
+Built-in potential is an internal electrostatic difference, not a free battery available at external terminals in thermal equilibrium. Contact potentials and equilibrium electrochemical conditions must also be included when considering a complete measurement circuit. Ignoring that distinction would wrongly imply a perpetual current source from an unpowered junction.
+
+## Incremental capacitance and conductance
+
+The magnitude of charge per area on either depletion side is Q_A = qN_A x_p = qN_D x_n. Differentiating with respect to reverse-bias magnitude gives depletion capacitance per area C_A = epsilon_s/W for this abrupt-junction approximation. As reverse bias widens depletion, capacitance decreases. Multiplying by junction area gives total capacitance before accounting for edge and parasitic contributions.
+
+Forward conduction introduces stored minority charge and therefore diffusion capacitance, a different mechanism. A small-signal model linearizes around a selected operating point. For the ideal diode exponential, incremental conductance is g_d = I_S exp(V/(nV_T))/(nV_T), approximately I/(nV_T) when forward current greatly exceeds I_S. The corresponding incremental resistance is approximately nV_T/I. Neither quantity is a constant resistance of the diode over its entire voltage range.
+
+| Regime | Dominant model concern | Invalid shortcut |
+|---|---|---|
+| Thermal equilibrium | Balanced drift and diffusion | Treat internal barrier as an external supply |
+| Moderate reverse bias | Depletion widening and generation leakage | Assume exactly zero current |
+| Forward low injection | Minority-carrier injection and diffusion | Assign one universal turn-on voltage |
+| Strong forward drive | Series resistance, heating, high injection | Extrapolate ideal exponential indefinitely |
+| Breakdown | Large field and multiplication or tunneling | Assume all reverse voltages are nondestructive |
+
+These distinctions connect junction theory to CMOS parasitic junctions and to the load seen by switching circuitry. They do not establish a diode simulator, process model or electrical protection feature in ChrisOS. The theory is a prerequisite for interpreting devices; implementation claims in later chapters must return to their own source evidence. [MIT 6.012 lecture notes](https://ocw.mit.edu/courses/6-012-microelectronic-devices-and-circuits-spring-2009/pages/lecture-notes/) provide primary study material on equilibrium junctions, terminal characteristics and small-signal capacitance.

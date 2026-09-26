@@ -1,18 +1,25 @@
-digraph foundations {
-  rankdir=LR;
-  graph [bgcolor="transparent", pad="0.2", nodesep="0.35", ranksep="0.55"];
-  node [shape=box, style="rounded", fontname="monospace", fontsize=10];
-  edge [fontname="monospace", fontsize=9];
-  Matter [label="matter / charge"];
-  Bands [label="bands / doping"];
-  Devices [label="junctions / MOSFET"];
-  Logic [label="Boolean / gates"];
-  State [label="latches / registers"];
-  Memory [label="SRAM / DRAM"];
-  Timing [label="clock / timing"];
-  Repr [label="data representation"];
-  DS [label="data structures"];
-  Alg [label="algorithms"];
-  Systems [label="kernel / compiler / graphics / VM"];
-  Matter -> Bands -> Devices -> Logic -> State -> Memory -> Timing -> Repr -> DS -> Alg -> Systems;
+digraph Foundations {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3", nodesep="0.25"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial", fontsize=11];
+  edge [fontname="Arial", fontsize=10];
+  root [label="Foundations / fundamentos\nphysical state to software / estado físico ao software"];
+  matter [label="Matter / matéria\ncharge, bands, doping\ncarga, bandas, dopagem"];
+  logic [label="Transformation / transformação\nBoolean functions, combinational paths\nfunções booleanas, caminhos combinacionais"];
+  state [label="Persistence / persistência\nlatches, registers, timing\nlatches, registradores, temporização"];
+  junction [label="Junctions + CMOS / junções + CMOS\nfields control current / campos controlam corrente"];
+  arithmetic [label="Arithmetic / aritmética\nfinite words, carry, overflow\npalavras finitas, carry, overflow"];
+  memory [label="Memory / memória\nSRAM, DRAM, interfaces"];
+  representation [label="Representation / representação\nlayout, addresses, ownership\nlayout, endereços, propriedade"];
+  algorithms [label="Structures + algorithms\nestruturas + algoritmos\ninvariants, cost / invariantes, custo"];
+  source [label="ChrisOS source / código\nflags.c · operands.c · virtq.c · pmm.c"];
+  root -> matter;
+  root -> logic;
+  root -> state;
+  matter -> junction;
+  logic -> arithmetic;
+  state -> memory;
+  junction -> logic [style=dashed, constraint=false];
+  arithmetic -> representation;
+  memory -> representation;
+  representation -> algorithms -> source;
 }

@@ -51,6 +51,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/build_all.py --source .source --docs docs
 
+      - name: Verify documented arithmetic against ChrisCPU source
+        working-directory: docs-repo
+        run: python scripts/check_arithmetic.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict

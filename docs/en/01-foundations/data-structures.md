@@ -3,15 +3,18 @@ id: data-structures
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources: []
-symbols: []
+sources:
+- kernel/metal/pmm.c
+symbols:
+- scan_usable_for_run
+- pmm_alloc
 depends_on:
-  - data-representation-layout
-  - algorithmic-complexity
+- data-representation-layout
+- algorithmic-complexity
 related:
-  - systems-algorithms
+- systems-algorithms
 ---
 
 # Data structures for systems software
@@ -392,6 +395,14 @@ A small operating system should not adopt them merely because they are sophistic
 This is not a rule table. Concurrency, failure semantics and locality can reverse a choice.
 
 ## The systems principle
+
+### A bounded queue as an invariant proof
+
+Consider a teaching FIFO with capacity eight, read index h, write index t and count c. Require 0 ≤ c ≤ 8, both indices between zero and seven, and t = (h + c) mod 8. Empty and full can have equal h and t; count distinguishes them. Enqueue first rejects c = 8, writes at t, advances t modulo eight and increments c. Dequeue first rejects c = 0, reads at h, advances h and decrements c. Substituting each update into the equation shows that the invariant is preserved.
+
+That sequential proof does not make the queue concurrent. If two producers both read the same t before either updates it, they can overwrite one slot and corrupt the count. A lock can serialize the complete transition; changing fields independently to atomics does not automatically produce a correct multi-producer queue. Publication of payload and index also needs an ordering contract for readers.
+
+Lifetime adds another obligation. A queued pointer does not keep its target allocation alive by itself. The queue may own the object until removal, hold a reference, or require the caller to retain it. The API must choose. Likewise, returning a free-list node twice can place one object into the allocation structure more than once, even if every individual pointer is in bounds. Structural validity, concurrency and ownership need separate arguments.
 
 A data structure is good when it makes the important invariants easy to preserve under the actual constraints.
 

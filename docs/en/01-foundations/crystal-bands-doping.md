@@ -3,15 +3,15 @@ id: crystal-bands-doping
 lang: en
 type: technical-chapter
 volume: 01-foundations
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-  - atom-semiconductor
+- atom-semiconductor
 related:
-  - pn-junction
-  - transistor-cmos
+- pn-junction
+- transistor-cmos
 ---
 
 # Crystal structure, energy bands and doping
@@ -151,3 +151,29 @@ The conceptual sequence is:
     digital gates
 
 The next chapter uses these doped regions to construct the p-n junction, depletion region and diode relation before the text proceeds to MOS electrostatics and CMOS logic.
+
+## Solving compensation rather than assuming the majority density
+
+The approximation n ≈ N_D is not a definition of n-type material. In a homogeneous, electrically neutral region with fully ionized donors and acceptors, charge neutrality gives p + N_D = n + N_A. Combining it with the equilibrium mass-action relation np = n_i² yields n − p = Δ, where Δ = N_D − N_A. Solving the quadratic gives n = (Δ + sqrt(Δ² + 4n_i²))/2 and p = n_i²/n. For a strongly acceptor-dominated region, solving symmetrically for p avoids subtracting nearly equal floating-point numbers when computing the small n.
+
+This derivation separates two hypotheses: neutrality concerns charge balance, while the mass-action relation concerns equilibrium statistics in the nondegenerate regime. Near a depletion region, local neutrality is not valid. Under illumination or electrical injection away from equilibrium, one equilibrium Fermi level cannot generally describe both carrier populations. Applying the quadratic everywhere would erase precisely the space charge needed to explain a junction.
+
+As a hypothetical numerical model, take N_D = 1.2 × 10^16 cm⁻³, N_A = 2 × 10^15 cm⁻³ and n_i = 10^10 cm⁻³. Then Δ = 10^16 cm⁻³, n is approximately 10^16 cm⁻³ and p approximately 10^4 cm⁻³. Adding donor and acceptor densities would incorrectly predict 1.4 × 10^16 majority carriers. If Δ were instead comparable to n_i, the minority population could no longer be neglected. These values illustrate the equations; they are not a fabrication recipe for a ChrisOS processor.
+
+| Quantity | Meaning | Typical unit in this model |
+|---|---|---|
+| N_D, N_A | Ionized impurity density under the stated assumption | cm⁻³ |
+| n, p | Mobile carrier density | cm⁻³ |
+| q | Positive elementary-charge magnitude | coulomb |
+| Mobility | Drift velocity divided by electric field | cm²/(V·s) |
+| Conductivity | Current density divided by electric field | S/cm |
+
+Using q in coulombs with densities in cm⁻³ and mobility in cm²/(V·s) produces conductivity in S/cm. Mixing a density expressed per cubic metre with centimetre-based mobility introduces a large numerical error even if the symbolic expression looks correct. Dimensional checking is part of the physical argument, just as width checking is part of finite-word arithmetic.
+
+## Occupancy, temperature and the boundaries of the model
+
+In the nondegenerate approximation, n = N_C exp(−(E_C − E_F)/(kT)) and p = N_V exp(−(E_F − E_V)/(kT)). N_C and N_V summarize the available band states and their thermal occupation scale. Moving E_F toward the conduction band therefore increases electron density exponentially. E_F is an equilibrium chemical-potential parameter, not a statement that electrons all occupy one energy or that a wire carries a voltage numerically equal to a band-gap energy.
+
+The exponential approximation fails when occupancy near a band edge is no longer small; Fermi–Dirac statistics must then be retained. At sufficiently low temperature, incomplete dopant ionization invalidates the fully ionized approximation. At sufficiently high temperature, intrinsic generation can compete with the net dopant population. Mobility also changes with scattering, so increasing dopant density does not imply an indefinitely proportional conductivity improvement.
+
+These limits explain why a useful device model declares temperature, doping range and operating regime. The present documentation uses semiconductor theory as a prerequisite for CMOS and memory cells; ChrisOS software does not choose a foundry's impurity profile or solve carrier statistics during ordinary instruction execution. [MIT 6.012 lecture notes](https://ocw.mit.edu/courses/6-012-microelectronic-devices-and-circuits-spring-2009/pages/lecture-notes/) identify the corresponding primary course material on carriers, compensation and transport.

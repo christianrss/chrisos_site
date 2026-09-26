@@ -29,12 +29,12 @@ Este volume não é um resumo introdutório. Ele estabelece os modelos necessár
 4. MOSFETs e CMOS.
 5. Álgebra booleana e representação lógica.
 6. Circuitos combinacionais.
-7. Lógica sequencial e estado armazenado.
-8. Latches, flip-flops e metastabilidade.
-9. Registradores, contadores e máquinas de estados.
-10. Somadores, ALUs e aritmética binária.
-11. SRAM, DRAM e células de memória.
-12. Clock, propagação e timing.
+7. Somadores, ULAs e aritmética binária.
+8. Lógica sequencial e estado armazenado.
+9. Latches, flip-flops e metaestabilidade.
+10. Registradores, contadores e máquinas de estados.
+11. Clock, propagação e temporização.
+12. SRAM, DRAM e células de memória.
 
 ## Sequência de fundamentos de software
 

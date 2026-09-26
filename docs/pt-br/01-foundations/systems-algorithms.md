@@ -356,7 +356,8 @@ O trade-off é perda intencional do histórico mais antigo.
 | bloco ChrisFS | bitmap + hint | O(B) | metadata | lock CFS |
 | resolver bloco de inode | direct/indirect | profundidade limitada | growth pode alocar | lock CFS |
 | replay journal | records limitados | O(R) | scratch limitado | serialização FS |
-| publish VirtIO | split ring | O(chain) | depende do recurso | barriers/ownership |
+| alocar/preencher cadeia VirtIO | links + descritores | O(chain) | pool limitado | propriedade do chamador |
+| publicar uma cabeça VirtIO | split ring | O(1) local | função não aloca | barreiras/propriedade |
 | depth test | depth array | O(1)/fragmento | buffer preexistente | ownership do tile |
 | decode ChrisCPU | byte stream → ChrisInsn | constante limitada | não | CPU-local |
 | trace append | ring circular | O(1) | não | CPU-local |

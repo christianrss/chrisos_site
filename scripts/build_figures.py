@@ -27,5 +27,33 @@ def main():
         body+=f'<line x1="{x}" y1="185" x2="{x}" y2="200" stroke="#111"/><text x="{x-15}" y="225">{label}</text>'
     body+='<text x="25" y="280">Input thresholds only; not a ChrisOS hardware specification.</text><text x="25" y="310">Limiares de entrada ilustrativos; não especificam o hardware do ChrisOS.</text>'
     svg('voltage-levels.svg','Illustrative input logic levels','An illustrative low range up to 0.3 V and high range from 0.7 V, with an undefined interval in between.',body)
-    print('analytical figures: 3')
+    # Dimensionless abrupt-junction example: NA/ND=4, xp=1, xn=4.
+    # Charge normalized by q*ND, field by q*ND*xp/epsilon,
+    # potential by q*ND*xp^2/epsilon. No device measurement.
+    body='<text x="25" y="32" font-size="20">Abrupt junction / junção abrupta · normalized model</text>'
+    body+='<text x="25" y="57" font-size="13">N_A / N_D = 4 · x_p = 1 · x_n = 4 · dimensionless / adimensional</text>'
+    profiles=[('rho / charge density / densidade de carga', -4, 1,
+               [(-1,0),(-1,-4),(0,-4),(0,1),(4,1),(4,0)]),
+              ('E / electric field / campo elétrico', -4, 0,
+               [(-1,0),(0,-4),(4,0)]),
+              ('phi / potential / potencial', 0, 10,
+               [(i/20, 2*(i/20+1)**2 if i<=0 else 2+4*(i/20)-(i/20)**2/2)
+                for i in range(-20,81)])]
+    for row,(title,lo,hi,points) in enumerate(profiles):
+        top=95+row*190
+        X=lambda x:140+(x+1)*120
+        Y=lambda y:top+110-(y-lo)/(hi-lo)*100
+        body+=f'<text x="25" y="{top-10}" font-size="15">{escape(title)}</text>'
+        body+=f'<line x1="140" y1="{Y(0)}" x2="740" y2="{Y(0)}" stroke="#777"/>'
+        body+=f'<line x1="260" y1="{top}" x2="260" y2="{top+120}" stroke="#999" stroke-dasharray="4 4"/>'
+        coords=' '.join(f'{X(x):.2f},{Y(y):.2f}' for x,y in points)
+        body+=f'<polyline points="{coords}" fill="none" stroke="#31566b" stroke-width="3"/>'
+        for x,label in [(-1,'-1'),(0,'0'),(4,'4')]:
+            body+=f'<text x="{X(x)-8}" y="{top+140}" font-size="13">{label}</text>'
+        body+=f'<text x="95" y="{Y(lo)+4}" font-size="13">{lo}</text><text x="95" y="{Y(hi)+4}" font-size="13">{hi}</text>'
+    body+='<text x="25" y="680" font-size="13">x: normalized position / posição normalizada · p: -1 to 0 · n: 0 to 4</text>'
+    body+='<text x="25" y="708" font-size="13">dE/dx = rho; dphi/dx = -E in these units. Not measured / não medido.</text>'
+    svg('junction-profiles.svg','Normalized charge, field and potential',
+        'Abrupt-junction model with acceptor density four times donor density. Charge is -4 on the p side and +1 on the n side. Field is continuous and negative; potential rises continuously from 0 to 10.',body,h=735)
+    print('analytical figures: 4')
 if __name__=='__main__':main()

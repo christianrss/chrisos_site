@@ -55,3 +55,13 @@ python -m unittest discover -s tests
 Context packs record source hashes, dependency outlines and whether the Git baseline was available. Generated source mirrors are written only when their content changes. Search is split by language and excludes complete source mirrors to keep the reader's download bounded by the authored corpus. Full code remains available in the Source Atlas.
 
 Chapter length is an editorial signal, not a claim that the curriculum is complete. The coverage report intentionally retains remaining gaps.
+
+## Reproducible source evidence
+
+```bash
+python scripts/check_arithmetic.py --source .source
+```
+
+This optional local probe (also run by the Pages workflow) compiles the checked-out ChrisCPU `flags.c` with a host C compiler supporting `unsigned __int128`. It verifies 752,270 arithmetic cases, 1,024 condition-code cases and nine null-output calls using an independent integer-range reference model. Temporary binaries are removed automatically. The command prints the source SHA-256 so evidence can be tied to the exact file. This is helper-level coverage, not decoder, guest-boot, device or physical-timing validation.
+
+The foundations pages distinguish physical circuit models, mathematical contracts and inspected source behavior. Their diagrams are rebuilt from DOT and deterministic analytical SVG generators; junction profiles are dimensionless calculations, not device measurements. Both language editions share source dependencies and prerequisite IDs.
