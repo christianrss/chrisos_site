@@ -1,0 +1,27 @@
+digraph datapath {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3", nodesep="0.4", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial", fontsize=12, margin="0.3,0.18"];
+  edge [fontname="Arial", fontsize=10];
+  bytes [label="Instruction bytes"];
+  decode [label="ChrisInsn"];
+  regs [label="Register state"];
+  read [label="Old operands"];
+  address [label="Effective address"];
+  memory [label="Translation and memory"];
+  alu [label="Result and flags"];
+  write [label="Publish effects"];
+  rip [label="Next RIP"];
+  bytes -> decode;
+  decode -> read;
+  decode -> address;
+  regs -> read;
+  regs -> address;
+  address -> memory;
+  memory -> read;
+  read -> alu;
+  alu -> write;
+  write -> regs [constraint=false];
+  write -> memory [constraint=false];
+  write -> rip;
+  decode -> rip [label="length or target"];
+}

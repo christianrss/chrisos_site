@@ -1,0 +1,26 @@
+digraph grammar {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3", nodesep="0.4", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial", fontsize=12, margin="0.3,0.18"];
+  edge [fontname="Arial", fontsize=10];
+  prefix [label="Prefix state"];
+  opcode [label="Opcode family"];
+  modrm [label="ModR/M"];
+  sib [label="SIB"];
+  disp [label="Displacement"];
+  imm [label="Immediate"];
+  out [label="Length and ChrisInsn"];
+  prefix -> opcode;
+  opcode -> modrm [label="addressing form"];
+  opcode -> imm [label="immediate form"];
+  opcode -> out [label="no operands"];
+  modrm -> sib [label="memory, r/m = 4"];
+  modrm -> disp;
+  modrm -> imm;
+  modrm -> out [label="register form"];
+  sib -> disp;
+  sib -> imm [label="no displacement"];
+  sib -> out [label="no displacement"];
+  disp -> imm;
+  disp -> out;
+  imm -> out;
+}

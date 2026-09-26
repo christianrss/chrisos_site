@@ -1,0 +1,22 @@
+digraph assembly {
+  graph [rankdir=TB, bgcolor="#faf9f4", pad="0.3", nodesep="0.4", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#e7ecef", fontname="Arial", fontsize=12, margin="0.3,0.18"];
+  edge [fontname="Arial", fontsize=10];
+  parse [label="Assembly parser"];
+  bytes [label="Section bytes"];
+  local [label="Local labels"];
+  patch [label="Same-section fixups"];
+  reloc [label="Symbols and relocations"];
+  object [label="ChrisoImage"];
+  link [label="Link and load"];
+  decode [label="Decode and execute"];
+  parse -> bytes;
+  parse -> local;
+  parse -> reloc;
+  local -> patch;
+  bytes -> patch;
+  patch -> object;
+  reloc -> object;
+  object -> link;
+  link -> decode;
+}

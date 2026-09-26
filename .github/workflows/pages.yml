@@ -55,7 +55,12 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_arithmetic.py --source .source
 
-      - name: Build static site
+      - name: Verify documented instruction and register contracts
+        # Keep executable evidence separate from the documentation build.
+        working-directory: docs-repo
+        run: python scripts/check_instruction_contracts.py --source .source
+
+      - name: Build static site with strict validation
         working-directory: docs-repo
         run: mkdocs build --strict
 
