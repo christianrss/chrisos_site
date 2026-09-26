@@ -1,100 +1,101 @@
 # AGENTS.md — ChrisOS Documentation
 
-This file is the operational contract for any AI agent or human automation modifying this repository.
+This file is the operational contract for every human or AI agent modifying the ChrisOS documentation repository.
 
-## Primary rule
+## Primary rule: this is a reference corpus, not a summary site
 
-**Do not scan the entire ChrisOS repository for a normal page update.**
+A technical chapter must not be a condensed overview standing in place of the subject it claims to document. Navigation pages, indexes and abstracts may be concise; authored technical chapters may not use concision as a substitute for coverage.
 
-The unit of work is one page or one tightly related group of pages.
+When a topic spans physics, architecture, operating-system theory, data structures, algorithms, ABI details, source implementation, failure behavior, concurrency or validation, the chapter must carry those layers explicitly. If a subject cannot yet be documented at that depth, keep it visibly incomplete in the coverage report rather than publishing a shallow page as if it were finished.
 
-## Required workflow
+## Evidence hierarchy
+
+For claims about current ChrisOS behavior, use this order:
+
+1. current source on ChrisOS `main`;
+2. reproducible tests and gates on the same revision;
+3. current in-repository specifications;
+4. revision-bound audits and status records;
+5. README prose;
+6. roadmap documents, clearly identified as future work.
+
+Never convert roadmap intent into an implementation claim.
+
+## Required chapter model
+
+A substantive page should cover the applicable parts of the following model, in enough detail that a reader can reconstruct the mechanism rather than memorize a description:
+
+- prerequisites and terminology;
+- physical or mathematical basis when relevant;
+- theory and standard architecture;
+- motivation and design constraints;
+- ChrisOS architectural decision;
+- source files and concrete symbols;
+- initialization sequence;
+- state and data structures;
+- memory layout and ownership;
+- control flow and data flow;
+- ABI, calling convention or wire/on-disk format when applicable;
+- concurrency, CPU context and lock ordering;
+- error paths, recovery and fault containment;
+- security and privilege boundary;
+- performance characteristics and trade-offs;
+- validation evidence and tests;
+- current limitations;
+- roadmap, explicitly separated from current behavior;
+- revision notes.
+
+Do not pad chapters to meet a word count. Depth targets are guardrails against accidental summaries; technical completeness is the real criterion.
+
+## Source-level rule
+
+Every implementation claim must be traceable through frontmatter `sources` and, where useful, `symbols`. Explain important code through invariants, ownership, state transitions, interfaces and failure behavior. Do not merely paraphrase individual lines.
+
+The generated Source Atlas is different: it is a deterministic file record. It must reproduce each indexed textual source file completely, with no ellipsis or AI summary. Generated pages are factual indexes and source mirrors, not architectural interpretation.
+
+## Low-context agent workflow
+
+The normal unit of work is one chapter or a tightly related group.
 
 1. Read the target page frontmatter.
-2. Read only the declared `sources`, `symbols`, `depends_on` and `related` entries.
-3. Inspect the Git diff from `reviewed_revision` to the current ChrisOS `main` branch for those sources.
+2. Read declared `sources`, `symbols`, `depends_on` and `related`.
+3. Inspect the Git diff from `reviewed_revision` to current ChrisOS `main` for those sources.
 4. Expand context only when a dependency cannot be resolved.
-5. Modify only sections affected by evidence.
-6. Run deterministic validation.
-7. Update `reviewed_revision` only after reconciling the page with source.
-8. Never edit generated files under `docs/*/99-source-atlas/generated/`.
-9. Never manually maintain current commit hashes, repository inventories or stale queues.
-10. Never convert roadmap intent into an implementation claim.
+5. Reconcile theory and implementation separately.
+6. Run deterministic validation and coverage generation.
+7. Update `reviewed_revision` only after source reconciliation.
+8. Never manually edit generated files below `docs/*/99-source-atlas/generated/`.
 
-## Content model
-
-Every substantive technical page must distinguish, when applicable:
-
-- **Theory** — general computing mechanism.
-- **Architecture** — intended ChrisOS design and contracts.
-- **Implementation** — what current `main` source actually does.
-- **Validation** — tests or gates that establish observed behavior.
-- **Limitations** — missing or unproven behavior.
-- **Roadmap** — future work, never phrased as current capability.
-
-## Style
-
-- Formal technical prose.
-- No exercises, quizzes or conversational teaching phrases.
-- Define prerequisites before using them.
-- Explain why a mechanism exists, how it works, and how ChrisOS implements it.
-- Explain important code by invariants, ownership, dataflow, concurrency and failure behavior; do not merely paraphrase individual lines.
-- Use diagrams and tables when they reduce ambiguity.
-- Prefer primary specifications for external technology.
-
-## Frontmatter
-
-Typical page:
-
-```yaml
----
-id: virtual-memory
-lang: en
-type: concept
-volume: "05-memory"
-status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
-sources:
-  - kernel/metal/mm.c
-  - kernel/metal/mm.h
-  - kernel/metal/pmm.c
-symbols:
-  - mm_map_cr3
-  - mm_switch
-depends_on:
-  - physical-memory
-  - x86-64-addressing
-related:
-  - tlb-shootdown
-  - process-address-spaces
----
-```
-
-## Context packs
-
-Generate before asking an agent to update a page:
+For a page context pack:
 
 ```bash
 python scripts/context_pack.py docs/en/05-memory/virtual-memory.md --source .source
 ```
 
-## Generated source atlas
-
-`scripts/inventory.py` scans the ChrisOS checkout and generates repository inventory, per-file source-reference pages, includes, C-like function definitions, hashes, line counts and source revision.
-
-Generated pages are factual indexes, not architectural interpretation.
+Use `--full` only when symbol-centred extraction is insufficient.
 
 ## Translation
 
-English and pt-BR pages are independent authored pages with the same `id` plus language. Technical content must remain equivalent. Do not reduce the pt-BR page to a summary.
+English and Brazilian Portuguese are first-class authored trees. Pages sharing the same `id` must be technically equivalent. The pt-BR edition must never be a shortened translation of the English edition.
 
-## Evidence priority
+## Editorial depth accounting
 
-For current implementation claims:
+`scripts/coverage.py` distinguishes three states:
 
-1. Current source on ChrisOS `main`.
-2. Reproducible tests/gates on the same revision.
-3. Current specifications maintained in source.
-4. Historical audit documents.
-5. README prose.
-6. Roadmap documents.
+- missing chapter;
+- authored but below the depth target;
+- chapter meeting the depth target.
+
+Existence is not completion. The generated report is intentionally strict so that the site cannot hide unfinished work behind a page count.
+
+## Style
+
+- Formal technical prose.
+- No exercises or quizzes.
+- No conversational filler.
+- Define prerequisites before using them.
+- Prefer tables for contracts and layouts.
+- Prefer diagrams for state, control flow, memory topology and subsystem boundaries.
+- Use equations where they are the clearest representation.
+- Prefer primary specifications for external technologies.
+- Distinguish observed fact, architectural interpretation and future work.

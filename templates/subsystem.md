@@ -14,19 +14,28 @@ related: []
 
 # Subsystem title
 
-## Responsibility
+## Scope and responsibility
+## Prerequisites
 ## External contract
-## Internal architecture
-## Initialization
+## Architectural position
+## Design constraints and rationale
+## Initialization sequence
 ## State model
-## Data structures
-## Call and data flow
-## Ownership and teardown
-## Concurrency
-## Error handling
+## Data structures and layouts
+## Interfaces and ABI
+## Control flow
+## Data flow
+## Memory ownership and lifetime
+## Concurrency, CPU context and lock ordering
+## Interrupt and exception behavior
+## Error handling and recovery
 ## Security boundary
-## Performance
-## Validation
-## Limitations
+## Performance characteristics
 ## Source map
+### Files
+### Symbols
+### Call relationships
+## Validation and tests
+## Current limitations
+## Roadmap
 ## Revision notes

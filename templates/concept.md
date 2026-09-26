@@ -1,50 +1,41 @@
 ---
 id: REPLACE_ID
 lang: en
-type: technical-chapter
+type: concept
 volume: REPLACE_VOLUME
 status: draft
 reviewed_revision: REPLACE_REVISION
-sources: []
+sources:
+  - REPLACE_SOURCE
 symbols: []
 depends_on: []
 related: []
 ---
 
-# Title
+# Concept title
 
-<div class="abstract">
-Precise scope and definition.
-</div>
-
-## Definition
-
-## Prerequisites
-
+## Scope and prerequisites
+## Definitions and notation
 ## Physical or mathematical basis
-
-## Architecture
-
-## Operating-system relevance
-
-## Implementation in ChrisOS
-
-## Data structures and layouts
-
-## Execution flow
-
-## Ownership and lifetime
-
-## Concurrency and ordering
-
-## Failure modes
-
-## Performance implications
-
-## Validation
-
+## General theory
+## Architecture and mechanism
+## Data representation and layouts
+## Algorithms and state transitions
+## ChrisOS design decision
+## Current implementation
+### Source files
+### Important symbols
+### Initialization
+### Control flow
+### Data flow
+### Memory and ownership
+### Concurrency and CPU context
+## Interfaces and ABI
+## Failure modes and recovery
+## Security and privilege boundary
+## Performance and trade-offs
+## Validation evidence
 ## Current limitations
-
-## Related source
-
-## References
+## Relationship to other subsystems
+## Primary references
+## Revision notes

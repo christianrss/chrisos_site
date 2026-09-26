@@ -14,14 +14,22 @@ related: []
 
 # Source commentary
 
-## Responsibility
-## Interfaces
+## File responsibility
+## Architectural position
+## Inputs and outputs
+## Includes and dependencies
+## Types, constants and layouts
 ## Global and local state
 ## Important functions
 ## Call graph
-## Ownership
-## Locking and CPU context
-## Error paths
+## Control flow
+## Data flow
+## Memory ownership and lifetime
+## Locking, interrupt state and CPU context
 ## Invariants
+## Error and recovery paths
+## Security implications
+## Performance implications
 ## Tests and gates
+## Full-source cross-reference
 ## Revision notes
