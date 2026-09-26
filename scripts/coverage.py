@@ -10,6 +10,7 @@ from frontmatter import iter_pages, read_page
 
 DEPTH_TARGET_WORDS = {
     "concept": 1800,
+    "technical-chapter": 1800,
     "subsystem": 2200,
     "specification": 1600,
     "source-commentary": 1200,
