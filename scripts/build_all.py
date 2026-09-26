@@ -10,7 +10,7 @@ def main():
     commands=[
       [py,"scripts/build_diagrams.py"],
       [py,"scripts/inventory.py","--source",args.source,"--docs",args.docs],
-      [py,"scripts/stale_docs.py","--source",args.source,"--docs",args.docs],
+      [py,"scripts/source_map.py","--docs",args.docs],\n      [py,"scripts/stale_docs.py","--source",args.source,"--docs",args.docs],
       [py,"scripts/validate_docs.py","--source",args.source,"--docs",args.docs],
     ]
     for cmd in commands:

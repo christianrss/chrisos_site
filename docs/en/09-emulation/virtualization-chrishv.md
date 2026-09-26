@@ -6,8 +6,9 @@ volume: 09-emulation
 status: maintained
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
-  - chrisvm/cpu/hv/vmx/vmx.c
-  - chrisvm/cpu/hv/svm/svm.c
+  - chrisvm/cpu/hv/chrishv.c
+  - chrisvm/cpu/hv/vmx/vmx.h
+  - chrisvm/cpu/hv/svm/svm.h
   - docs/chrisvm/architecture.md
 symbols: []
 depends_on:
