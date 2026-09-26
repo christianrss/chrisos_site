@@ -39,3 +39,14 @@ extra_javascript:
   - assets/site.js
 
 copyright: "ChrisOS Research Project — technical documentation"
+
+hooks:
+  - scripts/site_hooks.py
+
+validation:
+  nav:
+    omitted_files: ignore
+
+exclude_docs: |
+  !en/99-source-atlas/generated/**
+  !pt-br/99-source-atlas/generated/**

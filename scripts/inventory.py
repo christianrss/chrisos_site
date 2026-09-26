@@ -256,13 +256,17 @@ def main() -> None:
     for lang in ("en", "pt-br"):
         root = docs / lang / "99-source-atlas" / "generated"
         root.mkdir(parents=True, exist_ok=True)
+        expected = {root / (str(row["path"]) + ".md") for row in rows}
         for old in root.rglob("*.md"):
-            old.unlink()
+            if old not in expected:
+                old.unlink()
 
         for row in rows:
             target = root / (str(row["path"]) + ".md")
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(generated_page(row, rev, lang), encoding="utf-8")
+            content = generated_page(row, rev, lang)
+            if not target.exists() or target.read_text(encoding="utf-8") != content:
+                target.write_text(content, encoding="utf-8")
 
         index = docs / lang / "99-source-atlas" / "inventory.md"
         index.parent.mkdir(parents=True, exist_ok=True)

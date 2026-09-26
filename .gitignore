@@ -8,3 +8,12 @@ __pycache__/
 docs/en/99-source-atlas/generated/
 docs/pt-br/99-source-atlas/generated/
 docs/generated-meta/
+docs/assets/diagrams/
+docs/en/learning-path.md
+docs/pt-br/learning-path.md
+docs/en/98-maintenance/coverage.md
+docs/pt-br/98-maintenance/coverage.md
+docs/en/98-maintenance/review-queue.md
+docs/pt-br/98-maintenance/review-queue.md
+docs/en/99-source-atlas/inventory.md
+docs/pt-br/99-source-atlas/inventory.md

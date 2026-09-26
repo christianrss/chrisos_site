@@ -1,0 +1,16 @@
+digraph memory {
+ graph [rankdir=TB,bgcolor="#faf9f4",pad="0.25"];
+ node [shape=box,style=filled,fillcolor="#ecebe4",fontname="Helvetica",fontsize=12];
+ cells [label="Physical storage / armazenamento físico"];
+ sram [label="SRAM\nfeedback / realimentação"];
+ dram [label="DRAM\ncharge + refresh / carga + refresh"];
+ platform [label="Controller and architecture\naddressable bytes / bytes endereçáveis"];
+ frames [label="PMM\n1 bitmap bit → 1 frame / 1 bit → 1 frame"];
+ heap [label="Heap\nbyte allocation / alocação em bytes"];
+ gfx [label="Graphics\nuint32_t pixels; width ≠ pitch"];
+ host [label="ChrisVM\nhost calloc → guest RAM\nRAM convidada em memória hospedeira"];
+ cells -> sram; cells -> dram; sram -> platform; dram -> platform;
+ platform -> frames; frames -> heap; heap -> gfx;
+ host -> platform [style=dashed,label="functional model / modelo funcional"];
+ {rank=same;sram;dram}
+}

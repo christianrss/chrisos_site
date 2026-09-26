@@ -122,3 +122,24 @@ For each important structure or algorithm, record when applicable:
 A statement such as "the allocator finds a free page" is incomplete. Documentation must identify the representation used to record page state, the search strategy, cursor/hint behavior, synchronization, complexity, fragmentation implications and the source functions implementing the operation.
 
 Do not assign textbook algorithms to ChrisOS by analogy. Only label a current implementation with an algorithmic name when the source supports that classification.
+
+## Semantic curriculum and build contracts
+
+- `data/documentation-manifest.yml` declares the planned corpus. `data/curriculum.yml` assigns every planned ID exactly once to a level and module. The two must agree; physical chapter URLs remain stable when navigation changes.
+- Run `python scripts/curriculum.py` after changing IDs or prerequisites. Unknown prerequisites and dependency cycles fail the build. A planned but unwritten prerequisite is shown as missing, never replaced by an empty published chapter.
+- `depends_on` contains prerequisites; `related` may point forward. Do not create reciprocal prerequisites merely because two mechanisms interact.
+- Generated routes, figures, coverage reports and source mirrors are build outputs. Edit their scripts and data, not the generated files.
+- A word floor is only an editorial signal. It cannot establish technical completeness or justify calling a chapter reviewed. Preserve explicit limitations and distinguish inspected code from executed evidence.
+- `context_pack.py` includes dependency outlines and source hashes. Inspect `diff_status`: `unavailable-baseline` requires retrieving the relevant history, not assuming an empty diff proves no change.
+- `next_work.py` lists missing and short chapters in curriculum order. Expand an existing weak prerequisite before introducing a dependent chapter that silently assumes it.
+- The static search is language-specific. Complete source mirrors are available through the atlas, but excluded from text search payloads; do not duplicate the full source corpus into the search index.
+
+Verification for publication:
+
+```bash
+python -m unittest discover -s tests
+python scripts/build_all.py --source .source --docs docs
+mkdocs build --strict
+```
+
+Document any additional source tests actually executed. Do not equate documentation build success with successful kernel boot, desktop operation or hardware support.

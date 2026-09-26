@@ -33,7 +33,7 @@ Virtual memory inserts a translation between addresses used by software and phys
 A process instruction may load from virtual address `V`. The CPU consults translation structures selected by CR3 and either obtains physical address `P` with permissions or raises a fault.
 
 <figure class="figure">
-<img src="../../assets/diagrams/memory.svg" alt="Four-level page translation with TLB">
+<img src="../../../assets/diagrams/memory.svg" alt="Four-level page translation with TLB">
 <figcaption>Translation first checks cached TLB state and otherwise performs a page-table walk.</figcaption>
 </figure>
 

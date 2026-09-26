@@ -41,3 +41,17 @@ The resulting `.context/<page-id>/` contains only the page, declared source file
 Every push to `main` runs the deterministic documentation pipeline and deploys GitHub Pages.
 
 https://os.christiansoftware.org/
+
+## Learning structure
+
+The sidebar is generated from `data/curriculum.yml`: language → level → module → chapter. All 183 planned chapter IDs have exactly one position. Existing URLs are preserved. `depends_on` generates prerequisite links and is checked for cycles; planned missing prerequisites remain visible as gaps. The learning-path catalogue shows missing chapters and chapters needing expansion.
+
+```bash
+python scripts/next_work.py --lang en --limit 12
+python scripts/context_pack.py docs/en/08-graphics/pixels-framebuffer.md --source .source
+python -m unittest discover -s tests
+```
+
+Context packs record source hashes, dependency outlines and whether the Git baseline was available. Generated source mirrors are written only when their content changes. Search is split by language and excludes complete source mirrors to keep the reader's download bounded by the authored corpus. Full code remains available in the Source Atlas.
+
+Chapter length is an editorial signal, not a claim that the curriculum is complete. The coverage report intentionally retains remaining gaps.

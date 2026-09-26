@@ -1,0 +1,17 @@
+digraph step {
+ graph [rankdir=TB,bgcolor="#faf9f4",pad="0.25"];
+ node [shape=box,style=filled,fillcolor="#ecebe4",fontname="Helvetica",fontsize=12];
+ budget [label="cpu_run\nBudget + halt check / orçamento + parada"];
+ bp [shape=diamond,label="RIP breakpoint?"];
+ fetch [label="fetch_insn\n15 execute-class reads / leituras"];
+ decode [label="chris_decode → ChrisInsn"];
+ trace [label="trace; rip_dirty = 0"];
+ exec [label="chris_execute"];
+ rip [label="Advance RIP only if !rip_dirty and !halted\nAvançar RIP apenas nessas condições"];
+ irq [label="maybe_irq; steps++; tsc++"];
+ stop [label="Exit / saída\nBREAK, EXCEPTION, UNMAPPED, HLT…",fillcolor="#eadcce"];
+ budget -> bp; bp -> fetch [label="no / não"];bp -> stop [label="yes / sim"];
+ fetch -> decode;fetch -> stop [label="fault / falha"];
+ decode -> trace;decode -> stop [label="invalid / inválida"];
+ trace -> exec -> rip -> irq; irq -> budget; exec -> stop [style=dashed,label="exit state / estado de saída"];
+}

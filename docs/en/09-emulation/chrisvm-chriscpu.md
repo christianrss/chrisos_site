@@ -31,7 +31,7 @@ related:
 ChrisVM is the virtual machine/platform. ChrisCPU is the software x86-64 interpreter backend.
 
 <figure class="figure">
-<img src="../../assets/diagrams/chrisvm.svg" alt="ChrisVM architecture">
+<img src="../../../assets/diagrams/chrisvm.svg" alt="ChrisVM architecture">
 <figcaption>The machine owns memory and devices; CPU backends execute architectural state against that machine.</figcaption>
 </figure>
 

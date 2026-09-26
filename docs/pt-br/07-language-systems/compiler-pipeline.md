@@ -22,7 +22,7 @@ related:
 Compilador transforma uma linguagem formal em outra preservando o significado definido.
 
 <figure class="figure">
-<img src="../../assets/diagrams/compiler.svg" alt="Estágios de compilação">
+<img src="../../../assets/diagrams/compiler.svg" alt="Estágios de compilação">
 <figcaption>Decomposição comum; compiladores concretos podem combinar estágios.</figcaption>
 </figure>
 

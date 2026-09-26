@@ -79,7 +79,7 @@ O kernel precisa de fatos da máquina que não podem ser compilados na imagem:
 Na revisão documentada aparecem serial/build info, processamento de boot, fundamentos de descritores/interrupções, memória física e virtual, heap/processos, gráficos, SMP/APIC, ACPI/storage/filesystem, runtime de linguagem, desktop e rede.
 
 <figure class="figure">
-<img src="../../assets/diagrams/boot.svg" alt="Fluxo de boot ChrisOS">
+<img src="../../../assets/diagrams/boot.svg" alt="Fluxo de boot ChrisOS">
 <figcaption>Principais estágios de inicialização. A ordem exata do código é autoritativa para uma revisão específica.</figcaption>
 </figure>
 

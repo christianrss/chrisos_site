@@ -1,0 +1,14 @@
+digraph inverter {
+ graph [rankdir=TB,bgcolor="#faf9f4",pad="0.25"];
+ node [shape=box,fontname="Helvetica",fontsize=12,style=filled,fillcolor="#ecebe4"];
+ supply [label="VDD"];
+ p [label="PMOS\npull-up"];
+ out [label="Y = NOT A\noutput / saída"];
+ n [label="NMOS\npull-down"];
+ ground [label="GND"];
+ in [label="A\ninput / entrada"];
+ supply -> p -> out -> n -> ground [dir=none,penwidth=2];
+ in -> p [style=dashed,label="gate"];
+ in -> n [style=dashed,label="gate"];
+ {rank=same;in;out}
+}

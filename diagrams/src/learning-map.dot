@@ -1,0 +1,23 @@
+digraph curriculum {
+ graph [rankdir=TB, bgcolor="#faf9f4", pad="0.25", nodesep="0.25", ranksep="0.45"];
+ node [shape=box, style="rounded,filled", fillcolor="#ecebe4", fontname="Helvetica", fontsize=12];
+ edge [color="#666"];
+ matter [label="01 · Matter / Matéria\nCharge → CMOS → stored state"];
+ bits [label="02 · Representation / Representação\nBits, algorithms, structures"];
+ machine [label="03 · Machine / Máquina\nISA, memory, buses"];
+ boot [label="04 · Boot\nFirmware, ELF, kernel entry"];
+ kernel [label="05 · Kernel\nMemory, privilege, concurrency"];
+ lang [label="06 · Languages / Linguagens\nCompiler, CLVM, native tools"];
+ storage [label="07 · Storage / Armazenamento\nBlocks, ChrisFS, recovery"];
+ pixels [label="08 · Pixels and desktop\nBuffers, input, windows"];
+ graphics [label="09 · Graphics / Gráficos\nGeometry, GPU, shaders"];
+ net [label="10 · Networks / Redes\nPackets and protocol state"];
+ vm [label="11 · Virtual machines\nChrisCPU, devices, ChrisHV"];
+ research [label="12 · Research / Pesquisa\nBootstrap, evidence, history", fillcolor="#dce4db"];
+ matter -> bits -> machine -> boot -> kernel;
+ kernel -> lang; kernel -> storage; kernel -> net;
+ lang -> pixels; pixels -> graphics;
+ machine -> vm; kernel -> vm;
+ graphics -> research; storage -> research; net -> research; vm -> research;
+ {rank=same; lang; storage; net}
+}
