@@ -97,10 +97,10 @@ def main() -> None:
             "",
             (
                 "Esta página não usa a mera existência de um arquivo como sinônimo de conclusão. "
-                "Um capítulo é contado como profundo apenas quando atinge o piso editorial de palavras para seu tipo."
+                "O piso de palavras mede somente extensão textual. Não comprova completude técnica, cobertura de pré-requisitos, conciliação das fontes ou qualidade da revisão."
                 if pt else
                 "This page does not treat the mere existence of a file as completion. "
-                "A chapter counts as deep only when it reaches the editorial word floor for its page type."
+                "The word floor is a length signal only. It does not establish technical completeness, prerequisite coverage, source reconciliation or review quality."
             ),
             "",
             f"{'Capítulos planejados' if pt else 'Planned chapters'}: **{len(planned)}**  ",
@@ -109,7 +109,7 @@ def main() -> None:
             f"{'Presentes, porém abaixo da profundidade-alvo' if pt else 'Present but below depth target'}: **{len(thin)}**  ",
             f"{'Capítulos que atingem a profundidade-alvo' if pt else 'Chapters meeting depth target'}: **{len(deep)}**  ",
             f"{'Cobertura estrutural' if pt else 'Structural coverage'}: **{structural_pct:.1f}%**  ",
-            f"{'Cobertura profunda' if pt else 'Deep coverage'}: **{depth_pct:.1f}%**",
+            f"{'Cobertura do piso textual' if pt else 'Text-floor coverage'}: **{depth_pct:.1f}%**",
             "",
             f"## {'Pisos editoriais' if pt else 'Editorial depth floors'}",
             "",
@@ -150,7 +150,7 @@ def main() -> None:
 
         lines.extend([
             "",
-            f"## {'Capítulos profundos' if pt else 'Deep chapters'}",
+            f"## {'Capítulos acima do piso textual' if pt else 'Chapters above the text floor'}",
             "",
             "| Volume | ID | Words | Title |",
             "|---|---|---:|---|",

@@ -33,7 +33,7 @@ Memória virtual insere tradução entre endereços usados por software e endere
 Uma instrução acessa endereço virtual `V`. A CPU consulta estruturas selecionadas por CR3 e obtém endereço físico `P` com permissões ou gera fault.
 
 <figure class="figure">
-<img src="../../assets/diagrams/memory.svg" alt="Tradução de páginas com TLB">
+<img src="../../../assets/diagrams/memory.svg" alt="Tradução de páginas com TLB">
 <figcaption>A tradução consulta primeiro o TLB e, em miss, percorre as page tables.</figcaption>
 </figure>
 

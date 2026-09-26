@@ -1,0 +1,389 @@
+version: 1
+levels:
+- id: 01-matter
+  title:
+    en: 01 · Matter, devices and logic
+    pt-br: 01 · Matéria, dispositivos e lógica
+  modules:
+  - title:
+      en: Charge and semiconductor physics
+      pt-br: Carga e física de semicondutores
+    chapters:
+    - atom-semiconductor
+    - crystal-bands-doping
+    - pn-junction
+    - transistor-cmos
+  - title:
+      en: Boolean functions and circuits
+      pt-br: Funções booleanas e circuitos
+    chapters:
+    - boolean-algebra
+    - combinational-logic
+    - arithmetic-circuits
+  - title:
+      en: State, time and memory cells
+      pt-br: Estado, tempo e células de memória
+    chapters:
+    - logic-sequential
+    - latches-flipflops
+    - registers-counters
+    - clock-timing
+    - sram-dram
+- id: 02-representation
+  title:
+    en: 02 · Representation and algorithms
+    pt-br: 02 · Representação e algoritmos
+  modules:
+  - title:
+      en: Bits, types and layout
+      pt-br: Bits, tipos e layout
+    chapters:
+    - data-representation-layout
+  - title:
+      en: Cost models and structures
+      pt-br: Modelos de custo e estruturas
+    chapters:
+    - algorithmic-complexity
+    - data-structures
+    - systems-algorithms
+- id: 03-machine
+  title:
+    en: 03 · Instruction execution and platform
+    pt-br: 03 · Execução de instruções e plataforma
+  modules:
+  - title:
+      en: ISA and instruction encoding
+      pt-br: ISA e codificação de instruções
+    chapters:
+    - cpu-datapath-isa
+    - machine-code
+    - x86-registers-flags
+    - x86-instruction-encoding
+  - title:
+      en: Addressing and protection
+      pt-br: Endereçamento e proteção
+    chapters:
+    - x86-64-memory-privilege
+    - privilege-rings
+  - title:
+      en: Memory hierarchy and concurrency
+      pt-br: Hierarquia de memória e concorrência
+    chapters:
+    - cache-hierarchy
+    - coherence
+    - atomics-memory-model
+  - title:
+      en: Devices and platform discovery
+      pt-br: Dispositivos e descoberta da plataforma
+    chapters:
+    - buses-mmio-dma
+    - pci-pcie
+    - acpi-platform
+- id: 04-boot
+  title:
+    en: 04 · From reset to kernel entry
+    pt-br: 04 · Do reset à entrada do kernel
+  modules:
+  - title:
+      en: Firmware and boot contracts
+      pt-br: Firmware e contratos de boot
+    chapters:
+    - reset-firmware
+    - uefi
+    - limine
+    - boot-information
+  - title:
+      en: Executable layout and entry
+      pt-br: Layout do executável e entrada
+    chapters:
+    - elf-linking
+    - linker-script
+    - higher-half-kernel
+    - power-on-kstart
+- id: 05-kernel
+  title:
+    en: 05 · Kernel, memory and execution contexts
+    pt-br: 05 · Kernel, memória e contextos de execução
+  modules:
+  - title:
+      en: Trust boundaries and exception entry
+      pt-br: Fronteiras de confiança e entrada de exceções
+    chapters:
+    - kernel-model
+    - gdt-tss
+    - idt-exceptions
+    - pic-apic-ioapic
+    - timers
+    - panic-logging
+  - title:
+      en: Frames and address translation
+      pt-br: Frames e tradução de endereços
+    chapters:
+    - physical-memory
+    - hhdm
+    - pmm-algorithms
+    - virtual-memory
+    - page-table-layout
+    - page-faults
+    - address-spaces
+    - tlb
+  - title:
+      en: Concurrency and ownership
+      pt-br: Concorrência e propriedade de recursos
+    chapters:
+    - interrupts-smp
+    - tlb-shootdown
+    - heap-ownership
+    - spinlocks
+    - resource-lifetime
+    - kernel-jobs-kthreads
+    - jit-memory
+  - title:
+      en: User execution and process lifecycle
+      pt-br: Execução de usuário e ciclo de vida de processos
+    chapters:
+    - user-mode-entry
+    - processes-syscalls
+    - user-copy
+    - process-lifecycle
+- id: 06-languages
+  title:
+    en: 06 · Languages, compilers and runtimes
+    pt-br: 06 · Linguagens, compiladores e runtimes
+  modules:
+  - title:
+      en: Compiler construction
+      pt-br: Construção de compiladores
+    chapters:
+    - compiler-pipeline
+    - lexical-analysis
+    - parsing
+    - semantic-analysis
+    - intermediate-representation
+    - native-codegen
+    - calling-conventions
+  - title:
+      en: ChrisC and CLVM execution
+      pt-br: Execução ChrisC e CLVM
+    chapters:
+    - chrisc-clvm
+    - clvm-bytecode
+    - clvm-memory
+    - clvm-syscalls
+    - clvm-interpreter
+    - jit
+    - debugger
+    - gc-libraries
+  - title:
+      en: Native toolchain
+      pt-br: Ferramentas nativas
+    chapters:
+    - native-toolchain
+    - kcc
+    - chrisasm
+    - chriso
+    - chrisld
+- id: 07-storage
+  title:
+    en: 07 · Persistent state and filesystems
+    pt-br: 07 · Estado persistente e sistemas de arquivos
+  modules:
+  - title:
+      en: Block transport and media
+      pt-br: Transporte de blocos e mídia
+    chapters:
+    - block-storage
+    - ata
+    - ahci
+    - nvme
+    - virtio-block
+    - usb-storage
+    - partitions-gpt
+  - title:
+      en: ChrisFS structures and recovery
+      pt-br: Estruturas e recuperação do ChrisFS
+    chapters:
+    - chrisfs
+    - chrisfs-superblock
+    - chrisfs-inodes
+    - chrisfs-directories
+    - chrisfs-journal
+    - chrisfs-cache
+    - chrisfs-fsck
+- id: 08-pixels
+  title:
+    en: 08 · From bytes to the desktop
+    pt-br: 08 · Dos bytes ao desktop
+  modules:
+  - title:
+      en: Pixel memory and composition
+      pt-br: Memória de pixels e composição
+    chapters:
+    - pixels-framebuffer
+    - color-formats
+    - gfx2d
+    - desktop-compositor
+  - title:
+      en: Input, windows and applications
+      pt-br: Entrada, janelas e aplicações
+    chapters:
+    - desktop-applications
+    - window-manager
+    - input-routing
+    - chriseditor
+    - chrisshell
+    - file-manager
+    - mine-chris
+    - doom-port
+- id: 09-graphics
+  title:
+    en: 09 · Geometry, rasterization and GPUs
+    pt-br: 09 · Geometria, rasterização e GPUs
+  modules:
+  - title:
+      en: Geometry and sampling
+      pt-br: Geometria e amostragem
+    chapters:
+    - matrix-transformations
+    - clipping
+    - triangle-rasterization
+    - depth-buffer
+    - textures
+    - software-3d
+    - parallel-raster
+  - title:
+      en: Device transport and commands
+      pt-br: Transporte do dispositivo e comandos
+    chapters:
+    - virtio-gpu-virgl
+    - virtio-gpu-transport
+    - gfx3d-api
+    - virgl-command-stream
+  - title:
+      en: Programmable shading
+      pt-br: Sombreamento programável
+    chapters:
+    - shaders-csir
+    - shader-frontend
+    - csir
+    - tgsi-backend
+    - software-shader
+    - mine-graphics
+- id: 10-networks
+  title:
+    en: 10 · Networks and protocol state
+    pt-br: 10 · Redes e estados de protocolo
+  modules:
+  - title:
+      en: Frames, datagrams and streams
+      pt-br: Frames, datagramas e fluxos
+    chapters:
+    - ethernet
+    - ipv4
+    - udp
+    - tcp
+  - title:
+      en: ChrisOS network integration
+      pt-br: Integração de rede no ChrisOS
+    chapters:
+    - network-stack
+    - virtio-net
+    - sockets
+- id: 11-machines
+  title:
+    en: 11 · Emulation and virtualization
+    pt-br: 11 · Emulação e virtualização
+  modules:
+  - title:
+      en: Architectural semantics
+      pt-br: Semântica arquitetural
+    chapters:
+    - emulator-theory
+    - x86-decoding
+    - emulator-flags
+    - emulator-exceptions
+    - emulator-paging
+  - title:
+      en: ChrisVM platform
+      pt-br: Plataforma ChrisVM
+    chapters:
+    - chrisvm-chriscpu
+    - chris-architecture-state
+    - chrisvm-machine
+    - chrisvm-memory-map
+    - chrisvm-io-bus
+    - chrisvm-mmio-bus
+    - chrisvm-devices
+    - chrisvm-boot
+    - chrisvm-debugger
+    - determinism-replay
+  - title:
+      en: Hardware virtualization
+      pt-br: Virtualização por hardware
+    chapters:
+    - virtualization-chrishv
+    - vmx
+    - svm
+    - ept-npt
+- id: 12-research
+  title:
+    en: 12 · Bootstrap, validation and research
+    pt-br: 12 · Bootstrap, validação e pesquisa
+  modules:
+  - title:
+      en: Self-hosting
+      pt-br: Self-hosting
+    chapters:
+    - self-hosting-bootstrap
+    - selfhost-levels
+    - stage-compilers
+    - internal-kernel-build
+    - reproducible-builds
+  - title:
+      en: Physical hardware
+      pt-br: Hardware físico
+    chapters:
+    - installation-real-hardware
+    - gpt-esp
+    - uefi-disk-boot
+    - hardware-profile
+    - bringup-diagnostics
+    - driver-compatibility
+  - title:
+      en: Experiments and evidence
+      pt-br: Experimentos e evidências
+    chapters:
+    - validation-evidence
+    - host-tests
+    - qemu-gates
+    - hardware-gates
+    - fault-injection
+    - fuzzing
+    - performance-measurement
+  - title:
+      en: Specifications and primary references
+      pt-br: Especificações e referências primárias
+    chapters:
+    - specifications-policy
+    - chrisvm-spec
+    - chrisvm-boot-spec
+    - chriso-spec
+    - chrisfs-spec
+    - clvm-spec
+    - shader-spec
+    - bibliography
+  - title:
+      en: Architecture history
+      pt-br: História da arquitetura
+    chapters:
+    - architecture-history
+    - graphics-history
+    - toolchain-history
+    - chrisvm-history
+  - title:
+      en: Corpus maintenance
+      pt-br: Manutenção do corpus
+    chapters:
+    - agent-workflow
+    - source-policy
+    - documentation-schema

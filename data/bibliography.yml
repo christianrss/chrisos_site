@@ -3,6 +3,7 @@ references:
     title: Intel 64 and IA-32 Architectures Software Developer's Manual
     organization: Intel
     class: architecture-manual
+    url: https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
   amd-apm:
     title: AMD64 Architecture Programmer's Manual
     organization: AMD
@@ -23,3 +24,13 @@ references:
     title: PCI Express Base Specification
     organization: PCI-SIG
     class: specification
+  mit-6012:
+    title: Microelectronic Devices and Circuits, Spring 2009
+    organization: MIT OpenCourseWare
+    class: university-lecture-notes
+    url: https://ocw.mit.edu/courses/6-012-microelectronic-devices-and-circuits-spring-2009/pages/lecture-notes/
+  mit-6004:
+    title: Computation Structures, Spring 2009
+    organization: MIT OpenCourseWare
+    class: university-lecture-notes
+    url: https://ocw.mit.edu/courses/6-004-computation-structures-spring-2009/pages/lecture-notes/

@@ -26,6 +26,7 @@ def main() -> None:
     seen = {}
     pairs = {}
     types = {}
+    metadata = {}
 
     for page in iter_pages(docs):
         meta, body = read_page(page)
@@ -41,6 +42,7 @@ def main() -> None:
             if key in seen:
                 errors.append(f"duplicate id/lang {key}: {seen[key]} and {page}")
             seen[key] = page
+            metadata[key] = meta
             pairs.setdefault(pid, set()).add(lang)
             types.setdefault(pid, set()).add(typ)
 
@@ -62,6 +64,12 @@ def main() -> None:
         generated = any(t.startswith("generated") for t in types.get(pid, set()))
         if not generated and langs != {"en", "pt-br"}:
             errors.append(f"{pid}: languages={sorted(langs)}, expected en and pt-br")
+
+    for pid, langs in pairs.items():
+        if langs == {"en", "pt-br"}:
+            for field in ("sources", "depends_on", "reviewed_revision"):
+                if metadata[(pid, "en")].get(field) != metadata[(pid, "pt-br")].get(field):
+                    errors.append(f"{pid}: bilingual metadata mismatch in {field}")
 
     for warning in warnings:
         print("WARNING: " + warning)

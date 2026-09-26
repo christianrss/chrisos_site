@@ -32,10 +32,9 @@
     <a href="https://github.com/christianrss/chrisos_site">Documentation repository</a>
   </nav>
 </header>
-<input id="nav-toggle" class="nav-toggle" type="checkbox" hidden>
-<label for="nav-toggle" class="nav-button">Contents</label>
+<button id="nav-toggle" class="nav-button" type="button" aria-controls="nav-panel" aria-expanded="false">{{ "Conteúdo" if page and page.meta.lang == "pt-br" else "Contents" }}</button>
 <div class="layout">
-  <aside class="sidebar" aria-label="Documentation navigation">
+  <aside id="nav-panel" class="sidebar" aria-label="Documentation navigation">
     <div class="sidebar-title">DOCUMENTATION</div>
     {% macro tree(items) -%}
       <ul>
@@ -48,27 +47,31 @@
       {% endfor %}
       </ul>
     {%- endmacro %}
-    {{ tree(nav) }}
+    {% for edition in nav %}{% if (page.meta.lang == "pt-br" and edition.title == "Português") or (page.meta.lang != "pt-br" and edition.title == "English") %}{{ tree(edition.children) }}{% endif %}{% endfor %}
     <hr>
     <form class="search" role="search" onsubmit="return false">
       <label for="site-search">Search</label>
       <input id="site-search" type="search" autocomplete="off">
-      <div id="search-results" class="search-results"></div>
+      <div id="search-results" class="search-results" aria-live="polite"></div>
     </form>
   </aside>
   <main id="main" class="content">
     {% if page %}
-      <div class="crumbs"><a href="{{ ('pt-br/' if page.meta.lang == 'pt-br' else 'en/')|url }}">ChrisOS</a><span>/</span><span>{{ page.title }}</span></div>
+      <div class="crumbs"><a href="{{ ('pt-br/' if page.meta.lang == 'pt-br' else 'en/')|url }}">ChrisOS</a>{% for ancestor in page.ancestors|reverse %}<span>/</span><span>{{ ancestor.title }}</span>{% endfor %}<span>/</span><span>{{ page.title }}</span></div>
+      {% if translation.url %}<p class="edition-link"><a href="{{ translation.url|url }}" hreflang="{{ 'en' if page.meta.lang == 'pt-br' else 'pt-br' }}">{{ 'Read this chapter in English' if page.meta.lang == 'pt-br' else 'Ler este capítulo em português' }}</a></p>{% endif %}
+      {% if prerequisites %}<aside class="prerequisites"><b>{{ 'Pré-requisitos' if page.meta.lang == 'pt-br' else 'Prerequisites' }}</b><ul>{% for dep in prerequisites %}<li>{% if dep.url %}<a href="{{ dep.url|url }}">{{ dep.title }}</a>{% else %}{{ dep.title }} — {{ 'capítulo ausente' if page.meta.lang == 'pt-br' else 'missing chapter' }}{% endif %}</li>{% endfor %}</ul></aside>{% endif %}
+      {% if page.toc|length %}<details class="page-toc"><summary>{{ 'Neste capítulo' if page.meta.lang == 'pt-br' else 'In this chapter' }}</summary><ul>{% for item in page.toc %}<li><a href="{{ item.url }}">{{ item.title }}</a>{% if item.children %}<ul>{% for child in item.children %}<li><a href="{{ child.url }}">{{ child.title }}</a></li>{% endfor %}</ul>{% endif %}</li>{% endfor %}</ul></details>{% endif %}
       <article>{{ page.content }}</article>
       <div class="document-record">
         <b>{% if page.meta.lang == 'pt-br' %}Registro do documento{% else %}Document record{% endif %}</b>
         {% if page.meta.id %}<span>ID: <code>{{ page.meta.id }}</code></span>{% endif %}
         {% if page.meta.reviewed_revision %}<span>Reviewed source: <code>{{ page.meta.reviewed_revision[:12] }}</code></span>{% endif %}
+        {% if page.meta.sources and page.meta.reviewed_revision %}<details><summary>{{ 'Fontes desta revisão' if page.meta.lang == 'pt-br' else 'Sources at this revision' }}</summary><ul>{% for source in page.meta.sources %}<li><a href="https://github.com/christianrss/ChrisOS/blob/{{ page.meta.reviewed_revision }}/{{ source }}">{{ source }}</a></li>{% endfor %}</ul></details>{% endif %}
         {% if page.meta.type %}<span>Class: <code>{{ page.meta.type }}</code></span>{% endif %}
       </div>
       <nav class="pager">
-        {% if page.previous_page %}<a href="{{ page.previous_page.url|url }}">← {{ page.previous_page.title }}</a>{% else %}<span></span>{% endif %}
-        {% if page.next_page %}<a href="{{ page.next_page.url|url }}">{{ page.next_page.title }} →</a>{% endif %}
+        {% if page.previous_page and page.previous_page.meta.lang == page.meta.lang %}<a href="{{ page.previous_page.url|url }}">← {{ page.previous_page.title }}</a>{% else %}<span></span>{% endif %}
+        {% if page.next_page and page.next_page.meta.lang == page.meta.lang %}<a href="{{ page.next_page.url|url }}">{{ page.next_page.title }} →</a>{% endif %}
       </nav>
     {% endif %}
   </main>

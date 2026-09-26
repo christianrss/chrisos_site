@@ -22,7 +22,7 @@ related:
 A compiler transforms one formal language into another while preserving defined program meaning.
 
 <figure class="figure">
-<img src="../../assets/diagrams/compiler.svg" alt="Compiler stages">
+<img src="../../../assets/diagrams/compiler.svg" alt="Compiler stages">
 <figcaption>A common decomposition. Individual compilers may combine or omit explicit stages.</figcaption>
 </figure>
 

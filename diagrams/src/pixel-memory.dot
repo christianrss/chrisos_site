@@ -1,0 +1,17 @@
+digraph pixels {
+ graph [rankdir=TB, bgcolor="#faf9f4", pad="0.25"];
+ node [shape=box, style=filled, fillcolor="#ecebe4", fontname="Helvetica",fontsize=12];
+ boot [label="kstart\nbootinfo + fb_bpp == 32"];
+ init [label="gfx_init\nvalidate geometry; kmalloc back"];
+ back [label="Backbuffer / buffer traseiro\nindex = y × width + x\nowned allocation / alocação própria"];
+ dirty [label="g_dirty[32]\nclip → merge → full-screen fallback"];
+ present [label="gfx_present\ncopy each damaged row"];
+ front [label="Frontbuffer / buffer frontal\nindex = y × pitch_pixels + x\ncaller-supplied / fornecido pelo chamador"];
+ flush [label="Freestanding only\nhw_gpu_flush_rect(bounding box)"];
+ boot -> init; init -> back;
+ back -> dirty [label="gfx_mark_dirty"];
+ back -> present [label="pixels"];
+ dirty -> present [label="regions / regiões"];
+ present -> front; present -> flush;
+ {rank=same; back; dirty}
+}

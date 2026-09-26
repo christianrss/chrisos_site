@@ -24,7 +24,6 @@ symbols:
 depends_on:
   - gdt-tss
   - virtual-memory
-  - processes-syscalls
 related:
   - user-copy
   - process-lifecycle

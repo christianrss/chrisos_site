@@ -9,7 +9,7 @@ status: generated
 
 This publication is available in two complete language trees.
 
-- [English](en/)
-- [Português do Brasil](pt-br/)
+- [English](en/index.md)
+- [Português do Brasil](pt-br/index.md)
 
 The documentation is built from Markdown and reconciled against the ChrisOS `main` branch during GitHub Actions deployment.

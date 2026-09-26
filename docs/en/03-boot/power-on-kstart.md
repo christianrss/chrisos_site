@@ -85,7 +85,7 @@ At the documented revision, the sequence includes early serial/build information
 A simplified dependency graph is:
 
 <figure class="figure">
-<img src="../../assets/diagrams/boot.svg" alt="ChrisOS boot dependency flow">
+<img src="../../../assets/diagrams/boot.svg" alt="ChrisOS boot dependency flow">
 <figcaption>Major initialization stages. The exact source order remains authoritative for a specific revision.</figcaption>
 </figure>
 
