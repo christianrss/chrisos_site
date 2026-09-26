@@ -1,25 +1,45 @@
 # ChrisOS Documentation Site
 
-Official documentation site for the ChrisOS ecosystem.
+Official, bilingual documentation for the ChrisOS ecosystem.
 
-- Source OS repository: https://github.com/christianrss/ChrisOS
-- Documentation source: Markdown under `docs/`
-- Languages: English and Brazilian Portuguese
-- Deployment: GitHub Actions + GitHub Pages
+## Design
+
+The site intentionally uses a strong late-80s/90s workstation/desktop visual language while keeping a modern responsive layout underneath:
+
+- official `ChrisOS_Monolito.png` identity;
+- CRT/terminal texture, hard bevels, pixel-like treatment and system panels;
+- responsive navigation provided by MkDocs Material;
+- mobile-safe tables and code blocks;
+- no JavaScript framework;
+- all documentation content is Markdown.
+
+## Source
+
+- OS: https://github.com/christianrss/ChrisOS
+- Documentation: this repository
+- Baseline at migration: `main @ da3df29`
 
 ## Local development
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate    # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 mkdocs serve
 ```
 
-## Build
+## Production build
 
 ```bash
 mkdocs build --strict
 ```
 
-The generated site is written to `site/` and is deployed by `.github/workflows/pages.yml`.
+## GitHub Pages
+
+Every push to `main` triggers `.github/workflows/pages.yml`.
+
+Expected URL:
+
+```text
+https://christianrss.github.io/chrisos_site/
+```

@@ -1,0 +1,142 @@
+site_name: ChrisOS / Documentation
+site_description: Official documentation for the ChrisOS operating system ecosystem.
+site_url: https://christianrss.github.io/chrisos_site/
+repo_url: https://github.com/christianrss/ChrisOS
+repo_name: christianrss/ChrisOS
+edit_uri: https://github.com/christianrss/chrisos_site/edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  logo: assets/images/ChrisOS_Monolito.png
+  favicon: assets/images/ChrisOS_Monolito.png
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+  palette:
+    scheme: slate
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+
+extra_css:
+  - assets/stylesheets/retro.css
+
+extra_javascript:
+  - assets/javascripts/retro.js
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/christianrss/ChrisOS
+
+nav:
+  - English:
+      - "00 Inside ChrisOS": inside-chrisos.md
+      - "01 Build & run": build-run.md
+      - "02 System architecture": system-architecture.md
+      - "03 Repository map": repository-map.md
+      - System foundations:
+          - "04 Boot & initialization": boot-initialization.md
+          - "05 Memory & ownership": memory-ownership.md
+          - "06 Interrupts & SMP": interrupts-smp.md
+          - "07 Processes & system calls": processes-syscalls.md
+          - "08 ChrisFS & persistence": chrisfs-persistence.md
+      - Languages & tools:
+          - "09 ChrisC language": chrisc-language.md
+          - "10 CLVM runtime": clvm-runtime.md
+          - "11 JIT & execution paths": jit-execution.md
+          - "12 KCC, ChrisAsm & ChrisLd": native-toolchain.md
+          - "13 Editor, debugger & build": editor-debugger-build.md
+          - "14 Self-hosting": self-hosting.md
+          - "15 Libraries, modules & GC": libraries-modules-gc.md
+      - Graphics & interaction:
+          - "16 2D graphics & composition": graphics-2d.md
+          - "17 Software 3D": software-3d.md
+          - "18 VirtIO-GPU": virtio-gpu.md
+          - "19 VirGL 3D transport": virgl.md
+          - "20 GLSL subset & CSIR": glsl-csir.md
+      - Hardware & applications:
+          - "21 Devices & drivers": devices-drivers.md
+          - "22 Networking & transfer": networking-transfer.md
+          - "23 Desktop & applications": desktop-applications.md
+          - "24 Mine Chris & Doom": mine-doom.md
+          - "25 Installation & real hardware": installation-hardware.md
+          - "26 RISC-V bring-up": riscv.md
+          - "27 ChrisVM roadmap": chrisvm.md
+      - Reference:
+          - "28 Validation & known limits": validation-limits.md
+          - "29 Sources & revision policy": sources-policy.md
+          - "30 Technical glossary": glossary.md
+          - "31 Maintain this documentation": maintain-docs.md
+          - "32 Kernel source atlas": kernel-atlas.md
+          - "33 Compiler source atlas": compiler-atlas.md
+          - "34 Applications & libraries atlas": apps-libraries-atlas.md
+          - "35 Game source atlas": games-atlas.md
+          - "36 Tests & tools atlas": tests-tools-atlas.md
+          - "37 Build & platform atlas": build-platform-atlas.md
+  - Português:
+      - Início: pt-br/index.md
+      - "00 Por dentro do ChrisOS": pt-br/inside-chrisos.md
+      - "01 Compilar e executar": pt-br/build-run.md
+      - "02 Arquitetura do sistema": pt-br/system-architecture.md
+      - "03 Mapa do repositório": pt-br/repository-map.md
+      - Fundamentos:
+          - "04 Boot e inicialização": pt-br/boot-initialization.md
+          - "05 Memória e ownership": pt-br/memory-ownership.md
+          - "06 Interrupções e SMP": pt-br/interrupts-smp.md
+          - "07 Processos e syscalls": pt-br/processes-syscalls.md
+          - "08 ChrisFS e persistência": pt-br/chrisfs-persistence.md
+      - Linguagens e ferramentas:
+          - "09 Linguagem ChrisC": pt-br/chrisc-language.md
+          - "10 Runtime CLVM": pt-br/clvm-runtime.md
+          - "11 JIT e caminhos de execução": pt-br/jit-execution.md
+          - "12 KCC, ChrisAsm e ChrisLd": pt-br/native-toolchain.md
+          - "13 Editor, debugger e build": pt-br/editor-debugger-build.md
+          - "14 Self-hosting": pt-br/self-hosting.md
+          - "15 Bibliotecas, módulos e GC": pt-br/libraries-modules-gc.md
+      - Gráficos e interação:
+          - "16 Gráficos 2D e composição": pt-br/graphics-2d.md
+          - "17 3D por software": pt-br/software-3d.md
+          - "18 VirtIO-GPU": pt-br/virtio-gpu.md
+          - "19 Transporte 3D VirGL": pt-br/virgl.md
+          - "20 Subset GLSL e CSIR": pt-br/glsl-csir.md
+      - Hardware e aplicações:
+          - "21 Dispositivos e drivers": pt-br/devices-drivers.md
+          - "22 Rede e transferência": pt-br/networking-transfer.md
+          - "23 Desktop e aplicações": pt-br/desktop-applications.md
+          - "24 Mine Chris e Doom": pt-br/mine-doom.md
+          - "25 Instalação e hardware real": pt-br/installation-hardware.md
+          - "26 Bring-up RISC-V": pt-br/riscv.md
+          - "27 Roadmap ChrisVM": pt-br/chrisvm.md
+      - Referência:
+          - "28 Validação e limites conhecidos": pt-br/validation-limits.md
+          - "29 Fontes e política de revisão": pt-br/sources-policy.md
+          - "30 Glossário técnico": pt-br/glossary.md
+          - "31 Manter esta documentação": pt-br/maintain-docs.md
+          - "32 Atlas do kernel": pt-br/kernel-atlas.md
+          - "33 Atlas do compilador": pt-br/compiler-atlas.md
+          - "34 Atlas de aplicações e bibliotecas": pt-br/apps-libraries-atlas.md
+          - "35 Atlas dos jogos": pt-br/games-atlas.md
+          - "36 Atlas de testes e ferramentas": pt-br/tests-tools-atlas.md
+          - "37 Atlas de build e plataforma": pt-br/build-platform-atlas.md
