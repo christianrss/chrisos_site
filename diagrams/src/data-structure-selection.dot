@@ -1,0 +1,24 @@
+digraph structures {
+  rankdir=TB;
+  graph [bgcolor="transparent", pad="0.2", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded", fontname="monospace", fontsize=10];
+  Need [label="operation requirements"];
+  Dense [label="dense / bounded?"];
+  Order [label="ordered queries?"];
+  Priority [label="priority?"];
+  Prefix [label="prefix/range?"];
+  Array [label="array / bitset / ring"];
+  Hash [label="hash table"];
+  Tree [label="balanced tree / B-tree"];
+  Heap [label="heap / priority queue"];
+  Trie [label="trie / radix"];
+  Need -> Dense;
+  Dense -> Array [label="yes"];
+  Dense -> Order [label="no / dynamic"];
+  Order -> Tree [label="yes"];
+  Order -> Priority [label="no"];
+  Priority -> Heap [label="yes"];
+  Priority -> Prefix [label="no"];
+  Prefix -> Trie [label="yes"];
+  Prefix -> Hash [label="exact key"];
+}
