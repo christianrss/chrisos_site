@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="{{ page.meta.lang if page and page.meta.lang else 'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{ page.meta.description if page and page.meta.description else config.site_description }}">
+  <title>{% if page and page.title %}{{ page.title }} — {% endif %}{{ config.site_name }}</title>
+  <link rel="stylesheet" href="{{ 'assets/site.css'|url }}">
+</head>
+<body data-base="{{ base_url }}">
+<a class="skip" href="#main">Skip to content</a>
+<header class="institutional">
+  <div class="masthead">
+    <a class="brand" href="{{ ('en/' if not page or page.meta.lang != 'pt-br' else 'pt-br/')|url }}">
+      <img src="{{ 'assets/images/ChrisOS_Monolito.png'|url }}" width="54" height="54" alt="">
+      <span><b>ChrisOS Research Project</b><small>Operating systems · language systems · graphics · machine emulation</small></span>
+    </a>
+    <div class="edition"><span>DOCUMENTATION ARCHIVE</span><span>MAIN BRANCH</span></div>
+  </div>
+  <nav class="toplinks" aria-label="Project">
+    <a href="{{ 'en/'|url }}">English</a>
+    <a href="{{ 'pt-br/'|url }}">Português</a>
+    <a href="https://github.com/christianrss/ChrisOS">Source</a>
+    <a href="https://github.com/christianrss/chrisos_site">Documentation repository</a>
+  </nav>
+</header>
+<input id="nav-toggle" class="nav-toggle" type="checkbox" hidden>
+<label for="nav-toggle" class="nav-button">Contents</label>
+<div class="layout">
+  <aside class="sidebar" aria-label="Documentation navigation">
+    <div class="sidebar-title">DOCUMENTATION</div>
+    {% macro tree(items) -%}
+      <ul>
+      {% for item in items %}
+        {% if item.is_section %}
+          <li class="section"><details {% if item.active %}open{% endif %}><summary>{{ item.title }}</summary>{{ tree(item.children) }}</details></li>
+        {% elif item.is_page %}
+          <li><a {% if item.active %}class="active"{% endif %} href="{{ item.url|url }}">{{ item.title }}</a></li>
+        {% endif %}
+      {% endfor %}
+      </ul>
+    {%- endmacro %}
+    {{ tree(nav) }}
+    <hr>
+    <form class="search" role="search" onsubmit="return false">
+      <label for="site-search">Search</label>
+      <input id="site-search" type="search" autocomplete="off">
+      <div id="search-results" class="search-results"></div>
+    </form>
+  </aside>
+  <main id="main" class="content">
+    {% if page %}
+      <div class="crumbs"><a href="{{ ('pt-br/' if page.meta.lang == 'pt-br' else 'en/')|url }}">ChrisOS</a><span>/</span><span>{{ page.title }}</span></div>
+      <article>{{ page.content }}</article>
+      <div class="document-record">
+        <b>{% if page.meta.lang == 'pt-br' %}Registro do documento{% else %}Document record{% endif %}</b>
+        {% if page.meta.id %}<span>ID: <code>{{ page.meta.id }}</code></span>{% endif %}
+        {% if page.meta.reviewed_revision %}<span>Reviewed source: <code>{{ page.meta.reviewed_revision[:12] }}</code></span>{% endif %}
+        {% if page.meta.type %}<span>Class: <code>{{ page.meta.type }}</code></span>{% endif %}
+      </div>
+      <nav class="pager">
+        {% if page.previous_page %}<a href="{{ page.previous_page.url|url }}">← {{ page.previous_page.title }}</a>{% else %}<span></span>{% endif %}
+        {% if page.next_page %}<a href="{{ page.next_page.url|url }}">{{ page.next_page.title }} →</a>{% endif %}
+      </nav>
+    {% endif %}
+  </main>
+</div>
+<footer><hr><p>ChrisOS Research Project. Static documentation generated from Markdown. Implementation claims are revision-bound.</p></footer>
+<script src="{{ 'assets/site.js'|url }}"></script>
+</body>
+</html>

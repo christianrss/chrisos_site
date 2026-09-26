@@ -1,4 +1,10 @@
 .venv/
+.source/
+.context/
 site/
 __pycache__/
+*.pyc
 .DS_Store
+docs/en/99-source-atlas/generated/
+docs/pt-br/99-source-atlas/generated/
+docs/generated-meta/
