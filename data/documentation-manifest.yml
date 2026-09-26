@@ -1,0 +1,221 @@
+version: 1
+policy:
+  authored_pages_are_not_placeholders: true
+  generated_source_atlas_is_mechanical: true
+  require_bilingual_authored_pages: true
+  no_exercises: true
+  no_conversational_prose: true
+volumes:
+  01-foundations:
+    chapters:
+      - {id: atom-semiconductor, title: "Atom, charge and semiconductor physics", priority: foundation}
+      - {id: crystal-bands-doping, title: "Crystal structure, energy bands and doping", priority: expansion}
+      - {id: pn-junction, title: "P-N junctions and semiconductor interfaces", priority: expansion}
+      - {id: transistor-cmos, title: "MOSFETs and CMOS", priority: foundation}
+      - {id: boolean-algebra, title: "Boolean algebra and logic representation", priority: expansion}
+      - {id: combinational-logic, title: "Combinational circuits", priority: expansion}
+      - {id: logic-sequential, title: "Sequential logic and stored state", priority: foundation}
+      - {id: latches-flipflops, title: "Latches, flip-flops and metastability", priority: expansion}
+      - {id: registers-counters, title: "Registers, counters and state machines", priority: expansion}
+      - {id: arithmetic-circuits, title: "Adders, ALUs and binary arithmetic", priority: expansion}
+      - {id: sram-dram, title: "SRAM, DRAM and memory cells", priority: expansion}
+      - {id: clock-timing, title: "Clocking, propagation and timing", priority: expansion}
+  02-computer-architecture:
+    chapters:
+      - {id: cpu-datapath-isa, title: "CPU datapath and ISA", priority: foundation}
+      - {id: machine-code, title: "Machine code and instruction encoding", priority: expansion}
+      - {id: x86-registers-flags, title: "x86-64 registers and flags", priority: expansion}
+      - {id: x86-instruction-encoding, title: "x86 instruction encoding and addressing modes", priority: expansion}
+      - {id: x86-64-memory-privilege, title: "x86-64 memory and privilege", priority: foundation}
+      - {id: privilege-rings, title: "Privilege rings, transitions and protection", priority: expansion}
+      - {id: cache-hierarchy, title: "Caches and memory hierarchy", priority: expansion}
+      - {id: coherence, title: "Cache coherence and multiprocessor memory", priority: expansion}
+      - {id: buses-mmio-dma, title: "Buses, MMIO and DMA", priority: foundation}
+      - {id: pci-pcie, title: "PCI and PCI Express", priority: expansion}
+      - {id: atomics-memory-model, title: "Atomics, barriers and memory ordering", priority: expansion}
+      - {id: acpi-platform, title: "ACPI and platform description", priority: expansion}
+  03-boot:
+    chapters:
+      - {id: reset-firmware, title: "Processor reset and platform firmware", priority: expansion}
+      - {id: uefi, title: "UEFI architecture and boot services", priority: expansion}
+      - {id: limine, title: "Limine boot protocol", priority: expansion}
+      - {id: power-on-kstart, title: "Power-on to kstart", priority: foundation}
+      - {id: elf-linking, title: "ELF, objects and linking", priority: foundation}
+      - {id: higher-half-kernel, title: "Higher-half kernel layout", priority: expansion}
+      - {id: linker-script, title: "Kernel linker script anatomy", priority: expansion}
+      - {id: boot-information, title: "Boot information and memory-map validation", priority: expansion}
+  04-kernel:
+    chapters:
+      - {id: kernel-model, title: "Kernel model and trust boundaries", priority: foundation}
+      - {id: gdt-tss, title: "GDT and TSS", priority: expansion}
+      - {id: idt-exceptions, title: "IDT and exception entry", priority: expansion}
+      - {id: interrupts-smp, title: "Interrupts and SMP", priority: foundation}
+      - {id: pic-apic-ioapic, title: "PIC, LAPIC and IOAPIC", priority: expansion}
+      - {id: timers, title: "PIT and timing", priority: expansion}
+      - {id: kernel-jobs-kthreads, title: "Kernel jobs and kthreads", priority: expansion}
+      - {id: processes-syscalls, title: "Processes and system calls", priority: foundation}
+      - {id: user-mode-entry, title: "User-mode entry and return", priority: expansion}
+      - {id: user-copy, title: "Safe user-memory access", priority: expansion}
+      - {id: process-lifecycle, title: "Process lifecycle and scheduler state", priority: expansion}
+      - {id: panic-logging, title: "Panic, serial and kernel logging", priority: expansion}
+  05-memory:
+    chapters:
+      - {id: physical-memory, title: "Physical memory management", priority: foundation}
+      - {id: hhdm, title: "Higher-half direct map", priority: expansion}
+      - {id: pmm-algorithms, title: "PMM allocation algorithms and invariants", priority: expansion}
+      - {id: virtual-memory, title: "Virtual memory and page tables", priority: foundation}
+      - {id: page-table-layout, title: "PML4, PDPT, PD and PT", priority: expansion}
+      - {id: page-faults, title: "Page faults and fault containment", priority: expansion}
+      - {id: address-spaces, title: "Process address spaces", priority: expansion}
+      - {id: tlb, title: "Translation Lookaside Buffer", priority: expansion}
+      - {id: tlb-shootdown, title: "TLB shootdown and reclamation", priority: foundation}
+      - {id: heap-ownership, title: "Kernel heap and ownership", priority: foundation}
+      - {id: spinlocks, title: "Spinlocks and lock ordering", priority: expansion}
+      - {id: resource-lifetime, title: "Resource lifetime and teardown", priority: expansion}
+      - {id: jit-memory, title: "Executable memory, JIT and W^X", priority: expansion}
+  06-storage:
+    chapters:
+      - {id: block-storage, title: "Block storage stack", priority: foundation}
+      - {id: ata, title: "ATA PIO and DMA", priority: expansion}
+      - {id: ahci, title: "AHCI and SATA", priority: expansion}
+      - {id: nvme, title: "NVMe queues and namespaces", priority: expansion}
+      - {id: virtio-block, title: "VirtIO Block", priority: expansion}
+      - {id: usb-storage, title: "USB mass storage and host controllers", priority: expansion}
+      - {id: partitions-gpt, title: "Partition tables and GPT", priority: expansion}
+      - {id: chrisfs, title: "ChrisFS architecture", priority: foundation}
+      - {id: chrisfs-superblock, title: "ChrisFS superblock and geometry", priority: expansion}
+      - {id: chrisfs-inodes, title: "ChrisFS inodes and block indirection", priority: expansion}
+      - {id: chrisfs-directories, title: "ChrisFS directories and path resolution", priority: expansion}
+      - {id: chrisfs-journal, title: "ChrisFS journaling and recovery", priority: expansion}
+      - {id: chrisfs-cache, title: "ChrisFS cache and allocation", priority: expansion}
+      - {id: chrisfs-fsck, title: "ChrisFS consistency checking", priority: expansion}
+  07-language-systems:
+    chapters:
+      - {id: compiler-pipeline, title: "Compiler construction pipeline", priority: foundation}
+      - {id: lexical-analysis, title: "Lexical analysis", priority: expansion}
+      - {id: parsing, title: "Parsing and grammars", priority: expansion}
+      - {id: semantic-analysis, title: "Semantic analysis and type systems", priority: expansion}
+      - {id: intermediate-representation, title: "Intermediate representations", priority: expansion}
+      - {id: native-codegen, title: "Native code generation", priority: expansion}
+      - {id: calling-conventions, title: "Calling conventions and stack frames", priority: expansion}
+      - {id: chrisc-clvm, title: "ChrisC and CLVM", priority: foundation}
+      - {id: clvm-bytecode, title: "CLVM bytecode format", priority: expansion}
+      - {id: clvm-memory, title: "CLVM memory and isolation", priority: expansion}
+      - {id: clvm-syscalls, title: "CLVM syscall ABI", priority: expansion}
+      - {id: clvm-interpreter, title: "CLVM interpreter", priority: expansion}
+      - {id: jit, title: "CLVM JIT", priority: expansion}
+      - {id: debugger, title: "Debugger and source mapping", priority: expansion}
+      - {id: native-toolchain, title: "KCC, ChrisAsm, ChrisO and ChrisLd", priority: foundation}
+      - {id: kcc, title: "KCC architecture and C profile", priority: expansion}
+      - {id: chrisasm, title: "ChrisAsm", priority: expansion}
+      - {id: chriso, title: "ChrisO object format", priority: expansion}
+      - {id: chrisld, title: "ChrisLd", priority: expansion}
+      - {id: gc-libraries, title: "Libraries, modules and garbage collection", priority: expansion}
+  08-graphics:
+    chapters:
+      - {id: pixels-framebuffer, title: "Pixels and framebuffer", priority: foundation}
+      - {id: color-formats, title: "Color formats and alpha", priority: expansion}
+      - {id: gfx2d, title: "2D primitives and composition", priority: expansion}
+      - {id: desktop-compositor, title: "Desktop composition", priority: expansion}
+      - {id: software-3d, title: "Software 3D", priority: foundation}
+      - {id: matrix-transformations, title: "Vector and matrix transformations", priority: expansion}
+      - {id: clipping, title: "Clipping and projection", priority: expansion}
+      - {id: triangle-rasterization, title: "Triangle rasterization", priority: expansion}
+      - {id: depth-buffer, title: "Depth buffering", priority: expansion}
+      - {id: textures, title: "Textures and sampling", priority: expansion}
+      - {id: parallel-raster, title: "Parallel software rasterization", priority: expansion}
+      - {id: virtio-gpu-virgl, title: "VirtIO-GPU and VirGL", priority: foundation}
+      - {id: virtio-gpu-transport, title: "VirtIO-GPU transport and resources", priority: expansion}
+      - {id: gfx3d-api, title: "Gfx3D backend-neutral API", priority: expansion}
+      - {id: virgl-command-stream, title: "VirGL command stream", priority: expansion}
+      - {id: shaders-csir, title: "Shaders and CSIR", priority: foundation}
+      - {id: shader-frontend, title: "GLSL subset frontend", priority: expansion}
+      - {id: csir, title: "Chris Shader IR", priority: expansion}
+      - {id: tgsi-backend, title: "TGSI backend", priority: expansion}
+      - {id: software-shader, title: "Software shader backend", priority: expansion}
+      - {id: mine-graphics, title: "Mine Chris graphics path", priority: expansion}
+  09-emulation:
+    chapters:
+      - {id: emulator-theory, title: "Machine emulation theory", priority: foundation}
+      - {id: x86-decoding, title: "x86 instruction decoding", priority: expansion}
+      - {id: emulator-flags, title: "Architectural flags and arithmetic semantics", priority: expansion}
+      - {id: emulator-exceptions, title: "Exception delivery in an emulator", priority: expansion}
+      - {id: emulator-paging, title: "Guest paging and address translation", priority: expansion}
+      - {id: chrisvm-chriscpu, title: "ChrisVM and ChrisCPU", priority: foundation}
+      - {id: chris-architecture-state, title: "ChrisArchitectureState", priority: expansion}
+      - {id: chrisvm-machine, title: "ChrisMachine lifecycle", priority: expansion}
+      - {id: chrisvm-memory-map, title: "ChrisVM physical memory map", priority: expansion}
+      - {id: chrisvm-io-bus, title: "ChrisVM I/O bus", priority: expansion}
+      - {id: chrisvm-mmio-bus, title: "ChrisVM MMIO bus", priority: expansion}
+      - {id: chrisvm-devices, title: "ChrisVM device model", priority: expansion}
+      - {id: chrisvm-boot, title: "ChrisVM boot protocol", priority: expansion}
+      - {id: chrisvm-debugger, title: "ChrisVM tracing and debugger", priority: expansion}
+      - {id: determinism-replay, title: "Determinism and future record/replay", priority: expansion}
+      - {id: virtualization-chrishv, title: "Hardware virtualization and ChrisHV", priority: foundation}
+      - {id: vmx, title: "Intel VMX", priority: expansion}
+      - {id: svm, title: "AMD SVM", priority: expansion}
+      - {id: ept-npt, title: "EPT and NPT", priority: expansion}
+  10-networking:
+    chapters:
+      - {id: network-stack, title: "Network stack and VirtIO networking", priority: foundation}
+      - {id: ethernet, title: "Ethernet framing", priority: expansion}
+      - {id: ipv4, title: "IPv4 and addressing", priority: expansion}
+      - {id: udp, title: "UDP", priority: expansion}
+      - {id: tcp, title: "TCP fundamentals and ChrisOS transfer path", priority: expansion}
+      - {id: virtio-net, title: "VirtIO-net", priority: expansion}
+      - {id: sockets, title: "Socket ownership and API", priority: expansion}
+  11-desktop:
+    chapters:
+      - {id: desktop-applications, title: "Desktop and applications", priority: foundation}
+      - {id: window-manager, title: "Window manager and task model", priority: expansion}
+      - {id: input-routing, title: "Keyboard, mouse and focus", priority: expansion}
+      - {id: chriseditor, title: "ChrisEditor architecture", priority: expansion}
+      - {id: chrisshell, title: "ChrisShell architecture", priority: expansion}
+      - {id: file-manager, title: "File manager architecture", priority: expansion}
+      - {id: mine-chris, title: "Mine Chris as a system workload", priority: expansion}
+      - {id: doom-port, title: "Doom port and native compatibility", priority: expansion}
+  12-self-hosting:
+    chapters:
+      - {id: self-hosting-bootstrap, title: "Self-hosting and bootstrap", priority: foundation}
+      - {id: selfhost-levels, title: "SH0-SH6 evidence model", priority: expansion}
+      - {id: stage-compilers, title: "Compiler staging and convergence", priority: expansion}
+      - {id: internal-kernel-build, title: "Internally produced kernel", priority: expansion}
+      - {id: reproducible-builds, title: "Reproducible builds and provenance", priority: expansion}
+  13-real-hardware:
+    chapters:
+      - {id: installation-real-hardware, title: "Installation and real hardware", priority: foundation}
+      - {id: gpt-esp, title: "GPT and EFI System Partition", priority: expansion}
+      - {id: uefi-disk-boot, title: "Disk-only UEFI boot", priority: expansion}
+      - {id: hardware-profile, title: "Physical hardware profile", priority: expansion}
+      - {id: bringup-diagnostics, title: "Hardware bring-up diagnostics", priority: expansion}
+      - {id: driver-compatibility, title: "Driver compatibility evidence", priority: expansion}
+  14-validation:
+    chapters:
+      - {id: validation-evidence, title: "Validation and evidence classes", priority: foundation}
+      - {id: host-tests, title: "Host-test architecture", priority: expansion}
+      - {id: qemu-gates, title: "QEMU gate architecture", priority: expansion}
+      - {id: hardware-gates, title: "Physical-hardware validation", priority: expansion}
+      - {id: fault-injection, title: "Negative testing and fault injection", priority: expansion}
+      - {id: fuzzing, title: "Fuzzing parsers and formats", priority: expansion}
+      - {id: performance-measurement, title: "Performance measurement", priority: expansion}
+  15-specifications:
+    chapters:
+      - {id: specifications-policy, title: "Specifications and revision policy", priority: foundation}
+      - {id: chrisvm-spec, title: "ChrisVM specification", priority: expansion}
+      - {id: chrisvm-boot-spec, title: "ChrisVM boot protocol", priority: expansion}
+      - {id: chriso-spec, title: "ChrisO format", priority: expansion}
+      - {id: chrisfs-spec, title: "ChrisFS format", priority: expansion}
+      - {id: clvm-spec, title: "CLVM image and syscall specification", priority: expansion}
+      - {id: shader-spec, title: "Shader subset and CSIR specification", priority: expansion}
+      - {id: bibliography, title: "Primary bibliography", priority: expansion}
+  16-history:
+    chapters:
+      - {id: architecture-history, title: "Architecture history", priority: foundation}
+      - {id: graphics-history, title: "Graphics architecture history", priority: expansion}
+      - {id: toolchain-history, title: "Native toolchain history", priority: expansion}
+      - {id: chrisvm-history, title: "ChrisVM history", priority: expansion}
+  98-maintenance:
+    chapters:
+      - {id: agent-workflow, title: "Low-context agent workflow", priority: foundation}
+      - {id: source-policy, title: "Source and revision policy", priority: expansion}
+      - {id: documentation-schema, title: "Documentation schema and templates", priority: expansion}
