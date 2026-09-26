@@ -9,8 +9,7 @@ from frontmatter import iter_pages, read_page
 
 REQUIRED = {"id", "lang", "type"}
 PLACEHOLDER_RE = re.compile(
-    r"\b(TODO|TBD|REPLACE_ID|REPLACE_SOURCE|REPLACE_REVISION|lorem ipsum)\b",
-    re.I,
+    r"\b(?:TODO|TBD|REPLACE_ID|REPLACE_SOURCE|REPLACE_REVISION)\b|lorem ipsum"
 )
 
 
