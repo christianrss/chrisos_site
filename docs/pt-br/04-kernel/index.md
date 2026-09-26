@@ -10,18 +10,36 @@ sources: []
 
 # Arquitetura do kernel
 
-<div class="abstract">Fronteiras de privilégio, organização monolítica modular, exceções, interrupções, SMP, processos, execução ELF em user mode e syscalls.</div>
+<div class="abstract">Privilégio, entrada de exceções, roteamento de interrupções, SMP, workers de kernel, processos nativos, passagem de memória user/kernel e diagnóstico fatal.</div>
 
-## Escopo
+O volume é uma cadeia de dependências, não uma visão geral curta. Cada capítulo de implementação está vinculado à revisão do `main` e registra também os limites atuais.
 
-O volume define a terminologia e as relações necessárias antes de entrar em detalhes de implementação. Conceitos gerais são tratados separadamente das decisões específicas do ChrisOS; quando o texto passa para a implementação, a revisão de fonte e os arquivos relevantes são declarados no frontmatter.
+## Arquitetura e privilégio
 
-## Capítulos centrais
+- [Modelo de kernel e fronteiras de confiança](kernel-model.md)
+- [GDT e TSS](gdt-tss.md)
+- [IDT e entrada de exceções](idt-exceptions.md)
 
-- Kernel model and trust boundaries
-- Interrupts and SMP
-- Processes and system calls
+## Interrupções, tempo e execução paralela
 
-## Regra de leitura
+- [Interrupções e SMP](interrupts-smp.md)
+- [PIC, LAPIC e IOAPIC](pic-apic-ioapic.md)
+- [PIT, temporização e scheduler tick](timers.md)
+- [Jobs de kernel e kthreads cooperativas](kernel-jobs-kthreads.md)
 
-Não é necessário memorizar todos os detalhes das camadas inferiores, mas os termos utilizados pelas camadas superiores são definidos antes do primeiro uso técnico. Diagramas mostram fluxo e responsabilidade; tabelas registram contratos, layouts e estados.
+## Userspace nativo
+
+- [Processos nativos e system calls](processes-syscalls.md)
+- [Entrada em user mode e retorno controlado](user-mode-entry.md)
+- [Acesso seguro à memória de usuário](user-copy.md)
+- [Ciclo de vida e estado de processos](process-lifecycle.md)
+
+## Falha e observabilidade
+
+- [Panic, diagnóstico serial e kernel log](panic-logging.md)
+
+## Dependências de leitura
+
+Privilégio e exceções antecedem userspace nativo. SMP pressupõe o modelo de interrupt entry. User-copy pressupõe tradução de memória virtual. Lifecycle depende dos detalhes de PMM/MM do Volume 05.
+
+O [Source Atlas](../99-source-atlas/index.md) é a camada de evidência arquivo-a-arquivo; os capítulos autorais explicam arquitetura, invariantes, ownership, fluxo, falhas e limitações sem substituir a fonte por trechos.
