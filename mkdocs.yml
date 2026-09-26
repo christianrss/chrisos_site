@@ -52,6 +52,7 @@ extra:
 
 nav:
   - English:
+      - Home: index.md
       - "00 Inside ChrisOS": inside-chrisos.md
       - "01 Build & run": build-run.md
       - "02 System architecture": system-architecture.md
