@@ -6,6 +6,14 @@
   <meta name="description" content="{{ page.meta.description if page and page.meta.description else config.site_description }}">
   <title>{% if page and page.title %}{{ page.title }} — {% endif %}{{ config.site_name }}</title>
   <link rel="stylesheet" href="{{ 'assets/site.css'|url }}">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E23CRBBR6E"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-E23CRBBR6E');
+  </script>
 </head>
 <body data-base="{{ base_url }}">
 <a class="skip" href="#main">Skip to content</a>

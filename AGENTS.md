@@ -99,3 +99,26 @@ Existence is not completion. The generated report is intentionally strict so tha
 - Use equations where they are the clearest representation.
 - Prefer primary specifications for external technologies.
 - Distinguish observed fact, architectural interpretation and future work.
+
+
+## Algorithmic documentation rule
+
+Every implementation-facing subsystem chapter must explain the data structures and algorithms that produce the behavior, not only the module responsibilities.
+
+For each important structure or algorithm, record when applicable:
+
+- exact representation and relevant source type or structure;
+- invariant maintained by the structure;
+- operation sequence or pseudocode;
+- worst-case and expected time complexity;
+- memory cost and allocation behavior;
+- cache/locality implications;
+- synchronization and ownership rules;
+- failure and saturation behavior;
+- why the current design was selected;
+- credible alternatives and the trade-off that would justify replacing it;
+- validation evidence that exercises the algorithm.
+
+A statement such as "the allocator finds a free page" is incomplete. Documentation must identify the representation used to record page state, the search strategy, cursor/hint behavior, synchronization, complexity, fragmentation implications and the source functions implementing the operation.
+
+Do not assign textbook algorithms to ChrisOS by analogy. Only label a current implementation with an algorithmic name when the source supports that classification.

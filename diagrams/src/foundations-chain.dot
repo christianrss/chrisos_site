@@ -1,0 +1,18 @@
+digraph foundations {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded", fontname="monospace", fontsize=10];
+  edge [fontname="monospace", fontsize=9];
+  Matter [label="matter / charge"];
+  Bands [label="bands / doping"];
+  Devices [label="junctions / MOSFET"];
+  Logic [label="Boolean / gates"];
+  State [label="latches / registers"];
+  Memory [label="SRAM / DRAM"];
+  Timing [label="clock / timing"];
+  Repr [label="data representation"];
+  DS [label="data structures"];
+  Alg [label="algorithms"];
+  Systems [label="kernel / compiler / graphics / VM"];
+  Matter -> Bands -> Devices -> Logic -> State -> Memory -> Timing -> Repr -> DS -> Alg -> Systems;
+}

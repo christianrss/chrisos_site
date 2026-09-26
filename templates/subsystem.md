@@ -22,6 +22,11 @@ related: []
 ## Initialization sequence
 ## State model
 ## Data structures and layouts
+## Algorithms and complexity
+### Operation model
+### Worst-case and expected complexity
+### Locality and memory cost
+### Alternatives and trade-offs
 ## Interfaces and ABI
 ## Control flow
 ## Data flow

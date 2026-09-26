@@ -20,6 +20,10 @@ volumes:
       - {id: arithmetic-circuits, title: "Adders, ALUs and binary arithmetic", priority: expansion}
       - {id: sram-dram, title: "SRAM, DRAM and memory cells", priority: expansion}
       - {id: clock-timing, title: "Clocking, propagation and timing", priority: expansion}
+      - {id: data-representation-layout, title: "Data representation, memory layout and pointers", priority: foundation}
+      - {id: algorithmic-complexity, title: "Algorithm analysis and systems cost models", priority: foundation}
+      - {id: data-structures, title: "Data structures for systems software", priority: foundation}
+      - {id: systems-algorithms, title: "Algorithms used by ChrisOS", priority: foundation}
   02-computer-architecture:
     chapters:
       - {id: cpu-datapath-isa, title: "CPU datapath and ISA", priority: foundation}
