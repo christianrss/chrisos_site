@@ -108,6 +108,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_elf_linking_examples.py --source .source
 
+      - name: Verify linker script contracts
+        working-directory: docs-repo
+        run: python scripts/check_linker_script_examples.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
