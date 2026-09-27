@@ -1,0 +1,29 @@
+digraph uefi {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  fw [label="UEFI firmware"];
+  st [label="EFI System Table\nBootServices + RuntimeServices\nConfigurationTable[]"];
+  bm [label="UEFI Boot Manager\nBootOrder / fallback path"];
+  esp [label="EFI System Partition\nEFI/BOOT/BOOTX64.EFI"];
+  limine [label="Limine EFI image"];
+  bs [label="Boot Services\nprotocols + memory map\nGOP + filesystems"];
+  exit [label="GetMemoryMap\nMapKey\nExitBootServices"];
+  kernel [label="ChrisOS kernel ELF\nLimine protocol"];
+  info [label="ChrisOS bootinfo\nFB + HHDM + memmap + MP"];
+  runtime [label="Runtime Services\noptional OS integration", fillcolor="#f7f7f7"];
+  installer [label="ChrisOS installer\nGPT + ESP writer\ncurrent FAT16-style", fillcolor="#f7f7f7"];
+
+  fw -> st;
+  st -> bm;
+  bm -> esp;
+  esp -> limine;
+  st -> bs;
+  bs -> limine;
+  limine -> exit;
+  exit -> kernel;
+  kernel -> info;
+  st -> runtime [style=dashed, label="after handoff if preserved"];
+  installer -> esp [style=dashed, label="writes next-boot media"];
+}
