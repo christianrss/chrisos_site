@@ -124,7 +124,7 @@ def check_documents(root: Path) -> None:
 
     required = (
         "Z0 = sqrt(L'/C')",
-        "v_p = 1/sqrt(L'C')",
+        "1/sqrt(L'C')",
         "Γ_L = (Z_L - Z0) / (Z_L + Z0)",
         "V_diff = V_p - V_n",
         "V_cm = (V_p + V_n) / 2",
