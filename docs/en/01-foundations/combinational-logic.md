@@ -199,7 +199,7 @@ A simple processor datapath can be decomposed into storage plus combinational bl
         ↓
     register file
 
-The combinational fabric answers “what should the next values be?” Sequential storage answers “when do those values become the machine's state?”
+Combinational logic determines candidate next values. Sequential storage determines the sampling event at which those values become machine state.
 
 The next chapters therefore split in two directions: arithmetic circuits deepen the transformation blocks, while latches and flip-flops explain how computed values are captured and preserved.
 
