@@ -3,6 +3,8 @@ name: Build and deploy ChrisOS documentation
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
   schedule:
     - cron: "17 5 * * 1"
@@ -127,6 +129,10 @@ jobs:
       - name: Verify electrical foundation examples
         working-directory: docs-repo
         run: python scripts/check_electric_field_examples.py
+
+      - name: Verify reader navigation contracts
+        working-directory: docs-repo
+        run: python scripts/check_reader_navigation.py --docs docs
 
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
