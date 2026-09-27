@@ -142,6 +142,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_circuit_foundations_examples.py
 
+      - name: Verify transient and AC examples
+        working-directory: docs-repo
+        run: python scripts/check_transients_ac_examples.py
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
