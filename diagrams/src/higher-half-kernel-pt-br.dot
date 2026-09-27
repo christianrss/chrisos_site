@@ -1,0 +1,25 @@
+digraph higher_half_kernel {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.5", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  compiler [label="GCC\n-mcmodel=kernel\n-fno-pic -fno-pie"];
+  linker [label="linker.ld\nVMA 0xffffffff80000000"];
+  elf [label="kernel.elf\nPT_LOAD + e_entry"];
+  limine [label="Limine\nbacking fisico + page tables + HHDM"];
+  cr3 [label="CR3 herdado\nroot criada pelo bootloader"];
+  rip [label="RIP = kstart\nexecucao higher-half"];
+  hhdm [label="HHDM\nphys + offset runtime"];
+  mm [label="MM do ChrisOS\npercorre/adota/modifica tables"];
+  proc [label="Process roots\ncopy PML4[256..511]"];
+  future [label="Futuro: root propria\nreconstruir mappings -> trocar CR3", fillcolor="#f7f7f7"];
+
+  compiler -> linker -> elf -> limine;
+  limine -> cr3;
+  limine -> hhdm;
+  cr3 -> rip;
+  rip -> mm;
+  hhdm -> mm;
+  mm -> proc;
+  mm -> future [style=dashed];
+}
