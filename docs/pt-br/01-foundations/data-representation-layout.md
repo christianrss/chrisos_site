@@ -22,7 +22,8 @@ symbols:
 - cfs_put16
 - cfs_put32
 depends_on:
-- clock-timing
+  - number-systems-binary-arithmetic
+  - registers-counters
 related:
 - data-structures
 - cpu-datapath-isa
