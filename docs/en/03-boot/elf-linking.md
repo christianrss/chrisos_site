@@ -3,108 +3,292 @@ id: elf-linking
 lang: en
 type: technical-chapter
 volume: 03-boot
-status: maintained
+status: expanded
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
   - kernel/metal/linker.ld
+  - makefile
   - kernel/metal/elf.c
-  - compiler/chrisld/chrisld.c
+  - kernel/metal/elf.h
   - compiler/chrisld/chriso.h
-symbols: []
+  - compiler/chrisld/chriso.c
+  - compiler/chrisld/chrisld.c
+  - compiler/chrisld/chrisld.h
+  - compiler/chrisasm/chrisasm.c
+  - tools/test_chrisld.c
+  - docs/CHRISLD_STATUS.md
+  - docs/CURRENT_SELFHOST_AUDIT.md
+  - docs/NATIVE_TOOLCHAIN_AUDIT.md
+symbols:
+  - kstart
+  - __kernel_start
+  - __kernel_end
+  - __stack_bottom
+  - __stack_top
+  - elf_load
+  - chrisld_link
+  - chrisld_link_objects
+  - chrisld_validate
 depends_on:
-  - cpu-datapath-isa
+  - boot-information
+  - machine-code
+  - x86-64-memory-privilege
 related:
+  - linker-script
+  - higher-half-kernel
   - power-on-kstart
   - native-toolchain
-  - processes-syscalls
+  - chrisld
+  - chriso
+  - kcc
 ---
 
-# ELF, object files and kernel linking
+# ELF64, object linking and the ChrisOS kernel image
 
-## Translation units are not executables
+## Scope
 
-Compiling a C source file normally produces an object containing machine code, data, symbols and relocation information. Addresses of external functions or final section positions may not yet be known.
+The ChrisOS kernel is not a raw sequence of x86-64 instructions. It is an ELF64 executable whose structure tells the bootloader what architecture the image targets, where execution begins, which bytes must be loaded, which virtual addresses those bytes occupy, which memory exists without file payload, and which regions are writable or executable.
 
-The linker combines objects, resolves symbols, applies relocations and creates an executable layout.
+The production pipeline is:
 
-```text
+~~~text
 C / assembly sources
-       │
-       ▼
-   compiler / assembler
-       │
-       ▼
-   relocatable objects
-       │
-       ▼
-      linker
-       │
-       ▼
-       ELF
-```
+        |
+        +-- host GCC
+        +-- assembler
+        |
+        v
+relocatable objects
+        |
+        v
+host ld
+  -static
+  -nostdlib
+  -T kernel/metal/linker.ld
+        |
+        v
+kernel.elf
+  ELF64
+  ET_EXEC
+  EM_X86_64
+  higher-half
+  ENTRY(kstart)
+  Limine request segment
+        |
+        v
+Limine
+        |
+        v
+mapped kernel image
+~~~
 
-## Sections and segments
+![ELF linking pipeline](../../assets/diagrams/elf-linking-en.svg)
 
-ELF distinguishes link-time organization from load-time organization.
+The native ChrisLd is progressing toward this target, but it does not yet generate a production-equivalent kernel image.
 
-**Sections** organize content for linking and tooling: text, read-only data, writable data, BSS, symbols and relocations.
+## Link-time view and load-time view
 
-**Program headers/segments** tell a loader what ranges must be mapped into memory and with what properties.
+ELF has two related views.
 
-A kernel linker script therefore controls both symbol addresses and memory protection intent.
+At link time, the important entities are sections, symbols and relocations.
 
-## Relocations
+At load time, the important entities are program segments and the entry point.
 
-Suppose one object contains a call to a function defined in another object. The assembler cannot always encode the final displacement because the target's final address is unknown. It emits a relocation describing what must be patched after layout is known.
+The key distinction is:
 
-Different relocation types encode different mathematical operations: absolute addresses, PC-relative displacements, width-limited forms and architecture-specific semantics.
+~~~text
+sections
+    primarily serve linkers, debuggers and analysis tools
 
-A linker that "concatenates text bytes" without correctly resolving relocation types is not equivalent to a production linker.
+program headers
+    primarily serve loaders
+~~~
 
-## Symbols
+A bootloader does not need to reconstruct every source section. It needs to construct the runtime memory image described by the program headers.
 
-Symbols name code or data locations and carry binding/visibility/type information in mature object formats. Linkers must detect undefined references and often duplicate global definitions.
+## ELF object types
 
-The ChrisOS native toolchain uses its own ChrisO object representation on the path toward an internally controlled toolchain. Its semantics must eventually be rich enough for the actual kernel, not merely a trivial executable.
+Important object types are:
 
-## Kernel linker script
+| Type | Meaning |
+|---|---|
+| ET_REL | relocatable object |
+| ET_EXEC | executable |
+| ET_DYN | shared object or position-independent executable |
+| ET_CORE | core dump |
 
-`kernel/metal/linker.ld` is part of the kernel architecture. It fixes the higher-half address model, entry point and output segments. Changing it can invalidate assumptions in boot, virtual memory and the bootloader protocol even if no C source changes.
+The final ChrisOS kernel is ET_EXEC. Intermediate compiler objects are relocatable because many final addresses remain unknown until link time.
 
-A linker script is therefore executable architecture policy.
+## Why relocatable objects exist
 
-## User ELF loading
+If one translation unit calls a function defined in another unit, the compiler can emit the calling instruction but cannot yet know the final address of the destination.
 
-`kernel/metal/elf.c` addresses the inverse operation: consuming an executable. A secure loader must validate ranges before mapping them:
+The object records:
 
-- ELF identity and machine;
-- program-header bounds;
-- file-size versus memory-size relationships;
-- integer overflow;
-- virtual-address policy;
-- overlapping mappings;
-- entry-point validity;
-- writable/executable combinations where prohibited.
+- machine-code bytes;
+- a symbol reference;
+- a relocation site;
+- a relocation type;
+- an addend where applicable.
 
-The loader then allocates physical pages, maps them into the process address space, copies file-backed bytes and zero-initializes BSS ranges.
+The linker later assigns addresses, resolves the symbol and patches the instruction or data.
 
-## W^X
+## ELF identification
 
-Writable and executable memory simultaneously increases exploitation opportunities. A loader can enforce a W^X policy by refusing segments that request both permissions or by constructing stricter mappings.
+Every ELF begins with:
 
-The exact policy is an operating-system choice constrained by the executable format and hardware page-table permission bits.
+~~~text
+0x7f 'E' 'L' 'F'
+~~~
 
-## ChrisLd and bootstrap maturity
+For the current architecture:
 
-ChrisLd exists because self-hosting eventually requires the project to control its own final executable production. The important milestone is not "the output starts with the ELF magic." It is semantic equivalence for the requirements of the target image:
+~~~text
+EI_CLASS = ELFCLASS64
+EI_DATA  = ELFDATA2LSB
+~~~
 
-- all required objects included;
-- symbols resolved;
-- relocations applied;
-- section/segment alignment correct;
-- kernel entry exact;
-- Limine-visible structures preserved;
-- stack and BSS represented correctly;
-- permissions appropriate.
+The file therefore uses 64-bit ELF structures and little-endian integer encoding.
 
-This is why toolchain validation must compare structure and behavior, not only file signatures.
+## ELF64 header
+
+The executable header is 64 bytes. Important fields are:
+
+| Field | Purpose |
+|---|---|
+| e_ident | format identity |
+| e_type | object type |
+| e_machine | target ISA |
+| e_version | ELF version |
+| e_entry | entry virtual address |
+| e_phoff | program-header table offset |
+| e_shoff | section-header table offset |
+| e_flags | architecture flags |
+| e_ehsize | ELF header size |
+| e_phentsize | program-header entry size |
+| e_phnum | program-header count |
+| e_shentsize | section-header entry size |
+| e_shnum | section count |
+| e_shstrndx | section-name table index |
+
+For x86-64 ELF:
+
+~~~text
+e_ehsize    = 64
+e_phentsize = 56
+e_machine   = 62
+~~~
+
+where 62 is EM_X86_64.
+
+## Entry point
+
+The e_entry field contains the virtual address where execution begins.
+
+The production linker script says:
+
+~~~text
+ENTRY(kstart)
+~~~
+
+The host linker resolves kstart and writes its final virtual address into e_entry. Limine enters there because ChrisOS does not override the executable entry through a Limine Entry Point request.
+
+## Program headers
+
+An ELF64 program header contains:
+
+- p_type;
+- p_flags;
+- p_offset;
+- p_vaddr;
+- p_paddr;
+- p_filesz;
+- p_memsz;
+- p_align.
+
+For loading ChrisOS, PT_LOAD is the central segment type.
+
+## PT_LOAD
+
+A PT_LOAD entry means:
+
+~~~text
+copy p_filesz bytes
+from file offset p_offset
+
+to virtual address p_vaddr
+
+reserve a total of p_memsz bytes
+~~~
+
+When p_memsz is greater than p_filesz, the remaining memory bytes are zero-filled.
+
+## File image versus memory image
+
+For one segment:
+
+~~~text
+file-backed:
+[p_offset, p_offset + p_filesz)
+
+runtime memory:
+[p_vaddr, p_vaddr + p_memsz)
+~~~
+
+The loader copies the file-backed prefix and zeros the remainder.
+
+This allows the runtime image to be substantially larger than the executable file.
+
+## BSS
+
+Uninitialized or zero-initialized static storage normally occupies BSS.
+
+The production linker script contains:
+
+~~~text
+.bss (NOLOAD) : ALIGN(4K) {
+    *(.bss .bss.*)
+    *(COMMON)
+    . = ALIGN(16);
+    __stack_bottom = .;
+    . += 1024K;
+    __stack_top = .;
+    . = ALIGN(4K);
+    __kernel_end = .;
+} :data
+~~~
+
+This collects BSS, includes common symbols, reserves one MiB for the linker-managed kernel stack region and defines kernel boundary symbols without storing one MiB of zero bytes in the file.
+
+## p_filesz and p_memsz
+
+If a writable segment had 12 KiB of initialized data, 40 KiB of BSS and a 1024 KiB reserved stack, conceptually:
+
+~~~text
+p_filesz = initialized data
+p_memsz  = initialized data + BSS + stack
+~~~
+
+Alignment can add gaps.
+
+The difference becomes zero-filled runtime storage.
+
+## Segment permissions
+
+ELF program-header flags are:
+
+~~~text
+PF_X = 1
+PF_W = 2
+PF_R = 4
+~~~
+
+The production script defines:
+
+~~~text
+requests PT_LOAD FLAGS(6)  -> R | W
+text     PT_LOAD FLAGS(5)  -> R | X
+data     PT_LOAD FLAGS(6)  -> R | W
+~~~
+
+No declared production PT_LOAD is both writable and executable.
