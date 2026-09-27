@@ -155,12 +155,12 @@ An algorithm that allocates one node per operation depends on the allocator's be
 
 Questions include:
 
-- Is allocation O(1), a scan, or a tree lookup?
-- Can it sleep?
-- Does it take a global lock?
-- Can it fail?
-- Does it fragment memory?
-- Must the object be physically contiguous?
+- allocation strategy and asymptotic cost;
+- whether the operation may sleep;
+- lock scope and contention;
+- explicit failure conditions;
+- fragmentation behavior;
+- physical-contiguity requirements.
 
 A textbook data structure cannot be evaluated independently of its allocator in kernel code.
 
