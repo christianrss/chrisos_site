@@ -15,7 +15,7 @@
     gtag('config', 'G-E23CRBBR6E');
   </script>
 </head>
-<body data-base="{{ base_url }}">
+<body data-base="{{ base_url }}" data-site-root="{{ config.site_url }}">
 <a class="skip" href="#main">{{ 'Pular para o conteúdo' if page and page.meta.lang == 'pt-br' else 'Skip to content' }}</a>
 
 <header class="institutional">
@@ -54,6 +54,7 @@
   </a>
   {% endif %}
 </div>
+<div class="reader-scroll-progress" aria-hidden="true"><span id="reader-scroll-progress-bar"></span></div>
 
 <div id="nav-backdrop" class="nav-backdrop" hidden></div>
 
@@ -83,6 +84,15 @@
       <button id="nav-close" class="nav-close" type="button" aria-label="{{ 'Fechar sumário' if page and page.meta.lang == 'pt-br' else 'Close contents' }}">×</button>
     </div>
 
+    <div class="sidebar-filter-wrap">
+      <label for="sidebar-filter">{{ 'Filtrar capítulos' if page and page.meta.lang == 'pt-br' else 'Filter chapters' }}</label>
+      <div class="sidebar-filter-row">
+        <input id="sidebar-filter" type="search" autocomplete="off" placeholder="{{ 'Digite título ou tema…' if page and page.meta.lang == 'pt-br' else 'Type a title or topic…' }}">
+        <button id="sidebar-filter-clear" type="button" aria-label="{{ 'Limpar filtro' if page and page.meta.lang == 'pt-br' else 'Clear filter' }}">×</button>
+      </div>
+      <div id="sidebar-filter-status" class="sidebar-filter-status" aria-live="polite"></div>
+    </div>
+
     {% macro first_page_url(item) -%}
       {% if item.is_page %}{{ item.url|url }}{% elif item.is_section and item.children %}{{ first_page_url(item.children[0]) }}{% endif %}
     {%- endmacro %}
@@ -94,7 +104,7 @@
           <li class="section">
             <details {% if item.active %}open{% endif %}>
               <summary>
-                <a class="section-title-link" href="{{ first_page_url(item) }}">{{ item.title }}</a>
+                <a class="section-title-link" href="{{ first_page_url(item) }}" title="{{ 'Abrir primeira página desta seção' if page and page.meta.lang == 'pt-br' else 'Open the first page in this section' }}">{{ item.title }}</a>
                 <span class="section-disclosure" aria-hidden="true"></span>
               </summary>
               <div class="section-children">{{ tree(item.children) }}</div>
