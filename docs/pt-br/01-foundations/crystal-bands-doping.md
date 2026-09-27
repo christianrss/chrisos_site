@@ -8,7 +8,8 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-- atom-semiconductor
+  - atom-semiconductor
+  - electric-charge-field-potential
 related:
 - pn-junction
 - transistor-cmos
