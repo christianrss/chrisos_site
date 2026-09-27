@@ -791,6 +791,12 @@ The physical layer can fail while software-visible registers merely report link 
 
 No current ChrisOS source file or symbol is cited because no reviewed implementation claim in this chapter requires one.
 
+## Standards and terminology context
+
+The metrological quantities and unit symbols in this chapter follow the BIPM *International System of Units (SI)*, 9th edition, version 4.01 updated in 2026. In that system the weber (Wb), tesla (T), henry (H), volt (V), ampere (A), watt (W) and second (s) form the coherent vocabulary used by the equations above.
+
+Transformer engineering standards go well beyond this foundation model. IEEE C57.12.80-2024 is the active IEEE terminology standard for power and distribution transformers, while IEEE C57.12.00-2021 states general requirements for the liquid-immersed distribution/power/regulating-transformer class in its scope. Those standards are used here only to anchor terminology and the boundary between textbook equations and product requirements. This chapter does not claim compliance with a transformer product, insulation or test standard.
+
 ## Current limitations
 
 This chapter does not provide:
