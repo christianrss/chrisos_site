@@ -13,8 +13,8 @@ symbols:
 - chris_flags_bin
 - chris_cc_true
 depends_on:
-- boolean-algebra
-- combinational-logic
+  - combinational-logic
+  - number-systems-binary-arithmetic
 related:
 - data-representation-layout
 - emulator-theory
