@@ -20,7 +20,11 @@ def in_scope(path: Path, meta: dict) -> bool:
     posix = path.as_posix()
     if "/01-foundations/" in posix:
         return True
-    return meta.get("type") in {"landing", "volume-index"}
+    if posix.endswith("/en/index.md") or posix.endswith("/pt-br/index.md"):
+        return True
+    if "/02-computer-architecture/index.md" in posix:
+        return True
+    return False
 
 
 def prose_lines(body: str):
