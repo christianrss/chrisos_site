@@ -14,9 +14,9 @@ symbols:
 - pit_ticks
 - cpu_run
 depends_on:
-- logic-sequential
-- latches-flipflops
-- registers-counters
+  - latches-flipflops
+  - rc-rlc-transients
+  - transistor-cmos
 related:
 - cpu-datapath-isa
 - timers
@@ -33,7 +33,7 @@ Este capítulo pressupõe chaveamento CMOS, funções booleanas e a distinção 
 
 ## Atrasos de propagação e de contaminação
 
-Considere um bloco combinacional cuja entrada muda no instante zero. O atraso de contaminação é um limite inferior para quando sua saída pode começar a mudar. O atraso de propagação é um limite superior para quando ela estará estabilizada no valor correto, sob condições de operação e hipóteses de transição especificadas. Entre esses limites, a saída pode estar antiga, transitória ou temporariamente incorreta. Caminhos múltiplos podem produzir pulsos espúrios mesmo quando os valores booleanos inicial e final são iguais.
+Para um bloco combinacional cuja entrada muda no instante zero, O atraso de contaminação é um limite inferior para quando sua saída pode começar a mudar. O atraso de propagação é um limite superior para quando ela estará estabilizada no valor correto, sob condições de operação e hipóteses de transição especificadas. Entre esses limites, a saída pode estar antiga, transitória ou temporariamente incorreta. Caminhos múltiplos podem produzir pulsos espúrios mesmo quando os valores booleanos inicial e final são iguais.
 
 Esses limites descrevem riscos diferentes. O atraso máximo determina se a próxima amostragem ocorre cedo demais para o novo resultado. O atraso mínimo determina se o dado novo chega tão rapidamente que corrompe um valor ainda em captura. Otimizar um circuito apenas para reduzir o maior atraso pode, portanto, introduzir um problema de atraso mínimo em outro ponto. Nenhum limite é um número universal associado ao símbolo de uma porta: tensão, temperatura, variação de fabricação, capacitância da carga e inclinação da entrada influenciam seu valor.
 
