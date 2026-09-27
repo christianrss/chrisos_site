@@ -84,6 +84,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_pci_examples.py
 
+      - name: Verify illustrative ACPI table calculations
+        working-directory: docs-repo
+        run: python scripts/check_acpi_examples.py
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
