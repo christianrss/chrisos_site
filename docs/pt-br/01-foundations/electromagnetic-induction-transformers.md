@@ -791,6 +791,12 @@ A camada física pode falhar enquanto registradores visíveis ao software apenas
 
 Nenhum arquivo ou símbolo atual do ChrisOS é citado porque nenhuma afirmação de implementação revisada neste capítulo exige isso.
 
+## Contexto de normas e terminologia
+
+As grandezas metrológicas e os símbolos de unidade deste capítulo seguem o BIPM *International System of Units (SI)*, 9ª edição, versão 4.01 atualizada em 2026. Nesse sistema, weber (Wb), tesla (T), henry (H), volt (V), ampere (A), watt (W) e segundo (s) formam o vocabulário coerente usado pelas equações acima.
+
+Normas de engenharia de transformadores vão muito além deste modelo fundamental. A IEEE C57.12.80-2024 é a norma IEEE ativa de terminologia para transformadores de potência e distribuição, enquanto a IEEE C57.12.00-2021 estabelece requisitos gerais para a classe de transformadores de distribuição, potência e regulação imersos em líquido dentro de seu escopo. Essas normas são usadas aqui somente para ancorar terminologia e a fronteira entre equações didáticas e requisitos de produto. Este capítulo não afirma conformidade com norma de produto, isolação ou ensaio de transformadores.
+
 ## Limitações atuais
 
 Este capítulo não fornece:
