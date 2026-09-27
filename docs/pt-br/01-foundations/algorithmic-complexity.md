@@ -153,12 +153,12 @@ Uma estrutura que cria um nó por operação depende do alocador.
 
 Perguntas relevantes:
 
-- alocação é O(1), scan ou árvore?
-- pode bloquear?
-- usa lock global?
-- pode falhar?
-- fragmenta?
-- exige memória física contígua?
+- estratégia de alocação e custo assintótico;
+- possibilidade de bloqueio;
+- escopo e contenção do lock;
+- condições explícitas de falha;
+- comportamento de fragmentação;
+- exigência de memória física contígua.
 
 Estrutura de dados de livro-texto não pode ser avaliada isoladamente do allocator em kernel.
 
