@@ -1,0 +1,13 @@
+digraph cache {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  cpu [label="CPU: acesso a instrucoes / dados"];
+  l1i [label="Cache L1 de instrucoes"];
+  l1d [label="Cache L1 de dados"];
+  l2 [label="Niveis inferiores de cache\n(topologia depende da CPU)"];
+  ram [label="Controlador de memoria / DRAM"];
+  io [label="Acesso a registradores de dispositivo\n(tipo de memoria + ordenacao)"];
+  cpu -> l1i; cpu -> l1d; cpu -> io;
+  l1i -> l2 [label="falta"]; l1d -> l2 [label="falta / escrita"];
+  l2 -> ram [label="falta / escrita"];
+}

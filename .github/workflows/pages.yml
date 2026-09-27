@@ -64,6 +64,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_mmu.py --source .source
 
+      - name: Verify illustrative cache calculations
+        working-directory: docs-repo
+        run: python scripts/check_cache_examples.py
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
