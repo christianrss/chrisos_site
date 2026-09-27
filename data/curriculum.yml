@@ -2,17 +2,34 @@ version: 1
 levels:
 - id: 01-matter
   title:
-    en: 01 · Matter, devices and logic
-    pt-br: 01 · Matéria, dispositivos e lógica
+    en: 01 · Matter, electricity, devices and logic
+    pt-br: 01 · Matéria, eletricidade, dispositivos e lógica
   modules:
   - title:
-      en: Charge and semiconductor physics
-      pt-br: Carga e física de semicondutores
+      en: Matter, charge and electric quantities
+      pt-br: Matéria, carga e grandezas elétricas
     chapters:
     - atom-semiconductor
+    - electric-charge-field-potential
+    - voltage-current-resistance-power
+    - ohm-kirchhoff-circuits
+    - capacitance-inductance
+    - rc-rlc-transients
+    - ac-signals-frequency-impedance
+    - electromagnetic-induction-transformers
+    - transmission-lines-differential-signals
+    - noise-grounding-signal-integrity
+    - power-delivery-regulation
+  - title:
+      en: Semiconductor devices and electrical logic
+      pt-br: Dispositivos semicondutores e lógica elétrica
+    chapters:
     - crystal-bands-doping
     - pn-junction
+    - mos-capacitor
     - transistor-cmos
+    - cmos-switching-power
+    - logic-levels-noise-margins
   - title:
       en: Boolean functions and circuits
       pt-br: Funções booleanas e circuitos
@@ -31,20 +48,45 @@ levels:
     - sram-dram
 - id: 02-representation
   title:
-    en: 02 · Representation and algorithms
-    pt-br: 02 · Representação e algoritmos
+    en: 02 · Mathematical tools, representation and algorithms
+    pt-br: 02 · Ferramentas matemáticas, representação e algoritmos
   modules:
+  - title:
+      en: Mathematical language for systems
+      pt-br: Linguagem matemática para sistemas
+    chapters:
+    - number-systems-binary-arithmetic
+    - discrete-math-sets-relations-functions
+    - proof-invariants-induction
+    - vectors-complex-numbers-systems
   - title:
       en: Bits, types and layout
       pt-br: Bits, tipos e layout
     chapters:
     - data-representation-layout
   - title:
-      en: Cost models and structures
-      pt-br: Modelos de custo e estruturas
+      en: Complexity and algorithmic reasoning
+      pt-br: Complexidade e raciocínio algorítmico
     chapters:
     - algorithmic-complexity
+    - recursion-recurrences-amortization
+  - title:
+      en: Data structures
+      pt-br: Estruturas de dados
+    chapters:
     - data-structures
+    - arrays-lists-stacks-queues
+    - hash-tables
+    - trees-heaps-tries
+    - graphs-union-find
+    - bitmaps-rings-free-lists
+  - title:
+      en: Algorithms used by systems software
+      pt-br: Algoritmos usados por software de sistemas
+    chapters:
+    - sorting-searching
+    - graph-algorithms
+    - string-parsing-algorithms
     - systems-algorithms
 - id: 03-machine
   title:
@@ -52,10 +94,18 @@ levels:
     pt-br: 03 · Execução de instruções e plataforma
   modules:
   - title:
-      en: ISA and instruction encoding
-      pt-br: ISA e codificação de instruções
+      en: Datapath, microarchitecture and ISA
+      pt-br: Datapath, microarquitetura e ISA
     chapters:
     - cpu-datapath-isa
+    - microarchitecture-pipeline
+    - pipeline-hazards-forwarding
+    - branch-prediction-speculation
+    - out-of-order-renaming-retirement
+  - title:
+      en: Machine code and x86-64 encoding
+      pt-br: Código de máquina e codificação x86-64
+    chapters:
     - machine-code
     - x86-registers-flags
     - x86-instruction-encoding
@@ -69,6 +119,7 @@ levels:
       en: Memory hierarchy and concurrency
       pt-br: Hierarquia de memória e concorrência
     chapters:
+    - memory-controller-dram-organization
     - cache-hierarchy
     - coherence
     - atomics-memory-model
