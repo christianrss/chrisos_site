@@ -14,9 +14,8 @@ symbols:
 - cpu_run
 - gfx_rgb
 depends_on:
-- atom-semiconductor
-- crystal-bands-doping
-- pn-junction
+  - mos-capacitor
+  - pn-junction
 related:
 - logic-sequential
 ---
@@ -114,7 +113,7 @@ A gate output can drive only finite capacitance. Connecting it to many following
 
 Noise margin permits small disturbances without changing interpreted logic. If a signal enters the undefined transition region near a sampling event, sequential elements can become metastable. Synchronous design reduces this risk through timing constraints and synchronization structures but cannot make the underlying analog phenomenon disappear.
 
-## Loading, fanout and why buffers exist
+## Loading, fanout and buffer stages
 
 A gate output sees wiring capacitance and the input capacitances of following gates. To change the voltage, it must transfer charge into or out of that load. A rough delay estimate therefore grows with effective output resistance and load capacitance. Increasing transistor width can improve current drive, but increases capacitance presented to the preceding stage and consumes area. Optimizing one gate in isolation can move the problem upstream.
 
@@ -122,7 +121,7 @@ A buffer chain distributes a large drive requirement over stages. Its useful des
 
 Glitches add another cost. Unequal path delays can briefly switch a node even when its final value does not change between two logical observations. Such transitions charge capacitance and can consume energy. A truth table describes steady-state functionality, so it does not by itself predict all switching activity needed by the `α C V² f` power model.
 
-## Why CMOS leads to stateful machines
+## From CMOS combinational logic to stateful machines
 
 Pure combinational logic computes outputs solely from current inputs. A computer must also remember previous state. Feedback around gates produces bistable circuits; clocked storage elements constrain when new values are accepted. These structures become latches, flip-flops, registers, counters, caches and memory interfaces.
 
