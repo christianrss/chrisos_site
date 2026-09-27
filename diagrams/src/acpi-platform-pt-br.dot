@@ -1,0 +1,34 @@
+digraph acpi_platform {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  uefi [label="UEFI / handoff do bootloader"];
+  rsdp [label="RSDP\nassinatura + checksums"];
+  root [label="XSDT / RSDT\ndiretorio de tabelas"];
+  madt [label="MADT\nCPUs + LAPIC + IOAPIC + ISOs"];
+  mcfg [label="MCFG\nsegmentos PCIe ECAM"];
+  fadt [label="FADT / FACP\nSCI + reset + PM + DSDT/FACS"];
+  dsdt [label="DSDT + SSDTs\nDefinition Blocks AML"];
+  aml [label="Namespace/runtime AML\n_STA _CRS _PRT _PIC _OSC"];
+  consumers [label="Consumidores do kernel\nSMP / IRQ / PCIe / energia / timers"];
+  current [label="ChrisOS atual\nscan RSDP legado\nimprime APIC/MCFG/FACP", fillcolor="#f7f7f7"];
+
+  uefi -> rsdp;
+  rsdp -> root;
+  root -> madt;
+  root -> mcfg;
+  root -> fadt;
+  root -> dsdt;
+  fadt -> dsdt;
+  dsdt -> aml;
+  madt -> consumers;
+  mcfg -> consumers;
+  fadt -> consumers;
+  aml -> consumers;
+
+  current -> rsdp [style=dashed, label="descoberta parcial"];
+  current -> madt [style=dashed, label="somente assinatura"];
+  current -> mcfg [style=dashed, label="somente assinatura"];
+  current -> fadt [style=dashed, label="somente assinatura"];
+}
