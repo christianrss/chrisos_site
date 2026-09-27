@@ -15,7 +15,8 @@ symbols:
 - virtq_reclaim
 - virtq_init
 depends_on:
-- data-representation-layout
+  - data-representation-layout
+  - proof-invariants-induction
 related:
 - data-structures
 - systems-algorithms
@@ -27,7 +28,7 @@ related:
 Algorithm analysis provides a language for reasoning about growth, resource bounds and trade-offs, but systems software requires more than Big-O notation. Cache locality, allocation, synchronization, bounded capacity, interrupt context, worst-case latency and hardware interaction can dominate an implementation whose asymptotic complexity appears favorable. This chapter develops complexity analysis specifically for kernels, compilers, drivers, graphics and emulators.
 </div>
 
-## What an algorithm is
+## Algorithm definition
 
 An algorithm is a finite procedure that transforms input state into output state while preserving specified invariants.
 
