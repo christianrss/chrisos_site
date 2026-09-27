@@ -17,10 +17,10 @@ related:
 ---
 
 
-# Átomo, carga elétrica e física de semicondutores
+# Matéria, átomos, carga e modelos físicos
 
 <div class="abstract">
-Computadores digitais são máquinas de estados discretos construídas sobre fenômenos físicos contínuos. Este capítulo estabelece a cadeia física mínima necessária para compreender por que um transistor pode representar e transformar estado binário sem tratar uma porta lógica como um elemento inexplicado.
+Computadores digitais são máquinas de estados discretos construídas sobre fenômenos físicos contínuos. Este capítulo estabelece os conceitos de matéria, estados atômicos, carga, energia e modelagem exigidos antes da introdução separada de eletrostática, circuitos e física de dispositivos semicondutores.
 </div>
 
 ## Matéria e carga
@@ -67,7 +67,7 @@ As últimas linhas descrevem modelos de componentes. Capacitância ou resistênc
 
 Para um capacitor linear ideal, `Q = CV`. A energia eletrostática armazenada é `U = C V² / 2`, obtida pela integração do trabalho de acrescentar carga enquanto a tensão aumenta. Se uma capacitância de carga parte de zero e é carregada até uma alimentação `V` por um caminho resistivo, a fonte fornece `C V²`: metade é armazenada e metade dissipada no caminho simplificado. A descarga perde a metade armazenada, a menos que o circuito recupere energia deliberadamente.
 
-O cálculo explica a dependência quadrática da energia de comutação em relação à tensão. Uma carga hipotética de 10 fF a 1 V armazena 5 fJ. Um ciclo completo de carga e descarga no modelo simples retira 10 fJ da fonte. São valores ilustrativos explícitos, não parâmetros medidos do processador do usuário. Demonstram por que reduzir tensão pode alterar substancialmente a energia mesmo sem mudar a operação booleana.
+O cálculo explica a dependência quadrática da energia de comutação em relação à tensão. Uma carga hipotética de 10 fF a 1 V armazena 5 fJ. Um ciclo completo de carga e descarga no modelo simples retira 10 fJ da fonte. São valores ilustrativos explícitos, não parâmetros medidos de um processador específico. Demonstram por que reduzir tensão pode alterar substancialmente a energia mesmo sem mudar a operação booleana.
 
 Um isolante ideal de gate bloqueia condução contínua, mas sua capacitância precisa ser carregada e descarregada quando a entrada muda. “Controlado por tensão” não significa, portanto, “sem necessidade de energia”. Fuga, corrente de curto-circuito durante transições e interconexões acrescentam custos. O comportamento energético visível ao software está várias camadas acima, mas não pode ser compreendido contando apenas resultados aritméticos e ignorando a frequência de comutação dos nós elétricos.
 
