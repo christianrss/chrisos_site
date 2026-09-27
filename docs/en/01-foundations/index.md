@@ -8,195 +8,142 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 ---
 
-# Physical, electrical, digital and algorithmic foundations
+# Foundations
 
-<div class="abstract">This volume follows the causal chain from matter and electric charge to fields, circuits, semiconductor devices, digital logic, stored state, mathematical representation, data structures and algorithms. Later kernel, compiler, graphics, networking and emulator chapters should not depend on an unexplained primitive.</div>
+<div class="abstract">This collection contains the physical, electrical, digital, mathematical and algorithmic prerequisites used by the rest of the ChrisOS corpus. Its internal order follows the canonical curriculum rather than source-directory chronology.</div>
 
-## Scope
+## Position in the corpus
 
-This volume is not a survey. It is the prerequisite layer for the entire ChrisOS corpus.
-
-The intended progression is:
+The foundations establish the lowest abstraction layers required by later architecture, kernel, compiler, graphics, networking and emulation chapters.
 
 ~~~text
-matter
-  ↓
-charge
-  ↓
-electric field and potential
-  ↓
-voltage / current / resistance / power
-  ↓
-circuit laws
-  ↓
-capacitors / inductors / transients / AC
-  ↓
-signal integrity and power delivery
-  ↓
-semiconductor bands / junctions / MOS electrostatics
-  ↓
-MOSFET / CMOS
-  ↓
-logic levels and noise margins
-  ↓
-Boolean logic
-  ↓
-combinational circuits
-  ↓
-arithmetic circuits
-  ↓
-sequential logic
-  ↓
-registers / clocks / memory cells
-  ↓
+matter and physical models
+    ↓
+mathematical tools required by the physical model
+    ↓
+electric charge, field and potential
+    ↓
+circuit quantities and network laws
+    ↓
+energy storage, transients and AC behavior
+    ↓
+high-speed signaling, noise and power delivery
+    ↓
+semiconductor electrostatics
+    ↓
+MOSFET and CMOS
+    ↓
+logic levels and Boolean abstraction
+    ↓
+combinational arithmetic
+    ↓
+sequential state, clocks and memory cells
+    ↓
 representation
-  ↓
+    ↓
+complexity
+    ↓
 data structures
-  ↓
-algorithms
-  ↓
-computer architecture
-  ↓
-ChrisOS
+    ↓
+systems algorithms
 ~~~
 
-<figure class="figure">
-<img src="../../assets/diagrams/foundations-chain.svg" alt="Foundations chain">
-<figcaption>The documentation proceeds from physical carriers to structured state and executable algorithms.</figcaption>
-</figure>
+## Physical and electrical foundations
 
-## Electrical and physical sequence
+The canonical sequence is:
 
-The curriculum now treats the following topics as explicit prerequisites rather than hidden assumptions:
+1. matter, atoms and physical models;
+2. vectors and complex-number tools required later by field/circuit analysis;
+3. electric charge, field, potential and energy;
+4. voltage, current, resistance, energy and power;
+5. Ohm's law, Kirchhoff's laws and circuit analysis;
+6. capacitance and inductance;
+7. RC, RL and RLC transients;
+8. AC signals, phase, frequency and impedance;
+9. electromagnetic induction and transformers;
+10. transmission lines and differential signaling;
+11. noise, grounding and signal integrity;
+12. power delivery, regulation and decoupling.
 
-1. Matter, atomic structure and electrical charge.
-2. Electric field, force, electric potential and potential energy.
-3. Voltage, current, resistance, resistivity, energy and power.
-4. Ohm's law, Kirchhoff's laws and lumped circuit models.
-5. Capacitance, inductance and stored electric/magnetic energy.
-6. RC, RL and RLC transients and the meaning of a time constant.
-7. Sinusoids, frequency, phase, impedance and frequency-domain reasoning.
-8. Electromagnetic induction and transformer fundamentals.
-9. Transmission lines, differential signaling, reflections and termination.
-10. Noise, grounding, return current, crosstalk and signal integrity.
-11. Power delivery, regulation, decoupling and supply transients.
-12. Crystal structure, energy bands and carrier statistics.
-13. Doping, p-n junctions and semiconductor interfaces.
-14. MOS capacitor electrostatics.
-15. MOSFET and CMOS switching.
-16. Dynamic/static CMOS power, capacitance and delay.
-17. Logic thresholds, noise margins, fan-out and electrical restoration.
+These topics define the physical assumptions behind semiconductor and digital behavior.
 
-## Digital sequence
+## Semiconductor and digital foundations
 
-Only after the electrical layer is explicit does the curriculum proceed through:
+The device sequence is:
 
-1. Boolean algebra.
-2. Combinational logic.
-3. Adders, arithmetic circuits and ALUs.
-4. Sequential logic.
-5. Latches and flip-flops.
-6. Metastability and timing constraints.
-7. Registers, counters and finite-state machines.
-8. Clocking, propagation, setup/hold and clock-domain concerns.
-9. SRAM and DRAM cells.
+1. crystal structure, bands and doping;
+2. p-n junctions;
+3. MOS capacitor electrostatics;
+4. MOSFET and CMOS;
+5. CMOS delay and power;
+6. logic thresholds, fan-out and noise margins;
+7. Boolean algebra;
+8. binary number systems;
+9. combinational logic;
+10. arithmetic circuits;
+11. sequential logic;
+12. latches and flip-flops;
+13. registers, counters and state machines;
+14. clock timing;
+15. SRAM and DRAM.
 
-## Mathematical and software sequence
+The transition from electrical voltage ranges to abstract Boolean state is therefore explicit.
 
-The next volume-level bridge makes the mathematics needed by software explicit:
+## Representation and algorithms
 
-1. Number systems and binary arithmetic.
-2. Sets, relations and functions.
-3. Proof, invariants and induction.
-4. Vectors and complex numbers where systems/electronics later need them.
-5. Data representation, layout and pointers.
-6. Complexity analysis.
-7. Recurrences and amortized reasoning.
-8. Arrays, lists, stacks and queues.
-9. Hash tables.
-10. Trees, heaps and tries.
-11. Graphs and union-find.
-12. Bitmaps, rings and free lists.
-13. Sorting and searching.
-14. Graph algorithms.
-15. String and parsing algorithms.
-16. Applied systems algorithms in ChrisOS.
+The software-foundation sequence is:
 
-## Required reasoning model
+1. discrete mathematics: sets, relations and functions;
+2. proof, invariants and induction;
+3. data representation, layout and pointers;
+4. algorithmic complexity and systems cost models;
+5. recursion, recurrences and amortized analysis;
+6. arrays, lists, stacks and queues;
+7. hash tables;
+8. trees, heaps and tries;
+9. graphs and disjoint-set union;
+10. bitmaps, rings and free lists;
+11. sorting and searching;
+12. graph algorithms;
+13. string and parsing algorithms;
+14. algorithms implemented by ChrisOS.
 
-Every later implementation chapter should be readable through:
+## Dependency rule
 
-~~~text
-physical mechanism
-    ↓
-electrical behavior
-    ↓
-digital abstraction
-    ↓
-representation
-    ↓
-data structure
-    ↓
-invariant
-    ↓
-algorithm
-    ↓
-complexity and locality
-    ↓
-synchronization / ownership
-    ↓
-observable ChrisOS behavior
-~~~
+A later chapter may assume a concept only when one of the following is true:
 
-A subsystem is not documented completely when only its API is described.
+- the concept is defined in an earlier curriculum chapter;
+- the chapter contains a bounded local derivation sufficient for its use;
+- the concept is marked as a forward reference rather than treated as established knowledge.
 
-## Mathematical tools are introduced where they become necessary
+This rule prevents hidden jumps between physical, mathematical and software abstractions.
 
-The corpus is not intended to become a generic mathematics degree.
+## Implementation linkage
 
-Algebra, dimensional analysis, vectors, complex numbers, derivatives, integrals and differential equations are introduced when they become necessary to derive an electrical, algorithmic or architectural result.
+Foundational theory is connected to current implementation at the first appropriate boundary.
 
-The rule is that no equation may rely on unexplained mathematics that is essential to understanding the result.
+Examples include:
 
-## ChrisOS linkage rule
+| Foundation | Later implementation |
+|---|---|
+| finite-width arithmetic and flags | ChrisCPU arithmetic semantics |
+| registers and state machines | ChrisArchitectureState |
+| bitmaps | PMM allocation state |
+| ring buffers | VirtIO queues and kernel job queues |
+| trees/graphs | filesystem, compiler and dependency structures |
+| charge/capacitance/timing | physical limits beneath memory and CPU timing models |
 
-Every foundational topic eventually reconnects to the implementation.
+A foundational chapter does not claim that ChrisOS directly implements the underlying physical device.
 
-Examples:
+## Evidence rule
 
-~~~text
-electric field
-  -> MOS channel control
-  -> CMOS gate
-  -> flip-flop
-  -> register
-  -> architectural register
-  -> ChrisCPU state
+Physical and mathematical chapters distinguish:
 
-capacitance
-  -> switching energy / propagation delay
-  -> clock and memory timing
-  -> cache/DRAM behavior
-  -> performance assumptions visible to ChrisOS
+- normative equations and definitions;
+- model assumptions;
+- illustrative numerical examples;
+- limits of the model;
+- later architectural consequences;
+- current ChrisOS linkage.
 
-bitmap
-  -> resource representation
-  -> PMM free-page state
-  -> pmm_alloc()
-
-ring buffer
-  -> producer/consumer invariant
-  -> VirtIO queues / job queues
-
-tree / graph
-  -> hierarchy / dependency representation
-  -> filesystem, compiler and build-system algorithms
-~~~
-
-Theory that never reconnects to an implemented or explicitly future subsystem is not a sufficient chapter.
-
-## Reading rule
-
-Lower layers need not be memorized. They must be available, precise and linked when a higher chapter depends on them.
-
-The machine-readable curriculum is authoritative for chapter order. Missing chapters are intentionally counted as coverage gaps until written in both languages.
+Source-linked claims are revision-bound. Physical-device claims rely on primary technical references rather than inference from kernel code.
