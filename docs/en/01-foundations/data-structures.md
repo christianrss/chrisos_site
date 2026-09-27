@@ -25,11 +25,11 @@ A data structure is a representation plus invariants chosen to support a set of 
 
 ## Representation, invariant and operation
 
-A structure should be described through three questions:
+A structure is specified through three dimensions:
 
-1. **Representation:** how are elements stored?
-2. **Invariant:** what must remain true after every operation?
-3. **Operations:** which queries and mutations must be efficient?
+1. **Representation:** storage organization of the elements.
+2. **Invariant:** properties preserved by every valid operation.
+3. **Operations:** queries and mutations for which the representation is selected.
 
 For a circular queue, for example, the representation may be a fixed array plus <code>head</code>, <code>tail</code> and <code>count</code>. The invariant states that indices remain inside capacity and count never exceeds capacity. Enqueue and dequeue are then modular index updates.
 
