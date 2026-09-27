@@ -68,13 +68,24 @@ def generate(docs):
         pt = lang == 'pt-br'
         lines = ['---', 'id: learning-path', f'lang: {lang}', 'type: generated-index', 'status: generated', '---', '',
                  '# ' + ('Percurso de aprendizado e pré-requisitos' if pt else 'Learning path and prerequisites'), '',
-                 ('A sequência organiza o corpus em níveis, módulos e capítulos. Uma entrada ausente representa uma lacuna explícita; não é um capítulo publicado. A quantidade de palavras é apenas um sinal editorial, não comprovação de domínio ou de completude técnica.' if pt else 'The sequence organizes the corpus into levels, modules and chapters. A missing entry is an explicit gap, not a published chapter. Word count is only an editorial signal, not evidence of mastery or technical completeness.'), '',
+                 ('A sequência organiza o corpus em níveis, módulos e capítulos. Uma entrada ausente representa uma lacuna explícita; não é um capítulo publicado. A quantidade de palavras é apenas um sinal editorial, não comprovação de domínio ou de completude técnica. Os títulos de nível e módulo apontam para o primeiro capítulo publicado da respectiva seção.' if pt else 'The sequence organizes the corpus into levels, modules and chapters. A missing entry is an explicit gap, not a published chapter. Word count is only an editorial signal, not evidence of mastery or technical completeness. Level and module headings link to the first authored chapter in that section.'), '',
                  '![Mapa do percurso](../assets/diagrams/learning-map.svg)' if pt else '![Learning map](../assets/diagrams/learning-map.svg)', '']
         for level in curriculum['levels']:
-            lines += ['## ' + level['title'][lang], '']
+            level_ids = [pid for module in level['modules'] for pid in module['chapters']]
+            level_page = next((pages.get((pid, lang)) for pid in level_ids if pages.get((pid, lang))), None)
+            level_title = level['title'][lang]
+            if level_page:
+                level_link = os.path.relpath(level_page["path"], target.parent)
+                level_title = f'[{level_title}]({level_link})'
+            lines += ['## ' + level_title, '']
             for module in level['modules']:
+                module_page = next((pages.get((pid, lang)) for pid in module['chapters'] if pages.get((pid, lang))), None)
+                module_title = module['title'][lang]
+                if module_page:
+                    module_link = os.path.relpath(module_page["path"], target.parent)
+                    module_title = f'[{module_title}]({module_link})'
                 lines += [
-                    '### '+module['title'][lang],
+                    '### '+module_title,
                     '',
                     '| '+('Nº | Capítulo | Estado | Pré-requisitos | Anterior na sequência' if pt else 'No. | Chapter | State | Prerequisites | Previous in sequence')+' |',
                     '|---:|---|---|---|---|'

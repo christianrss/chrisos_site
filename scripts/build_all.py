@@ -20,6 +20,7 @@ def main() -> None:
         [py, "scripts/inventory.py", "--source", args.source, "--docs", args.docs],
         [py, "scripts/coverage.py", "--docs", args.docs],
         [py, "scripts/curriculum.py", "--docs", args.docs],
+        [py, "scripts/check_reader_navigation.py", "--docs", args.docs],
         [py, "scripts/stale_docs.py", "--source", args.source, "--docs", args.docs],
         [py, "scripts/validate_docs.py", "--source", args.source, "--docs", args.docs],
         [py, "scripts/check_editorial_style.py", "--docs", args.docs],
