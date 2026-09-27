@@ -6,7 +6,7 @@
   <meta name="description" content="{{ page.meta.description if page and page.meta.description else config.site_description }}">
   <meta name="theme-color" content="#eceae1">
   <title>{% if page and page.title %}{{ page.title }} — {% endif %}{{ config.site_name }}</title>
-  <link rel="stylesheet" href="{{ 'assets/site.css'|url }}">
+  <link rel="stylesheet" href="{{ 'assets/site.css'|url }}?v={{ config.extra.build_version }}">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E23CRBBR6E"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -15,7 +15,7 @@
     gtag('config', 'G-E23CRBBR6E');
   </script>
 </head>
-<body data-base="{{ base_url }}">
+<body data-base="{{ base_url }}" data-build-version="{{ config.extra.build_version }}">
 <a class="skip" href="#main">{{ 'Pular para o conteúdo' if page and page.meta.lang == 'pt-br' else 'Skip to content' }}</a>
 
 <header class="institutional">
@@ -317,6 +317,6 @@
 <footer>
   <p>ChrisOS Research Project · Markdown · revision-bound documentation</p>
 </footer>
-<script src="{{ 'assets/site.js'|url }}"></script>
+<script src="{{ 'assets/site.js'|url }}?v={{ config.extra.build_version }}"></script>
 </body>
 </html>
