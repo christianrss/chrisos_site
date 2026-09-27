@@ -128,6 +128,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_electric_field_examples.py
 
+      - name: Verify reader JavaScript syntax
+        working-directory: docs-repo
+        run: node --check docs/assets/site.js
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
