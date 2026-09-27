@@ -145,7 +145,7 @@ i3 = i1 + i2
 
 KCL não diz que as correntes são fisicamente iguais em todos os ramos. Ela restringe a soma com sinais na conexão.
 
-## Quando a carga do nó importa
+## Acúmulo de carga no nó
 
 Se carga puder se acumular em uma estrutura capacitiva explicitamente modelada, KCL continua válida quando a corrente do capacitor é incluída.
 
