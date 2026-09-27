@@ -1,0 +1,31 @@
+digraph buses_dma {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  cpu [label="CPU\nloads/stores, IN/OUT"];
+  va [label="Endereco virtual da CPU"];
+  mmu [label="MMU da CPU\npage tables + tipo de memoria"];
+  pa [label="Endereco fisico da CPU"];
+  mmio [label="Registrador MMIO / I/O\ncontrole + doorbell"];
+  device [label="Dispositivo / bus master"];
+  iommu [label="IOMMU\ntraducao IOVA opcional"];
+  ram [label="RAM do sistema\nbuffers DMA + descritores"];
+  irq [label="Interrupcao / conclusao"];
+
+  cpu -> va [label="acesso de memoria"];
+  va -> mmu;
+  mmu -> pa;
+  pa -> ram [label="RAM normal"];
+  pa -> mmio [label="faixa de dispositivo"];
+  mmio -> device [label="controle"];
+  device -> iommu [label="endereco DMA / IOVA"];
+  iommu -> ram [label="DMA traduzido"];
+  device -> ram [label="DMA identidade\n(sem IOMMU)", style=dashed];
+  device -> irq [label="conclusao"];
+  irq -> cpu;
+
+  desc [label="descritor em RAM\nendereco + tamanho + flags", fillcolor="#f7f7f7"];
+  ram -> desc [dir=both];
+  desc -> device [label="dispositivo busca por DMA", style=dashed];
+}
