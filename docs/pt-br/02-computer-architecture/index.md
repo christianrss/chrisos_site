@@ -10,24 +10,95 @@ sources: []
 
 # Arquitetura de computadores
 
-<div class="abstract">Datapaths, controle, conjuntos de instruções, execução x86-64, privilégio, caches, hierarquia de memória, barramentos, MMIO e DMA.</div>
+<div class="abstract">Este volume faz a ponte entre lógica digital e o comportamento de máquina visível ao sistema operacional: datapaths, pipelines, especulação, ISA, execução x86-64, privilégio, hierarquia de memória, barramentos, MMIO, DMA e descoberta da plataforma.</div>
 
 ## Escopo
 
-O volume define a terminologia e as relações necessárias antes de entrar em detalhes de implementação. Conceitos gerais são tratados separadamente das decisões específicas do ChrisOS; quando o texto passa para a implementação, a revisão de fonte e os arquivos relevantes são declarados no frontmatter.
+O volume explica tanto o contrato arquitetural consumido pelo ChrisOS quanto as ideias de implementação necessárias para compreender CPUs físicas e o ChrisCPU.
 
-## Capítulos centrais
+A cadeia pretendida é:
 
-1. [Datapath da CPU e ISA](cpu-datapath-isa.md)
-2. [Código de máquina e significado relocável](machine-code.md)
-3. [Registradores, aliases e flags](x86-registers-flags.md)
-4. [Codificação e decodificação de instruções](x86-instruction-encoding.md)
-5. [Memória e privilégio x86-64](x86-64-memory-privilege.md)
-6. [Anéis de privilégio e entrada controlada](privilege-rings.md)
-7. [Barramentos, MMIO e DMA](buses-mmio-dma.md) — expansão pendente.
+~~~text
+lógica combinacional + sequencial
+    ↓
+datapath e controle
+    ↓
+pipeline
+    ↓
+hazards / forwarding
+    ↓
+branch prediction / speculation
+    ↓
+renaming / out-of-order / retirement
+    ↓
+ISA
+    ↓
+machine-code encoding
+    ↓
+registradores / privilégio / memória
+    ↓
+controlador DRAM + caches
+    ↓
+coerência + atomics
+    ↓
+buses / PCIe / MMIO / DMA
+    ↓
+ACPI
+    ↓
+ChrisOS
+~~~
 
-O [currículo](../learning-path.md) também registra pré-requisitos ainda não escritos e capítulos posteriores sobre caches, coerência, operações atômicas, PCI e ACPI. A presença de uma página vinculada não declara cobertura completa.
+## Datapath e microarquitetura
+
+O currículo passa a tratar separadamente:
+
+1. Datapath da CPU e ISA.
+2. Estrutura de pipeline.
+3. Hazards de dados/controle e forwarding.
+4. Branch prediction e speculation.
+5. Register renaming, execução out-of-order e retirement.
+
+ISA é contrato externamente visível. Pipeline e OoO são mecanismos internos possíveis para realizá-lo.
+
+O ChrisCPU atual busca equivalência arquitetural, não reprodução de uma microarquitetura especulativa física. Essa diferença deve permanecer explícita.
+
+## Código de máquina e x86-64
+
+A sequência seguinte cobre:
+
+1. Código de máquina e relocations.
+2. Registradores, aliases e flags x86-64.
+3. Encoding e decoding de instruções.
+4. Memória e privilégio x86-64.
+5. Rings e controlled entry.
+
+Essa é a cadeia direta para ChrisAsm, KCC, ChrisCPU e o kernel ChrisOS.
+
+## Sistema de memória
+
+A sequência é:
+
+1. Organização de DRAM e função do memory controller.
+2. Cache hierarchy e locality.
+3. Coerência multiprocessador.
+4. Atomics e memory ordering.
+
+Isso mantém separadas células DRAM físicas, memória arquitetural e semântica SMP cache-coherent.
+
+## Dispositivos e plataforma
+
+A rota de plataforma cobre:
+
+1. buses, port I/O, MMIO e DMA;
+2. PCI/PCIe e device discovery;
+3. ACPI e descrição de plataforma.
+
+Esses capítulos fazem a ponte entre execução de instruções e os dispositivos controlados pelo ChrisOS.
 
 ## Regra de leitura
 
-Não é necessário memorizar todos os detalhes das camadas inferiores, mas os termos utilizados pelas camadas superiores são definidos antes do primeiro uso técnico. Diagramas mostram fluxo e responsabilidade; tabelas registram contratos, layouts e estados.
+Teoria geral e comportamento atual do ChrisOS/ChrisCPU são sempre separados.
+
+Uma CPU física pode usar pipeline e OoO enquanto expõe as mesmas transições arquiteturais que o ChrisCPU atualmente interpreta sequencialmente.
+
+Uma página existente não é automaticamente considerada concluída; coverage e depth gates continuam sendo a autoridade.
