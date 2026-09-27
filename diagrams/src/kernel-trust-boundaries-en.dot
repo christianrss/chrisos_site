@@ -1,0 +1,26 @@
+digraph kernel_trust {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  user [label="Ring-3 native app"];
+  vm [label="CLVM guest"];
+  net [label="Network / disk input"];
+  sys [label="Syscall + user copy"];
+  interp [label="Interpreter + CLVM bridge"];
+  parsers [label="ELF / FS / network parsers"];
+  mm [label="MM / PMM / process\npage tables + lifetime"];
+  drv [label="Privileged drivers\nMMIO + DMA"];
+  iommu [label="IOMMU domain\nnot assumed today", fillcolor="#f7f7f7"];
+  ram [label="Kernel memory / hardware"];
+
+  user -> sys [label="hardware boundary"];
+  vm -> interp [label="software boundary"];
+  net -> parsers [label="untrusted data"];
+  sys -> mm;
+  interp -> mm;
+  parsers -> mm;
+  mm -> drv;
+  drv -> ram [label="CPU / DMA authority"];
+  drv -> iommu [style=dashed,label="future isolation"];
+}
