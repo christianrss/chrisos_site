@@ -14,9 +14,9 @@ symbols:
 - pit_ticks
 - cpu_run
 depends_on:
-- logic-sequential
-- latches-flipflops
-- registers-counters
+  - latches-flipflops
+  - rc-rlc-transients
+  - transistor-cmos
 related:
 - cpu-datapath-isa
 - timers
