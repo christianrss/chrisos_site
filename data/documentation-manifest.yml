@@ -9,9 +9,22 @@ volumes:
   01-foundations:
     chapters:
       - {id: atom-semiconductor, title: "Atom, charge and semiconductor physics", priority: foundation}
+      - {id: electric-charge-field-potential, title: "Electric charge, field, potential and energy", priority: foundation}
+      - {id: voltage-current-resistance-power, title: "Voltage, current, resistance, energy and power", priority: expansion}
+      - {id: ohm-kirchhoff-circuits, title: "Ohm's law, Kirchhoff's laws and circuit analysis", priority: expansion}
+      - {id: capacitance-inductance, title: "Capacitance, inductance and stored field energy", priority: expansion}
+      - {id: rc-rlc-transients, title: "RC, RL and RLC transients", priority: expansion}
+      - {id: ac-signals-frequency-impedance, title: "AC signals, phase, frequency and impedance", priority: expansion}
+      - {id: electromagnetic-induction-transformers, title: "Electromagnetic induction and transformers", priority: expansion}
+      - {id: transmission-lines-differential-signals, title: "Transmission lines and differential signaling", priority: expansion}
+      - {id: noise-grounding-signal-integrity, title: "Noise, grounding and signal integrity", priority: expansion}
+      - {id: power-delivery-regulation, title: "Power delivery, regulation and decoupling", priority: expansion}
       - {id: crystal-bands-doping, title: "Crystal structure, energy bands and doping", priority: expansion}
       - {id: pn-junction, title: "P-N junctions and semiconductor interfaces", priority: expansion}
+      - {id: mos-capacitor, title: "MOS capacitor electrostatics", priority: expansion}
       - {id: transistor-cmos, title: "MOSFETs and CMOS", priority: foundation}
+      - {id: cmos-switching-power, title: "CMOS switching, delay and power", priority: expansion}
+      - {id: logic-levels-noise-margins, title: "Logic levels, thresholds, fan-out and noise margins", priority: expansion}
       - {id: boolean-algebra, title: "Boolean algebra and logic representation", priority: expansion}
       - {id: combinational-logic, title: "Combinational circuits", priority: expansion}
       - {id: logic-sequential, title: "Sequential logic and stored state", priority: foundation}
@@ -20,18 +33,36 @@ volumes:
       - {id: arithmetic-circuits, title: "Adders, ALUs and binary arithmetic", priority: expansion}
       - {id: sram-dram, title: "SRAM, DRAM and memory cells", priority: expansion}
       - {id: clock-timing, title: "Clocking, propagation and timing", priority: expansion}
+      - {id: number-systems-binary-arithmetic, title: "Number systems and binary arithmetic", priority: expansion}
+      - {id: discrete-math-sets-relations-functions, title: "Discrete mathematics: sets, relations and functions", priority: expansion}
+      - {id: proof-invariants-induction, title: "Proof, invariants and induction for systems", priority: expansion}
+      - {id: vectors-complex-numbers-systems, title: "Vectors and complex numbers for systems", priority: expansion}
       - {id: data-representation-layout, title: "Data representation, memory layout and pointers", priority: foundation}
       - {id: algorithmic-complexity, title: "Algorithm analysis and systems cost models", priority: foundation}
+      - {id: recursion-recurrences-amortization, title: "Recursion, recurrences and amortized analysis", priority: expansion}
       - {id: data-structures, title: "Data structures for systems software", priority: foundation}
+      - {id: arrays-lists-stacks-queues, title: "Arrays, linked structures, stacks and queues", priority: expansion}
+      - {id: hash-tables, title: "Hash tables and collision strategies", priority: expansion}
+      - {id: trees-heaps-tries, title: "Trees, heaps and tries", priority: expansion}
+      - {id: graphs-union-find, title: "Graphs and disjoint-set union", priority: expansion}
+      - {id: bitmaps-rings-free-lists, title: "Bitmaps, rings and free lists", priority: expansion}
+      - {id: sorting-searching, title: "Sorting and searching algorithms", priority: expansion}
+      - {id: graph-algorithms, title: "Graph algorithms for systems", priority: expansion}
+      - {id: string-parsing-algorithms, title: "String and parsing algorithms", priority: expansion}
       - {id: systems-algorithms, title: "Algorithms used by ChrisOS", priority: foundation}
   02-computer-architecture:
     chapters:
       - {id: cpu-datapath-isa, title: "CPU datapath and ISA", priority: foundation}
+      - {id: microarchitecture-pipeline, title: "CPU microarchitecture and pipelining", priority: expansion}
+      - {id: pipeline-hazards-forwarding, title: "Pipeline hazards and forwarding", priority: expansion}
+      - {id: branch-prediction-speculation, title: "Branch prediction and speculative execution", priority: expansion}
+      - {id: out-of-order-renaming-retirement, title: "Out-of-order execution, renaming and retirement", priority: expansion}
       - {id: machine-code, title: "Machine code and instruction encoding", priority: expansion}
       - {id: x86-registers-flags, title: "x86-64 registers and flags", priority: expansion}
       - {id: x86-instruction-encoding, title: "x86 instruction encoding and addressing modes", priority: expansion}
       - {id: x86-64-memory-privilege, title: "x86-64 memory and privilege", priority: foundation}
       - {id: privilege-rings, title: "Privilege rings, transitions and protection", priority: expansion}
+      - {id: memory-controller-dram-organization, title: "DRAM organization and memory controllers", priority: expansion}
       - {id: cache-hierarchy, title: "Caches and memory hierarchy", priority: expansion}
       - {id: coherence, title: "Cache coherence and multiprocessor memory", priority: expansion}
       - {id: buses-mmio-dma, title: "Buses, MMIO and DMA", priority: foundation}
