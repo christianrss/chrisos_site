@@ -150,6 +150,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_induction_transformer_examples.py
 
+      - name: Verify transmission line and differential signaling examples
+        working-directory: docs-repo
+        run: python scripts/check_transmission_line_examples.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
