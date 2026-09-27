@@ -134,6 +134,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_electric_field_examples.py
 
+      - name: Verify voltage, current, resistance and power examples
+        working-directory: docs-repo
+        run: python scripts/check_voltage_current_power_examples.py
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
