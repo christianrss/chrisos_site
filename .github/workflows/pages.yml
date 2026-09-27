@@ -3,6 +3,8 @@ name: Build and deploy ChrisOS documentation
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
   schedule:
     - cron: "17 5 * * 1"
@@ -151,6 +153,7 @@ jobs:
           path: docs-repo/site
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
