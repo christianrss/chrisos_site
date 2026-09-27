@@ -42,6 +42,7 @@
     <span aria-hidden="true">☰</span>
     <span>{{ 'Livro' if page and page.meta.lang == 'pt-br' else 'Book' }}</span>
   </button>
+  {% if page %}<span class="reader-current-title" title="{{ page.title }}">{{ page.title }}</span>{% endif %}
   <button id="search-toggle" class="reader-button search-button" type="button" aria-controls="search-dialog" aria-expanded="false">
     <span aria-hidden="true">⌕</span>
     <span>{{ 'Buscar' if page and page.meta.lang == 'pt-br' else 'Search' }}</span>
@@ -82,13 +83,20 @@
       <button id="nav-close" class="nav-close" type="button" aria-label="{{ 'Fechar sumário' if page and page.meta.lang == 'pt-br' else 'Close contents' }}">×</button>
     </div>
 
+    {% macro first_page_url(item) -%}
+      {% if item.is_page %}{{ item.url|url }}{% elif item.is_section and item.children %}{{ first_page_url(item.children[0]) }}{% endif %}
+    {%- endmacro %}
+
     {% macro tree(items) -%}
       <ul>
       {% for item in items %}
         {% if item.is_section %}
           <li class="section">
             <details {% if item.active %}open{% endif %}>
-              <summary><span>{{ item.title }}</span></summary>
+              <summary>
+                <a class="section-title-link" href="{{ first_page_url(item) }}">{{ item.title }}</a>
+                <span class="section-disclosure" aria-hidden="true"></span>
+              </summary>
               <div class="section-children">{{ tree(item.children) }}</div>
             </details>
           </li>
@@ -189,25 +197,35 @@
 
       <nav class="book-pager" aria-label="{{ 'Navegação entre capítulos' if page.meta.lang == 'pt-br' else 'Chapter navigation' }}">
         <div class="pager-prev">
-        {% if curriculum_context and curriculum_context.previous %}
-          {% if curriculum_context.previous.url %}
-          <small>{{ 'Anterior' if page.meta.lang == 'pt-br' else 'Previous' }}</small>
-          <a href="{{ curriculum_context.previous.url|url }}">← {{ curriculum_context.previous.title }}</a>
-          {% else %}
-          <small>{{ 'Anterior' if page.meta.lang == 'pt-br' else 'Previous' }}</small>
-          <span class="missing-step">← <code>{{ curriculum_context.previous.id }}</code> · {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }}</span>
+        {% if curriculum_context %}
+          {% if curriculum_context.previous %}
+            {% if curriculum_context.previous.url %}
+            <small>{{ 'Anterior' if page.meta.lang == 'pt-br' else 'Previous' }}</small>
+            <a href="{{ curriculum_context.previous.url|url }}">← {{ curriculum_context.previous.title }}</a>
+            {% else %}
+            <small>{{ 'Anterior' if page.meta.lang == 'pt-br' else 'Previous' }}</small>
+            <span class="missing-step">← <code>{{ curriculum_context.previous.id }}</code> · {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }}</span>
+            {% endif %}
           {% endif %}
+        {% elif page.previous_page and page.previous_page.meta.lang == page.meta.lang %}
+          <small>{{ 'Anterior' if page.meta.lang == 'pt-br' else 'Previous' }}</small>
+          <a href="{{ page.previous_page.url|url }}">← {{ page.previous_page.title }}</a>
         {% endif %}
         </div>
         <div class="pager-next">
-        {% if curriculum_context and curriculum_context.next %}
-          {% if curriculum_context.next.url %}
-          <small>{{ 'Seguinte' if page.meta.lang == 'pt-br' else 'Next' }}</small>
-          <a href="{{ curriculum_context.next.url|url }}">{{ curriculum_context.next.title }} →</a>
-          {% else %}
-          <small>{{ 'Seguinte' if page.meta.lang == 'pt-br' else 'Next' }}</small>
-          <span class="missing-step"><code>{{ curriculum_context.next.id }}</code> · {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }} →</span>
+        {% if curriculum_context %}
+          {% if curriculum_context.next %}
+            {% if curriculum_context.next.url %}
+            <small>{{ 'Seguinte' if page.meta.lang == 'pt-br' else 'Next' }}</small>
+            <a href="{{ curriculum_context.next.url|url }}">{{ curriculum_context.next.title }} →</a>
+            {% else %}
+            <small>{{ 'Seguinte' if page.meta.lang == 'pt-br' else 'Next' }}</small>
+            <span class="missing-step"><code>{{ curriculum_context.next.id }}</code> · {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }} →</span>
+            {% endif %}
           {% endif %}
+        {% elif page.next_page and page.next_page.meta.lang == page.meta.lang %}
+          <small>{{ 'Seguinte' if page.meta.lang == 'pt-br' else 'Next' }}</small>
+          <a href="{{ page.next_page.url|url }}">{{ page.next_page.title }} →</a>
         {% endif %}
         </div>
       </nav>
@@ -237,14 +255,22 @@
 
 {% if page %}
 <nav class="mobile-bookbar" aria-label="{{ 'Navegação rápida' if page.meta.lang == 'pt-br' else 'Quick navigation' }}">
-  {% if curriculum_context and curriculum_context.previous and curriculum_context.previous.url %}
-  <a href="{{ curriculum_context.previous.url|url }}" aria-label="{{ 'Capítulo anterior' if page.meta.lang == 'pt-br' else 'Previous chapter' }}">←</a>
-  {% else %}<span>←</span>{% endif %}
-  <button class="mobile-book-search open-global-search" type="button" aria-label="{{ 'Buscar' if page.meta.lang == 'pt-br' else 'Search' }}">⌕</button>
-  <button class="mobile-book-menu" type="button" aria-label="{{ 'Abrir sumário' if page.meta.lang == 'pt-br' else 'Open contents' }}">☰</button>
-  {% if curriculum_context and curriculum_context.next and curriculum_context.next.url %}
-  <a href="{{ curriculum_context.next.url|url }}" aria-label="{{ 'Próximo capítulo' if page.meta.lang == 'pt-br' else 'Next chapter' }}">→</a>
-  {% else %}<span>→</span>{% endif %}
+  {% if curriculum_context %}
+    {% if curriculum_context.previous and curriculum_context.previous.url %}
+    <a href="{{ curriculum_context.previous.url|url }}" aria-label="{{ 'Capítulo anterior' if page.meta.lang == 'pt-br' else 'Previous chapter' }}">←</a>
+    {% else %}<span aria-disabled="true">←</span>{% endif %}
+  {% elif page.previous_page and page.previous_page.meta.lang == page.meta.lang %}
+  <a href="{{ page.previous_page.url|url }}" aria-label="{{ 'Página anterior' if page.meta.lang == 'pt-br' else 'Previous page' }}">←</a>
+  {% else %}<span aria-disabled="true">←</span>{% endif %}
+  <button class="mobile-book-search open-global-search" type="button" aria-label="{{ 'Buscar' if page.meta.lang == 'pt-br' else 'Search' }}"><span aria-hidden="true">⌕</span><small>{{ 'Buscar' if page.meta.lang == 'pt-br' else 'Search' }}</small></button>
+  <button class="mobile-book-menu" type="button" aria-label="{{ 'Abrir sumário' if page.meta.lang == 'pt-br' else 'Open contents' }}"><span aria-hidden="true">☰</span><small>{{ 'Sumário' if page.meta.lang == 'pt-br' else 'Contents' }}</small></button>
+  {% if curriculum_context %}
+    {% if curriculum_context.next and curriculum_context.next.url %}
+    <a href="{{ curriculum_context.next.url|url }}" aria-label="{{ 'Próximo capítulo' if page.meta.lang == 'pt-br' else 'Next chapter' }}">→</a>
+    {% else %}<span aria-disabled="true">→</span>{% endif %}
+  {% elif page.next_page and page.next_page.meta.lang == page.meta.lang %}
+  <a href="{{ page.next_page.url|url }}" aria-label="{{ 'Próxima página' if page.meta.lang == 'pt-br' else 'Next page' }}">→</a>
+  {% else %}<span aria-disabled="true">→</span>{% endif %}
 </nav>
 {% endif %}
 

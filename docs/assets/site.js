@@ -43,17 +43,10 @@
     });
   });
 
-  /* Every navigation section gets a real content link.
-     The summary toggles the tree; the section-entry opens its first authored page. */
-  navPanel?.querySelectorAll('.section > details').forEach(details => {
-    const summary = details.querySelector(':scope > summary');
-    const firstPage = details.querySelector('.book-page > a');
-    if (!summary || !firstPage || details.querySelector(':scope > .section-entry')) return;
-    const jump = document.createElement('a');
-    jump.className = 'section-entry';
-    jump.href = firstPage.href;
-    jump.textContent = pt ? 'Abrir conteúdo da seção →' : 'Open section content →';
-    summary.insertAdjacentElement('afterend', jump);
+  /* Section titles are real links; clicking the title navigates, while clicking
+     the remaining summary row expands or collapses the hierarchy. */
+  navPanel?.querySelectorAll('.section-title-link').forEach(link => {
+    link.addEventListener('click', event => event.stopPropagation());
   });
 
   const activeBookLink = navPanel?.querySelector('a.active');
@@ -96,7 +89,14 @@
           if (!response.ok) throw new Error('search index ' + response.status);
           return response.json();
         })
-        .then(data => (data.docs || []).filter(doc => doc.location.startsWith(lang + '/')))
+        .then(data => (data.docs || [])
+          .filter(doc => doc.location.startsWith(lang + '/'))
+          .map(doc => ({
+            ...doc,
+            _title: normalize(doc.title),
+            _location: normalize(doc.location),
+            _text: normalize(doc.text)
+          })))
         .catch(error => {
           searchPromise = null;
           throw error;
@@ -146,9 +146,9 @@
   }
 
   function resultScore(doc, terms) {
-    const title = normalize(doc.title);
-    const location = normalize(doc.location);
-    const text = normalize(doc.text);
+    const title = doc._title ?? normalize(doc.title);
+    const location = doc._location ?? normalize(doc.location);
+    const text = doc._text ?? normalize(doc.text);
     let score = 0;
     for (const term of terms) {
       if (!text.includes(term) && !title.includes(term) && !location.includes(term)) return null;
