@@ -138,6 +138,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_voltage_current_power_examples.py
 
+      - name: Verify circuit analysis and field-storage examples
+        working-directory: docs-repo
+        run: python scripts/check_circuit_foundations_examples.py
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
