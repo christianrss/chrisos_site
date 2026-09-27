@@ -129,7 +129,7 @@ Bandas aproximadamente planas indicam potencial espacialmente uniforme no modelo
 
 Misturar esses diagramas produz interpretações incorretas mesmo quando a terminologia parece correta.
 
-## Por que a dopagem é a ponte para os dispositivos
+## Dopagem como ponte para a física de dispositivos
 
 Lógica digital precisa de regiões com tipos de portador previsíveis e de regiões cuja concentração possa ser alterada por campo elétrico. Dopagem fornece o pano de fundo fixo que viabiliza tanto junções quanto canais MOS.
 
