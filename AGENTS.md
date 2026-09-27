@@ -1,5 +1,7 @@
 # AGENTS.md — ChrisOS Documentation
 
+Before starting content work, read `DOCUMENTATION-STATE.md`. It is the persistent handoff memory for the current corpus state, completion campaign, reader status and remaining work. Regenerate coverage before changing its counts; canonical authority remains the manifest, curriculum, generated coverage and ChrisOS source.
+
 This file is the operational contract for every human or AI agent modifying the ChrisOS documentation repository.
 
 ## Primary rule: this is a reference corpus, not a summary site
