@@ -1,0 +1,22 @@
+digraph kernel_model {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.5", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  native [label="Processo ELF nativo\nCPL 3\nCR3 do processo"];
+  clvm [label="Guest ChrisC / CLVM\nboundary em software"];
+  syscall [label="INT 0x80\nIDT DPL=3\ntransicao de ring"];
+  vmbridge [label="CLVM SYS dispatcher\nbounds + capabilities"];
+  kernel [label="Kernel ring 0 compartilhado\nmetal + fs + gfx + net + wm + lang + tools + compiler"];
+  jobs [label="Kernel jobs / kthreads\nBSP + APs\nprivilegio compartilhado"];
+  drivers [label="Drivers / PCI / MMIO / DMA"];
+  hw [label="x86-64 + dispositivos"];
+  panic [label="Falha fatal ring 0\npanic + halt", fillcolor="#f7f7f7"];
+
+  native -> syscall -> kernel;
+  clvm -> vmbridge -> kernel;
+  kernel -> jobs;
+  kernel -> drivers -> hw;
+  jobs -> kernel [style=dashed,label="shared state"];
+  kernel -> panic [style=dashed,label="falha privilegiada"];
+}
