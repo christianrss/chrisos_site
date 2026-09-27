@@ -104,6 +104,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_boot_information_examples.py --source .source
 
+      - name: Verify ELF and linker contracts
+        working-directory: docs-repo
+        run: python scripts/check_elf_linking_examples.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict

@@ -1,0 +1,20 @@
+digraph elf_linking {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="C / ASM sources"];
+  obj [label="Relocatable objects\nsections + symbols + relocations"];
+  ld [label="Linker\nlayout + resolution + relocation"];
+  elf [label="kernel.elf\nELF64 ET_EXEC"];
+  ph [label="Program headers\nrequests RW\ntext RX\ndata RW"];
+  limine [label="Limine loader"];
+  mem [label="Runtime image\nhigher-half mappings\nBSS zero-fill"];
+  chriso [label="ChrisO v2\ncustom relocatable format", fillcolor="#f7f7f7"];
+  chrisld [label="ChrisLd\nbootstrap static linker", fillcolor="#f7f7f7"];
+
+  src -> obj -> ld -> elf -> ph -> limine -> mem;
+  src -> chriso [style=dashed, label="native path"];
+  chriso -> chrisld [style=dashed];
+  chrisld -> elf [style=dashed, label="not production-equivalent yet"];
+}
