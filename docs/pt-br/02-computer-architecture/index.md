@@ -10,95 +10,89 @@ sources: []
 
 # Arquitetura de computadores
 
-<div class="abstract">Este volume faz a ponte entre lógica digital e o comportamento de máquina visível ao sistema operacional: datapaths, pipelines, especulação, ISA, execução x86-64, privilégio, hierarquia de memória, barramentos, MMIO, DMA e descoberta da plataforma.</div>
+<div class="abstract">Esta coleção conecta lógica digital ao contrato de máquina consumido pelo ChrisOS e emulado pelo ChrisCPU. Estado arquitetural é separado da implementação microarquitetural; o modelo é então estendido por hierarquia de memória, barramentos e descoberta da plataforma.</div>
 
-## Escopo
-
-O volume explica tanto o contrato arquitetural consumido pelo ChrisOS quanto as ideias de implementação necessárias para compreender CPUs físicas e o ChrisCPU.
-
-A cadeia pretendida é:
+## Cadeia de dependências
 
 ~~~text
-lógica combinacional + sequencial
+lógica digital e estado armazenado
     ↓
 datapath e controle
     ↓
-pipeline
+estado visível pela ISA
     ↓
-hazards / forwarding
+pipeline e tratamento de hazards
     ↓
-branch prediction / speculation
-    ↓
-renaming / out-of-order / retirement
-    ↓
-ISA
+prediction, speculation e retirement
     ↓
 machine-code encoding
     ↓
-registradores / privilégio / memória
+registradores, flags e addressing x86-64
     ↓
-controlador DRAM + caches
+privilégio e proteção
     ↓
-coerência + atomics
+organização de DRAM e memory controller
     ↓
-buses / PCIe / MMIO / DMA
+cache hierarchy
     ↓
-ACPI
+coerência e memory ordering
     ↓
-ChrisOS
+MMIO / DMA / buses
+    ↓
+PCI Express
+    ↓
+descrição ACPI
+    ↓
+boot e kernel
 ~~~
 
-## Datapath e microarquitetura
+## Arquitetura e microarquitetura
 
-O currículo passa a tratar separadamente:
+A ISA define estado e transições observáveis por software. A microarquitetura define uma estratégia de implementação dessas transições.
 
-1. Datapath da CPU e ISA.
-2. Estrutura de pipeline.
-3. Hazards de dados/controle e forwarding.
-4. Branch prediction e speculation.
-5. Register renaming, execução out-of-order e retirement.
+O currículo separa:
 
-ISA é contrato externamente visível. Pipeline e OoO são mecanismos internos possíveis para realizá-lo.
+1. datapath da CPU e ISA;
+2. organização de pipeline;
+3. hazards e forwarding;
+4. branch prediction e speculation;
+5. register renaming, execução out-of-order e retirement.
 
-O ChrisCPU atual busca equivalência arquitetural, não reprodução de uma microarquitetura especulativa física. Essa diferença deve permanecer explícita.
+O ChrisCPU atual modela semântica arquitetural, não um pipeline físico especulativo.
 
-## Código de máquina e x86-64
+## Camada de código de máquina
 
-A sequência seguinte cobre:
+A sequência seguinte define o contrato binário exigido por assemblers, compilers, emulators e kernel:
 
-1. Código de máquina e relocations.
-2. Registradores, aliases e flags x86-64.
-3. Encoding e decoding de instruções.
-4. Memória e privilégio x86-64.
-5. Rings e controlled entry.
+1. código de máquina;
+2. aliases de registradores e flags x86-64;
+3. instruction encoding e addressing modes;
+4. memória e privilégio;
+5. transições controladas entre níveis de privilégio.
 
-Essa é a cadeia direta para ChrisAsm, KCC, ChrisCPU e o kernel ChrisOS.
+## Camada do sistema de memória
 
-## Sistema de memória
+A sequência distingue:
 
-A sequência é:
+1. organização física de DRAM e política do memory controller;
+2. cache hierarchy;
+3. cache coherence;
+4. atomics e memory ordering.
 
-1. Organização de DRAM e função do memory controller.
-2. Cache hierarchy e locality.
-3. Coerência multiprocessador.
-4. Atomics e memory ordering.
+Célula DRAM, posição de memória arquitetural, cache line e virtual page são abstrações distintas.
 
-Isso mantém separadas células DRAM físicas, memória arquitetural e semântica SMP cache-coherent.
+## Camada de plataforma
 
-## Dispositivos e plataforma
-
-A rota de plataforma cobre:
+A interação com dispositivos segue:
 
 1. buses, port I/O, MMIO e DMA;
-2. PCI/PCIe e device discovery;
-3. ACPI e descrição de plataforma.
+2. PCI e PCI Express;
+3. descrição de plataforma ACPI.
 
-Esses capítulos fazem a ponte entre execução de instruções e os dispositivos controlados pelo ChrisOS.
+Esses tópicos estabelecem os pré-requisitos de plataforma para boot, routing de interrupts, storage, graphics e networking.
 
-## Regra de leitura
+## Fronteiras de evidência
 
-Teoria geral e comportamento atual do ChrisOS/ChrisCPU são sempre separados.
+Mecanismos de processadores físicos são documentados a partir de especificações de arquitetura/vendor e teoria de arquitetura de computadores.
 
-Uma CPU física pode usar pipeline e OoO enquanto expõe as mesmas transições arquiteturais que o ChrisCPU atualmente interpreta sequencialmente.
-
-Uma página existente não é automaticamente considerada concluída; coverage e depth gates continuam sendo a autoridade.
+O source do ChrisCPU comprova somente o comportamento implementado pelo emulator. O comportamento da CPU hospedeira não é atribuído ao modelo guest sem implementação explícita.

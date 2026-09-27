@@ -9,6 +9,7 @@ sources: []
 symbols: []
 depends_on:
   - atom-semiconductor
+  - vectors-complex-numbers-systems
 related:
   - voltage-current-resistance-power
   - ohm-kirchhoff-circuits
@@ -450,7 +451,7 @@ A steep potential change over a short distance corresponds to a large electric f
 
 This matters in semiconductor devices because nanometer-scale structures can create very large electric fields from modest terminal voltages.
 
-## Why potential is often easier than field
+## Potential as a scalar computational model
 
 Electric field is a vector. Potential is a scalar.
 
@@ -512,7 +513,7 @@ Computer electronics are dynamic.
 
 Signals switch, clocks oscillate and currents change.
 
-Why start with electrostatics?
+The electrostatic model is introduced first because it isolates field and potential relationships before time-dependent electromagnetic propagation is added.
 
 Because many local relationships can first be understood by assuming fields change slowly enough that propagation and radiation can be ignored.
 
@@ -661,7 +662,7 @@ This directly connects electrostatics to switching energy in digital circuits.
 
 A CMOS node has capacitance even when no explicit schematic capacitor was placed there.
 
-## Why a digital edge takes time
+## Finite digital-edge transition time
 
 Changing a node from LOW to HIGH requires charge movement.
 
@@ -872,7 +873,7 @@ The emulator need not model charge, field or transistor delay unless the project
 
 Architectural equivalence is a higher abstraction.
 
-## What this chapter intentionally leaves for later
+## Deferred topics
 
 Separate chapters derive:
 

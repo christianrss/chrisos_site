@@ -15,7 +15,8 @@ symbols:
 - virtq_reclaim
 - virtq_init
 depends_on:
-- data-representation-layout
+  - data-representation-layout
+  - proof-invariants-induction
 related:
 - data-structures
 - systems-algorithms
@@ -27,7 +28,7 @@ related:
 Análise de algoritmos fornece linguagem para raciocinar sobre crescimento, limites de recursos e trade-offs, mas software de sistemas exige mais que notação Big-O. Localidade de cache, alocação, sincronização, capacidade limitada, contexto de interrupção, pior latência e interação com hardware podem dominar uma implementação cuja complexidade assintótica parece favorável. Este capítulo desenvolve análise de complexidade especificamente para kernels, compiladores, drivers, gráficos e emuladores.
 </div>
 
-## O que é um algoritmo
+## Definição de algoritmo
 
 Algoritmo é um procedimento finito que transforma estado de entrada em estado de saída preservando invariantes definidos.
 
@@ -152,12 +153,12 @@ Uma estrutura que cria um nó por operação depende do alocador.
 
 Perguntas relevantes:
 
-- alocação é O(1), scan ou árvore?
-- pode bloquear?
-- usa lock global?
-- pode falhar?
-- fragmenta?
-- exige memória física contígua?
+- estratégia de alocação e custo assintótico;
+- possibilidade de bloqueio;
+- escopo e contenção do lock;
+- condições explícitas de falha;
+- comportamento de fragmentação;
+- exigência de memória física contígua.
 
 Estrutura de dados de livro-texto não pode ser avaliada isoladamente do allocator em kernel.
 

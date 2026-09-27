@@ -19,52 +19,132 @@ sources:
 </div>
 
 <div class="abstract">
-<b>Abstract.</b> ChrisOS is an experimental operating-system ecosystem combining an x86-64 higher-half kernel, ChrisC and CLVM, a native compiler/assembler/linker path, ChrisFS, a graphical desktop, software and paravirtual graphics, and the ChrisVM/ChrisCPU emulator. This documentation builds the prerequisites from the physical foundations of computing and connects them to the concrete implementation in main.
+<b>Abstract.</b> ChrisOS is an experimental systems ecosystem containing an x86-64 kernel, ChrisC and CLVM, native compiler/assembler/linker components, ChrisFS, graphics and desktop subsystems, networking, and the ChrisVM/ChrisCPU machine-emulation stack. The documentation is organized as a dependency-ordered technical corpus from physical foundations to operating-system research.
 </div>
+
+## Canonical organization
+
+The documentation has two independent organizational layers:
+
+| Layer | Purpose | Authority |
+|---|---|---|
+| learning curriculum | establishes prerequisite order and conceptual progression | data/curriculum.yml |
+| repository collections | provides stable paths and subject-oriented archival grouping | docs/en/* and docs/pt-br/* |
+
+The learning curriculum is authoritative for reading order. Directory numbering is retained for URL stability and repository maintenance; it does not override prerequisite order.
+
+[Learning path and current gaps](learning-path.md)
+
+## Dependency chain
 
 <figure class="figure">
 <img src="../assets/diagrams/system-layers.svg" alt="Computing layers">
-<figcaption>The conceptual sequence runs from matter to applications; each layer introduces mechanisms grounded in preceding layers.</figcaption>
+<figcaption>Each layer is defined only after the mechanisms required by the preceding layers have been established.</figcaption>
 </figure>
 
-## Learning path
+The principal dependency chain is:
 
-[Start the 12-level sequence](learning-path.md): matter, representation, architecture, boot, kernel, languages, storage, pixels, graphics, networks, virtual machines and research. The catalogue exposes each chapter’s prerequisites and remaining gaps.
+~~~text
+matter and physical models
+    ↓
+mathematical tools required by the physical model
+    ↓
+electric fields, circuits and electromagnetic behavior
+    ↓
+semiconductor devices and CMOS
+    ↓
+Boolean and sequential logic
+    ↓
+representation, data structures and algorithms
+    ↓
+CPU architecture and platform interfaces
+    ↓
+firmware and boot
+    ↓
+kernel, memory, concurrency and processes
+    ↓
+language systems and persistent storage
+    ↓
+graphics, networking and desktop
+    ↓
+emulation, virtualization and self-hosting
+    ↓
+real hardware, validation and formal specifications
+~~~
 
-## Structure of the corpus
+Missing chapters remain visible in the curriculum and are not bypassed by the canonical previous/next sequence.
 
-The corpus separates theory, architecture, implementation, validation, limitations and roadmap. A capability is not treated as proven merely because source exists. The Source Atlas is mechanical; authored chapters explain meaning, invariants, ownership, concurrency, failure modes and subsystem relationships.
+## Curriculum levels
 
-<figure class="figure">
-<img src="../assets/diagrams/chrisos-overview.svg" alt="ChrisOS overview">
-<figcaption>High-level organization of the current ecosystem.</figcaption>
-</figure>
-
-## Collections
-
-| Volume | Scope |
+| Level | Technical scope |
 |---|---|
-| [01-foundations — Physical and digital foundations](01-foundations/index.md) | Matter, electrical charge, semiconductor devices, MOSFETs, CMOS logic, Boolean algebra, combinational and sequential circuits. |
-| [02-computer-architecture — Computer architecture](02-computer-architecture/index.md) | Datapaths, control, instruction sets, x86-64 execution, privilege, caches, memory hierarchy, buses, MMIO and DMA. |
-| [03-boot — Boot and executable formats](03-boot/index.md) | Power-on state, firmware, UEFI, Limine, ELF loading, linker layout and the transition into the ChrisOS entry point. |
-| [04-kernel — Kernel architecture](04-kernel/index.md) | Privilege boundaries, monolithic modular organization, exceptions, interrupts, SMP, processes, ELF user execution and system calls. |
-| [05-memory — Memory systems](05-memory/index.md) | Physical memory allocation, virtual addressing, four-level paging, CR3, TLBs, heaps, ownership and multiprocessor invalidation. |
-| [06-storage — Storage and filesystems](06-storage/index.md) | Block devices, ATA/AHCI/NVMe/VirtIO concepts, sectors, DMA, filesystem structures, journaling, ChrisFS and installation. |
-| [07-language-systems — Languages and toolchains](07-language-systems/index.md) | Lexing, parsing, semantic analysis, intermediate forms, bytecode, JIT compilation and the ChrisC/native toolchain paths. |
-| [08-graphics — Graphics systems](08-graphics/index.md) | Pixels, color, framebuffers, scanout, composition, rasterization, depth, VirtIO-GPU, VirGL and programmable shaders. |
-| [09-emulation — Machine emulation and virtualization](09-emulation/index.md) | Instruction interpretation, architectural state, buses and devices, ChrisVM/ChrisCPU and the boundary to future hardware virtualization. |
-| [10-networking — Networking](10-networking/index.md) | Network interface devices, packet movement, Ethernet/IP/UDP/TCP concepts and the current VirtIO networking paths. |
-| [11-desktop — Desktop and applications](11-desktop/index.md) | Window management, composition, input routing, built-in ChrisC applications and system workloads. |
-| [12-self-hosting — Self-hosting and bootstrap](12-self-hosting/index.md) | Compiler bootstrapping, internally produced objects and executables, kernel rebuild milestones and dependency reduction. |
-| [13-real-hardware — Installation and real hardware](13-real-hardware/index.md) | GPT, ESP, UEFI boot media, hardware profiles, driver evidence and the distinction between emulation and physical-machine support. |
-| [14-validation — Validation and reliability](14-validation/index.md) | Host tests, QEMU gates, physical-hardware evidence, invariants, fault containment, stability auditing and reproducibility. |
-| [15-specifications — Specifications and formats](15-specifications/index.md) | ChrisVM contracts, ChrisO, boot protocols, filesystem formats, ABIs, graphics protocols and externally defined specifications. |
-| [16-history — Architecture history](16-history/index.md) | Revision-bound history of architectural changes, superseded designs and the reasons interfaces moved. |
+| 01 · Matter, mathematical tools, electricity, devices and logic | matter, electrostatics, circuits, semiconductor devices, CMOS, Boolean logic, arithmetic circuits, state and memory cells |
+| 02 · Representation and algorithms | discrete mathematics, binary representation, complexity, data structures and systems algorithms |
+| 03 · Instruction execution and platform | datapaths, microarchitecture, ISA, x86-64, memory hierarchy, PCIe, MMIO, DMA and ACPI |
+| 04 · Reset to kernel entry | processor reset, firmware, UEFI, Limine, ELF, linking and higher-half entry |
+| 05 · Kernel, memory and execution contexts | trust boundaries, exceptions, PMM, paging, TLBs, concurrency, user mode and process lifecycle |
+| 06 · Languages, compilers and runtimes | compiler construction, ChrisC, CLVM, JIT and the native toolchain |
+| 07 · Persistent state and filesystems | block storage, ATA/AHCI/NVMe/VirtIO and ChrisFS structures/recovery |
+| 08 · Bytes to desktop | framebuffer, 2D graphics, composition, input, windows and applications |
+| 09 · Geometry, rasterization and GPUs | transformations, rasterization, VirtIO-GPU, VirGL and programmable shading |
+| 10 · Networks and protocol state | Ethernet, IPv4, UDP, TCP, VirtIO-net and sockets |
+| 11 · Emulation and virtualization | x86 emulation, ChrisVM/ChrisCPU, VMX/SVM and second-level translation |
+| 12 · Bootstrap, validation and research | self-hosting, real hardware, validation, specifications, history and corpus maintenance |
+
+## Document structure
+
+Technical chapters separate the following evidence classes:
+
+1. physical or mathematical theory;
+2. general systems architecture;
+3. current ChrisOS/ChrisCPU implementation;
+4. executable validation or source-derived evidence;
+5. known limitations;
+6. future architecture explicitly identified as future work.
+
+A source symbol is not sufficient evidence for feature completeness. Implementation claims are revision-bound.
+
+## Navigation semantics
+
+Each curriculum chapter exposes:
+
+- curriculum level and module;
+- absolute position in the canonical sequence;
+- previous and next planned chapters;
+- technical prerequisites declared by the chapter;
+- authored chapters that depend on it;
+- language pair;
+- source revision and source files.
+
+An absent previous or next chapter is rendered as an explicit curriculum gap rather than silently skipped.
+
+## Repository collections
+
+The stable repository collections remain available for reference navigation:
+
+| Collection | Subject |
+|---|---|
+| [Foundations](01-foundations/index.md) | physical, electrical, digital, mathematical and algorithmic prerequisites |
+| [Computer architecture](02-computer-architecture/index.md) | CPU, x86-64, memory hierarchy and platform |
+| [Boot](03-boot/index.md) | firmware, executable layout and kernel entry |
+| [Kernel](04-kernel/index.md) | privileged execution, interrupts, processes and kernel model |
+| [Memory](05-memory/index.md) | physical/virtual memory, TLBs, allocation and lifetime |
+| [Storage](06-storage/index.md) | block devices and filesystems |
+| [Language systems](07-language-systems/index.md) | compilers, runtimes and native toolchain |
+| [Graphics](08-graphics/index.md) | framebuffer, 2D/3D graphics and GPU interfaces |
+| [Emulation](09-emulation/index.md) | ChrisVM, ChrisCPU and virtualization |
+| [Networking](10-networking/index.md) | network protocols and devices |
+| [Desktop](11-desktop/index.md) | windows, input and applications |
+| [Self-hosting](12-self-hosting/index.md) | bootstrap and internal rebuild |
+| [Real hardware](13-real-hardware/index.md) | installation, bring-up and compatibility |
+| [Validation](14-validation/index.md) | tests, gates, faults and measurements |
+| [Specifications](15-specifications/index.md) | project formats, ABIs and protocol contracts |
+| [Architecture history](16-history/index.md) | revision-bound architectural history |
 
 ## Evidence policy
 
 1. Current source on main.
-2. Reproducible tests and gates on the same revision.
+2. Reproducible checks and gates against the same revision.
 3. Current in-repository specifications.
-4. Historical audits, identified by their revision.
-5. Roadmap explicitly marked as future work.
+4. Historical material explicitly bound to its source revision.
+5. Future work explicitly separated from implemented behavior.

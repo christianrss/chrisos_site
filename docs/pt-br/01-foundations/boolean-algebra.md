@@ -11,7 +11,7 @@ symbols:
 - chris_cc_true
 - write_status
 depends_on:
-- transistor-cmos
+  - logic-levels-noise-margins
 related:
 - combinational-logic
 ---

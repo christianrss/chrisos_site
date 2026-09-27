@@ -11,8 +11,8 @@ symbols:
 - scan_usable_for_run
 - pmm_alloc
 depends_on:
-- data-representation-layout
-- algorithmic-complexity
+  - data-representation-layout
+  - algorithmic-complexity
 related:
 - systems-algorithms
 ---
@@ -360,12 +360,12 @@ Every structure must define who owns its elements.
 
 Questions include:
 
-- Does insertion transfer ownership?
-- Does removal return ownership?
-- Can multiple structures reference the same object?
-- Are references counted?
-- Can an object disappear while readers hold pointers?
-- Is reclamation immediate or deferred?
+- ownership transfer on insertion;
+- ownership return on removal;
+- permitted multiplicity of references across structures;
+- reference-counting policy;
+- reader lifetime relative to removal;
+- immediate or deferred reclamation policy.
 
 Concurrency makes lifetime harder than lookup complexity.
 

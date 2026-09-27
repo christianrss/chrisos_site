@@ -9,6 +9,7 @@ sources: []
 symbols: []
 depends_on:
   - atom-semiconductor
+  - vectors-complex-numbers-systems
 related:
   - voltage-current-resistance-power
   - ohm-kirchhoff-circuits
@@ -460,7 +461,7 @@ Uma grande variação de potencial em distância pequena cria grande campo.
 
 Isso é particularmente importante em dispositivos semicondutores nanométricos, nos quais tensões moderadas podem gerar campos locais intensos.
 
-## Por que potencial costuma ser mais conveniente
+## Potencial como modelo computacional escalar
 
 Campo elétrico é vetor.
 
@@ -524,7 +525,7 @@ Eletrônica de computadores é dinâmica.
 
 Sinais chaveiam, clocks oscilam e correntes mudam.
 
-Por que começar com eletrostática?
+O modelo eletrostático é introduzido primeiro porque isola relações de campo e potencial antes da propagação eletromagnética dependente do tempo.
 
 Porque muitas relações locais são entendidas inicialmente assumindo que propagação e radiação podem ser desprezadas.
 
@@ -671,7 +672,7 @@ Isso liga diretamente eletrostática a switching energy.
 
 Um node CMOS tem capacitância mesmo sem capacitor discreto no schematic.
 
-## Por que uma borda digital leva tempo
+## Tempo finito de transição de uma borda digital
 
 Mudar um node de LOW para HIGH exige mover carga.
 
@@ -886,7 +887,7 @@ O emulator não precisa modelar carga, campo ou transistor delay enquanto o obje
 
 Modelagem de circuitos seria outra camada.
 
-## O que este capítulo deixa para depois
+## Tópicos posteriores
 
 Capítulos separados irão derivar:
 

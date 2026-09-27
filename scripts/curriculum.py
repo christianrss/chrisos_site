@@ -55,7 +55,14 @@ def state(page, lang):
 
 def generate(docs):
     curriculum, planned, pages = load_catalog(docs)
-    record = {'schema_version': 1, 'levels': curriculum['levels'], 'chapters': {}}
+    order = [
+        pid
+        for level in curriculum['levels']
+        for module in level['modules']
+        for pid in module['chapters']
+    ]
+    positions = {pid: index for index, pid in enumerate(order)}
+    record = {'schema_version': 1, 'levels': curriculum['levels'], 'order': order, 'chapters': {}}
     for lang in ('en', 'pt-br'):
         target = docs / lang / 'learning-path.md'
         pt = lang == 'pt-br'
@@ -66,7 +73,12 @@ def generate(docs):
         for level in curriculum['levels']:
             lines += ['## ' + level['title'][lang], '']
             for module in level['modules']:
-                lines += ['### '+module['title'][lang], '', '| '+('Capítulo | Estado | Pré-requisitos' if pt else 'Chapter | State | Prerequisites')+' |', '|---|---|---|']
+                lines += [
+                    '### '+module['title'][lang],
+                    '',
+                    '| '+('Nº | Capítulo | Estado | Pré-requisitos | Anterior na sequência' if pt else 'No. | Chapter | State | Prerequisites | Previous in sequence')+' |',
+                    '|---:|---|---|---|---|'
+                ]
                 for pid in module['chapters']:
                     p = pages.get((pid, lang))
                     title = p['title'] if p else planned[pid]['title']
@@ -75,8 +87,27 @@ def generate(docs):
                     for dep in (p or {}).get('depends_on', []):
                         dp=pages.get((dep, lang))
                         deps.append(f'[{dp["title"]}]({os.path.relpath(dp["path"],target.parent)})' if dp else f'`{dep}` — '+('ausente' if pt else 'missing'))
-                    lines.append(f'| {link} | {state(p,lang)} | {"; ".join(deps) or "—"} |')
-                    record['chapters'].setdefault(pid, {})[lang]={'path':p['path'].relative_to(docs).as_posix() if p else None,'state':state(p,lang),'depends_on':(p or {}).get('depends_on',[]), 'level':level['id']}
+                    index = positions[pid]
+                    previous_id = order[index - 1] if index > 0 else None
+                    next_id = order[index + 1] if index + 1 < len(order) else None
+                    previous = '—'
+                    if previous_id:
+                        previous_page = pages.get((previous_id, lang))
+                        if previous_page:
+                            previous = f'[{previous_page["title"]}]({os.path.relpath(previous_page["path"], target.parent)})'
+                        else:
+                            previous = f'`{previous_id}` — '+('ausente' if pt else 'missing')
+                    lines.append(f'| {index + 1} | {link} | {state(p,lang)} | {"; ".join(deps) or "—"} | {previous} |')
+                    record['chapters'].setdefault(pid, {})[lang]={
+                        'path':p['path'].relative_to(docs).as_posix() if p else None,
+                        'state':state(p,lang),
+                        'depends_on':(p or {}).get('depends_on',[]),
+                        'level':level['id'],
+                        'module':module['title'][lang],
+                        'position':index + 1,
+                        'previous_id':previous_id,
+                        'next_id':next_id,
+                    }
                 lines.append('')
         target.write_text('\n'.join(lines)+'\n')
     out=docs/'generated-meta/curriculum.json'

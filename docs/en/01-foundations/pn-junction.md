@@ -8,7 +8,8 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-- crystal-bands-doping
+  - crystal-bands-doping
+  - electric-charge-field-potential
 related:
 - transistor-cmos
 ---
@@ -21,7 +22,7 @@ The p-n junction is the first semiconductor structure in which spatially separat
 
 ## Joining p-type and n-type material
 
-Consider p-type and n-type regions brought into contact. Before contact, each bulk region is approximately charge neutral, but their mobile-carrier concentrations differ. The n side contains a high concentration of electrons; the p side contains a high concentration of holes.
+For p-type and n-type regions brought into contact, Before contact, each bulk region is approximately charge neutral, but their mobile-carrier concentrations differ. The n side contains a high concentration of electrons; the p side contains a high concentration of holes.
 
 Immediately after forming the junction, concentration gradients drive diffusion. Electrons statistically move from the n side toward the p side, while holes move from the p side toward the n side. Near the boundary they recombine with opposite carriers.
 

@@ -27,6 +27,7 @@ symbols:
   - chris_decode
 depends_on:
   - data-structures
+  - algorithmic-complexity
 related:
   - physical-memory
   - kernel-jobs-kthreads
@@ -140,7 +141,7 @@ Dequeue reads at head and advances similarly.
 
 Both are O(1), with no dynamic allocation. Full capacity is explicit: <code>job_submit</code> fails when count equals capacity.
 
-### Why this representation fits
+### Representation rationale
 
 Jobs are short records containing function and argument pointers. A bounded ring keeps storage stable, avoids allocation from worker paths and gives constant-time queue mutation.
 
@@ -374,7 +375,7 @@ The trade-off is intentional loss of oldest history.
 | ChrisCPU decode | byte stream → ChrisInsn | bounded O(1)/instruction | none | CPU-local |
 | VM trace append | circular trace array | O(1) | none | CPU-local in current model |
 
-## What should change when scale changes
+## Scaling thresholds and redesign criteria
 
 The atlas is descriptive, not an endorsement that every current algorithm should remain forever.
 

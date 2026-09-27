@@ -14,9 +14,9 @@ symbols:
 - pit_ticks
 - cpu_run
 depends_on:
-- logic-sequential
-- latches-flipflops
-- registers-counters
+  - latches-flipflops
+  - rc-rlc-transients
+  - transistor-cmos
 related:
 - cpu-datapath-isa
 - timers
@@ -33,7 +33,7 @@ This chapter assumes CMOS switching, Boolean functions and the distinction betwe
 
 ## Propagation and contamination delay
 
-Consider a combinational block whose input changes at time zero. The contamination delay is a lower bound on when its output may first change. The propagation delay is an upper bound on when the output has settled to the correct value, subject to specified operating conditions and input transition assumptions. Between these limits the output may be old, transient or temporarily incorrect. Multiple paths can produce glitches even when the initial and final Boolean values are equal.
+For a combinational block whose input changes at time zero, The contamination delay is a lower bound on when its output may first change. The propagation delay is an upper bound on when the output has settled to the correct value, subject to specified operating conditions and input transition assumptions. Between these limits the output may be old, transient or temporarily incorrect. Multiple paths can produce glitches even when the initial and final Boolean values are equal.
 
 These bounds describe different hazards. The maximum delay determines whether the next sampling event occurs too early for the new result. The minimum delay determines whether new data arrives so quickly that it corrupts a value still being captured. Optimizing a circuit solely for the shortest maximum delay can therefore introduce a minimum-delay problem elsewhere. Neither bound is a universal number for a gate symbol: voltage, temperature, process variation, load capacitance and input slope affect it.
 

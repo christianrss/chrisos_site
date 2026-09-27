@@ -13,8 +13,7 @@ symbols:
 - maybe_irq
 - chris_arch_reset
 depends_on:
-- transistor-cmos
-- combinational-logic
+  - combinational-logic
 related:
 - cpu-datapath-isa
 ---

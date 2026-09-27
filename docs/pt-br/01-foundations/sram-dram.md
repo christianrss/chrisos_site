@@ -19,9 +19,10 @@ symbols:
 - chris_machine_create
 - chris_machine_destroy
 depends_on:
-- transistor-cmos
-- logic-sequential
-- clock-timing
+  - latches-flipflops
+  - clock-timing
+  - transistor-cmos
+  - capacitance-inductance
 related:
 - physical-memory
 - virtual-memory

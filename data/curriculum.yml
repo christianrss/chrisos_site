@@ -2,14 +2,23 @@ version: 1
 levels:
 - id: 01-matter
   title:
-    en: 01 · Matter, electricity, devices and logic
-    pt-br: 01 · Matéria, eletricidade, dispositivos e lógica
+    en: 01 · Matter, mathematical tools, electricity, devices and logic
+    pt-br: 01 · Matéria, ferramentas matemáticas, eletricidade, dispositivos e lógica
   modules:
   - title:
-      en: Matter, charge and electric quantities
-      pt-br: Matéria, carga e grandezas elétricas
+      en: Matter and physical models
+      pt-br: Matéria e modelos físicos
     chapters:
     - atom-semiconductor
+  - title:
+      en: Mathematical tools for physical systems
+      pt-br: Ferramentas matemáticas para sistemas físicos
+    chapters:
+    - vectors-complex-numbers-systems
+  - title:
+      en: Charge, circuits and electromagnetic behavior
+      pt-br: Carga, circuitos e comportamento eletromagnético
+    chapters:
     - electric-charge-field-potential
     - voltage-current-resistance-power
     - ohm-kirchhoff-circuits
@@ -31,10 +40,11 @@ levels:
     - cmos-switching-power
     - logic-levels-noise-margins
   - title:
-      en: Boolean functions and circuits
-      pt-br: Funções booleanas e circuitos
+      en: Boolean and numerical logic
+      pt-br: Lógica booleana e numérica
     chapters:
     - boolean-algebra
+    - number-systems-binary-arithmetic
     - combinational-logic
     - arithmetic-circuits
   - title:
@@ -52,13 +62,11 @@ levels:
     pt-br: 02 · Ferramentas matemáticas, representação e algoritmos
   modules:
   - title:
-      en: Mathematical language for systems
-      pt-br: Linguagem matemática para sistemas
+      en: Mathematical language for discrete systems
+      pt-br: Linguagem matemática para sistemas discretos
     chapters:
-    - number-systems-binary-arithmetic
     - discrete-math-sets-relations-functions
     - proof-invariants-induction
-    - vectors-complex-numbers-systems
   - title:
       en: Bits, types and layout
       pt-br: Bits, tipos e layout

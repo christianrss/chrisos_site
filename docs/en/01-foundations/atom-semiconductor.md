@@ -17,10 +17,10 @@ related:
 ---
 
 
-# Atom, electrical charge and semiconductor physics
+# Matter, atoms, charge and physical models
 
 <div class="abstract">
-Digital computers are discrete-state machines built from continuous physical phenomena. The purpose of this chapter is to establish the minimum physical chain required to understand why a transistor can represent and transform binary state without treating a logic gate as an unexplained primitive.
+Digital computers are discrete-state machines built from continuous physical phenomena. This chapter establishes the matter, atomic-state, charge, energy and modeling concepts required before electrostatics, circuit theory and semiconductor-device physics are introduced as separate layers.
 </div>
 
 ## Matter and charge
@@ -39,7 +39,7 @@ Three electrical quantities recur throughout hardware:
 
 Resistance describes how strongly a structure opposes current. Ohm's law, `V = IR`, is a macroscopic relation useful for conductors and resistive elements; transistor operation requires the additional physics of semiconductors and electric fields.
 
-## Models, scales and what an electron state describes
+## Models, scales and electron-state interpretation
 
 An orbital is a quantum state, not a small classical orbit around the nucleus. The squared magnitude of its wavefunction determines a probability density for position measurements under the model. Energy levels and the occupation of available states constrain the behavior of electrons. In a solid, the collective arrangement of atoms changes the allowed states, so copying an isolated-atom picture directly into a transistor gives the wrong model.
 
@@ -67,7 +67,7 @@ The last two rows describe component models. A constant capacitance or resistanc
 
 For an ideal linear capacitor, `Q = CV`. The stored electrostatic energy is `U = C V² / 2`, obtained by integrating the work of adding charge as the capacitor voltage rises. If a load capacitance is charged from zero to a supply `V` through a resistive path, the supply provides `C V²`: half becomes stored energy and half is dissipated in the simplified charging path. Discharging loses the stored half unless the circuit deliberately recovers it.
 
-This calculation explains the squared-voltage dependence of ordinary switching energy. A hypothetical 10 fF load charged to 1 V stores 5 fJ. One complete charge/discharge cycle in the simple model draws 10 fJ from the supply. These are explicitly illustrative values, not measured parameters of the user's processor. They show why reducing voltage can change energy substantially even when the Boolean computation is unchanged.
+This calculation explains the squared-voltage dependence of ordinary switching energy. A hypothetical 10 fF load charged to 1 V stores 5 fJ. One complete charge/discharge cycle in the simple model draws 10 fJ from the supply. These are explicitly illustrative values, not measured parameters of any specific processor. They show why reducing voltage can change energy substantially even when the Boolean computation is unchanged.
 
 An ideal gate insulator blocks steady conduction, but its capacitance must still be charged and discharged when the input changes. “Voltage controlled” therefore does not mean “requires no energy.” Leakage, short-circuit current during transitions and interconnect add further costs. Software-visible power behavior is many layers above this model, but it cannot be understood by counting only arithmetic results while ignoring how frequently electrical nodes switch.
 
@@ -130,7 +130,7 @@ A simplified model is:
 
 The abstraction works because subsequent gates restore degraded analog signals toward valid voltage levels. Digital design therefore relies on analog device physics while exposing discrete logical behavior.
 
-## Why this matters to operating systems
+## Relevance to operating-system abstractions
 
 A kernel manipulates registers, page-table bits, interrupt flags and device registers as if each bit were exact. The physical machine underneath stores those states as charges and voltages in transistor networks. The software abstraction is reliable because multiple layers enforce discrete contracts:
 

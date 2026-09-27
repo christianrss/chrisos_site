@@ -27,6 +27,7 @@ symbols:
   - chris_decode
 depends_on:
   - data-structures
+  - algorithmic-complexity
 related:
   - physical-memory
   - kernel-jobs-kthreads
@@ -42,7 +43,7 @@ related:
 Este capítulo é um mapa algorítmico da revisão atual da branch <code>main</code> do ChrisOS. Ele não atribui nomes de livro-texto por semelhança. Cada seção identifica a representação realmente visível no source, a operação executada, o invariante principal, as características de complexidade e o modelo de concorrência. O objetivo é ligar teoria de estruturas de dados ao comportamento concreto de kernel, filesystem, gráficos, compilador e emulador.
 </div>
 
-## Como ler o atlas
+## Estrutura de leitura do atlas
 
 Um mesmo algoritmo pode ser adequado em um subsistema e inadequado em outro. O ChrisOS atual utiliza várias estruturas propositalmente limitadas: arrays, bitmaps e rings. Elas frequentemente trocam lookup sofisticado por uso de memória previsível e implementação simples.
 
@@ -362,7 +363,7 @@ O trade-off é perda intencional do histórico mais antigo.
 | decode ChrisCPU | byte stream → ChrisInsn | constante limitada | não | CPU-local |
 | trace append | ring circular | O(1) | não | CPU-local |
 
-## Quando trocar algoritmos
+## Critérios para substituição de algoritmos
 
 O atlas descreve o presente, não determina que todo design deva permanecer.
 

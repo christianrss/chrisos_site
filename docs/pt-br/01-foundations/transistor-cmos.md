@@ -14,9 +14,8 @@ symbols:
 - cpu_run
 - gfx_rgb
 depends_on:
-- atom-semiconductor
-- crystal-bands-doping
-- pn-junction
+  - mos-capacitor
+  - pn-junction
 related:
 - logic-sequential
 ---

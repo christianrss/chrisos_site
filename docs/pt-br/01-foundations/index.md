@@ -8,195 +8,140 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 ---
 
-# Fundamentos físicos, elétricos, digitais e algorítmicos
+# Fundamentos
 
-<div class="abstract">Este volume percorre a cadeia causal da matéria e da carga elétrica até campos, circuitos, dispositivos semicondutores, lógica digital, estado armazenado, representação matemática, estruturas de dados e algoritmos. Os capítulos posteriores de kernel, compiladores, gráficos, redes e emulação não devem depender de uma primitiva não explicada.</div>
+<div class="abstract">Esta coleção contém os pré-requisitos físicos, elétricos, digitais, matemáticos e algorítmicos utilizados pelo restante do corpus do ChrisOS. Sua ordem interna segue o currículo canônico, não a cronologia dos diretórios do repositório.</div>
 
-## Escopo
+## Posição no corpus
 
-Este volume não é um panorama introdutório. Ele é a camada de pré-requisitos de todo o corpus do ChrisOS.
-
-A progressão pretendida é:
+Os fundamentos estabelecem as camadas de abstração exigidas pelos capítulos posteriores de arquitetura, kernel, compiladores, gráficos, redes e emulação.
 
 ~~~text
-matéria
-  ↓
-carga
-  ↓
-campo elétrico e potencial
-  ↓
-tensão / corrente / resistência / potência
-  ↓
-leis de circuitos
-  ↓
-capacitores / indutores / transientes / CA
-  ↓
-integridade de sinal e alimentação
-  ↓
-bandas / junções / eletrostática MOS
-  ↓
-MOSFET / CMOS
-  ↓
-níveis lógicos e noise margins
-  ↓
-lógica booleana
-  ↓
-circuitos combinacionais
-  ↓
-circuitos aritméticos
-  ↓
-lógica sequencial
-  ↓
-registradores / clocks / células de memória
-  ↓
+matéria e modelos físicos
+    ↓
+ferramentas matemáticas exigidas pelo modelo físico
+    ↓
+carga, campo e potencial elétrico
+    ↓
+grandezas de circuito e leis de rede
+    ↓
+armazenamento de energia, transientes e comportamento AC
+    ↓
+sinalização de alta velocidade, ruído e alimentação
+    ↓
+eletrostática de semicondutores
+    ↓
+MOSFET e CMOS
+    ↓
+níveis lógicos e abstração booleana
+    ↓
+aritmética combinacional
+    ↓
+estado sequencial, clocks e células de memória
+    ↓
 representação
-  ↓
+    ↓
+complexidade
+    ↓
 estruturas de dados
-  ↓
-algoritmos
-  ↓
-arquitetura de computadores
-  ↓
-ChrisOS
+    ↓
+algoritmos de sistemas
 ~~~
 
-<figure class="figure">
-<img src="../../assets/diagrams/foundations-chain.svg" alt="Cadeia de fundamentos">
-<figcaption>A documentação progride de portadores físicos para estado estruturado e algoritmos executáveis.</figcaption>
-</figure>
+## Fundamentos físicos e elétricos
 
-## Sequência física e elétrica
+A sequência canônica é:
 
-O currículo passa a tratar os seguintes assuntos como pré-requisitos explícitos, e não assumptions escondidas:
+1. matéria, átomos e modelos físicos;
+2. vetores e números complexos necessários posteriormente à análise de campos e circuitos;
+3. carga, campo, potencial e energia;
+4. tensão, corrente, resistência, energia e potência;
+5. lei de Ohm, leis de Kirchhoff e análise de circuitos;
+6. capacitância e indutância;
+7. transientes RC, RL e RLC;
+8. sinais AC, fase, frequência e impedância;
+9. indução eletromagnética e transformadores;
+10. linhas de transmissão e sinalização diferencial;
+11. ruído, grounding e integridade de sinal;
+12. power delivery, regulação e desacoplamento.
 
-1. Matéria, estrutura atômica e carga elétrica.
-2. Campo elétrico, força, potencial elétrico e energia potencial.
-3. Tensão, corrente, resistência, resistividade, energia e potência.
-4. Lei de Ohm, leis de Kirchhoff e modelos de circuitos concentrados.
-5. Capacitância, indutância e energia armazenada em campos elétricos/magnéticos.
-6. Transientes RC, RL e RLC e significado de constante de tempo.
-7. Senoides, frequência, fase, impedância e raciocínio no domínio da frequência.
-8. Indução eletromagnética e fundamentos de transformadores.
-9. Linhas de transmissão, sinalização diferencial, reflexões e terminação.
-10. Ruído, grounding, corrente de retorno, crosstalk e signal integrity.
-11. Power delivery, regulação, desacoplamento e transientes de alimentação.
-12. Estrutura cristalina, bandas de energia e estatística de portadores.
-13. Dopagem, junções p-n e interfaces semicondutoras.
-14. Eletrostática do capacitor MOS.
-15. MOSFET e chaveamento CMOS.
-16. Potência dinâmica/estática, capacitância e delay CMOS.
-17. Thresholds lógicos, noise margins, fan-out e restauração elétrica.
+Esses tópicos definem as hipóteses físicas usadas depois para semicondutores e comportamento digital.
 
-## Sequência digital
+## Fundamentos de semicondutores e lógica digital
 
-Somente depois da camada elétrica explícita o currículo avança por:
+A sequência de dispositivos é:
 
-1. Álgebra booleana.
-2. Lógica combinacional.
-3. Somadores, circuitos aritméticos e ULA.
-4. Lógica sequencial.
-5. Latches e flip-flops.
-6. Metaestabilidade e restrições de timing.
-7. Registradores, contadores e máquinas de estados.
-8. Clock, propagação, setup/hold e clock domains.
-9. Células SRAM e DRAM.
+1. estrutura cristalina, bandas e dopagem;
+2. junções p-n;
+3. eletrostática do capacitor MOS;
+4. MOSFET e CMOS;
+5. delay e potência CMOS;
+6. thresholds lógicos, fan-out e noise margins;
+7. álgebra booleana;
+8. sistemas numéricos binários;
+9. lógica combinacional;
+10. circuitos aritméticos;
+11. lógica sequencial;
+12. latches e flip-flops;
+13. registradores, contadores e máquinas de estados;
+14. temporização de clock;
+15. SRAM e DRAM.
 
-## Sequência matemática e de software
+A transição entre faixas elétricas de tensão e estado booleano abstrato permanece explícita.
 
-A ponte seguinte torna explícita a matemática necessária para software:
+## Representação e algoritmos
 
-1. Sistemas numéricos e aritmética binária.
-2. Conjuntos, relações e funções.
-3. Provas, invariantes e indução.
-4. Vetores e números complexos quando sistemas/eletrônica precisarem deles.
-5. Representação de dados, layout e ponteiros.
-6. Análise de complexidade.
-7. Recorrências e análise amortizada.
-8. Arrays, listas, stacks e queues.
-9. Hash tables.
-10. Trees, heaps e tries.
-11. Grafos e union-find.
-12. Bitmaps, rings e free lists.
-13. Sorting e searching.
-14. Algoritmos de grafos.
-15. Algoritmos de strings e parsing.
-16. Algoritmos aplicados ao ChrisOS.
+A sequência de fundamentos de software é:
 
-## Modelo obrigatório de raciocínio
+1. matemática discreta: conjuntos, relações e funções;
+2. prova, invariantes e indução;
+3. representação de dados, layout e ponteiros;
+4. complexidade algorítmica e modelos de custo;
+5. recursão, recorrências e análise amortizada;
+6. arrays, listas, stacks e queues;
+7. hash tables;
+8. trees, heaps e tries;
+9. grafos e disjoint-set union;
+10. bitmaps, rings e free lists;
+11. sorting e searching;
+12. algoritmos de grafos;
+13. algoritmos de strings e parsing;
+14. algoritmos implementados pelo ChrisOS.
 
-Todo capítulo posterior deve poder ser lido pela cadeia:
+## Regra de dependência
 
-~~~text
-mecanismo físico
-    ↓
-comportamento elétrico
-    ↓
-abstração digital
-    ↓
-representação
-    ↓
-estrutura de dados
-    ↓
-invariante
-    ↓
-algoritmo
-    ↓
-complexidade e localidade
-    ↓
-sincronização / ownership
-    ↓
-comportamento observável do ChrisOS
-~~~
+Um capítulo posterior pode assumir um conceito somente quando:
 
-Um subsistema não está documentado completamente quando apenas sua API é descrita.
+- o conceito foi definido em capítulo curricular anterior;
+- o próprio capítulo contém uma derivação local limitada e suficiente;
+- o conceito aparece explicitamente como referência futura, sem ser tratado como conhecimento já estabelecido.
 
-## Ferramentas matemáticas entram quando se tornam necessárias
+Essa regra elimina saltos implícitos entre abstrações físicas, matemáticas e de software.
 
-O corpus não precisa se tornar um curso genérico de matemática.
+## Ligação com a implementação
 
-Álgebra, análise dimensional, vetores, números complexos, derivadas, integrais e equações diferenciais são introduzidos quando passam a ser necessários para derivar um resultado elétrico, algorítmico ou arquitetural.
+A teoria fundamental é conectada à implementação atual na primeira fronteira adequada.
 
-A regra é que nenhuma equação pode depender de matemática essencial não explicada.
+| Fundamento | Implementação posterior |
+|---|---|
+| aritmética de largura finita e flags | semântica aritmética do ChrisCPU |
+| registradores e máquinas de estado | ChrisArchitectureState |
+| bitmaps | estado de alocação do PMM |
+| ring buffers | filas VirtIO e job queues do kernel |
+| trees/grafos | estruturas de filesystem, compiler e dependências |
+| carga/capacitância/timing | limites físicos sob modelos de memória e CPU |
 
-## Regra de ligação com o ChrisOS
+Um capítulo de fundamentos não afirma que o ChrisOS implementa diretamente o dispositivo físico subjacente.
 
-Todo fundamento deve reencontrar a implementação.
+## Regra de evidência
 
-Exemplos:
+Capítulos físicos e matemáticos distinguem:
 
-~~~text
-campo elétrico
-  -> controle do canal MOS
-  -> porta CMOS
-  -> flip-flop
-  -> registrador
-  -> registrador arquitetural
-  -> estado do ChrisCPU
+- equações e definições normativas;
+- hipóteses do modelo;
+- exemplos numéricos ilustrativos;
+- limites do modelo;
+- consequências arquiteturais posteriores;
+- ligação com o ChrisOS atual.
 
-capacitância
-  -> energia de chaveamento / delay
-  -> timing de clock e memória
-  -> comportamento de cache/DRAM
-  -> assumptions de performance visíveis ao ChrisOS
-
-bitmap
-  -> representação de recurso
-  -> estado de páginas do PMM
-  -> pmm_alloc()
-
-ring buffer
-  -> invariante produtor/consumidor
-  -> VirtIO queues / job queues
-
-tree / graph
-  -> hierarquia / dependências
-  -> algoritmos de filesystem, compiler e build
-~~~
-
-Teoria que nunca retorna a um subsystem implementado ou explicitamente futuro não é suficiente.
-
-## Regra de leitura
-
-As camadas inferiores não precisam ser memorizadas. Precisam estar disponíveis, precisas e ligadas quando uma camada superior depender delas.
-
-O currículo machine-readable é a autoridade para a ordem dos capítulos. Capítulos ausentes são intencionalmente contabilizados como gaps até existirem nos dois idiomas.
+Afirmações vinculadas ao source são revision-bound. Afirmações de dispositivos físicos usam referências técnicas primárias, não inferências do código do kernel.

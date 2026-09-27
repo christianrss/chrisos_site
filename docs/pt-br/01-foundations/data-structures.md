@@ -11,8 +11,8 @@ symbols:
 - scan_usable_for_run
 - pmm_alloc
 depends_on:
-- data-representation-layout
-- algorithmic-complexity
+  - data-representation-layout
+  - algorithmic-complexity
 related:
 - systems-algorithms
 ---
@@ -351,12 +351,12 @@ Toda estrutura precisa definir ownership dos elementos.
 
 Perguntas:
 
-- inserir transfere ownership?
-- remover devolve ownership?
-- várias estruturas podem referenciar o mesmo objeto?
-- existe reference count?
-- leitor pode manter ponteiro durante remoção?
-- reclaim é imediato ou diferido?
+- transferência de ownership na inserção;
+- devolução de ownership na remoção;
+- multiplicidade permitida de referências entre estruturas;
+- política de reference counting;
+- lifetime de leitores em relação à remoção;
+- política de reclaim imediato ou diferido.
 
 Em concorrência, lifetime costuma ser mais difícil que lookup.
 

@@ -12,8 +12,8 @@ symbols:
 - chris_arch_reset
 - ChrisArchitectureState
 depends_on:
-- combinational-logic
-- transistor-cmos
+  - logic-sequential
+  - transistor-cmos
 related:
 - logic-sequential
 - clock-timing

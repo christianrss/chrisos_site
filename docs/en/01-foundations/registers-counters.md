@@ -20,9 +20,8 @@ symbols:
 - virtq_take
 - Virtq
 depends_on:
-- latches-flipflops
-- arithmetic-circuits
-- logic-sequential
+  - latches-flipflops
+  - arithmetic-circuits
 related:
 - clock-timing
 - data-representation-layout
