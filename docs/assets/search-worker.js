@@ -107,13 +107,23 @@ function search(query, limit) {
     String(a.doc.title || '').localeCompare(String(b.doc.title || ''))
   );
 
-  return ranked.slice(0, limit || 36).map(item => ({
-    location:item.doc.location,
-    title:item.doc.title,
-    page_title:item.doc.page_title,
-    kind:item.doc.kind,
-    snippet:snippetFor(item.doc, terms, item.firstIndex)
-  }));
+  const results = [];
+  const seen = new Set();
+  for (const item of ranked) {
+    const baseLocation = String(item.doc.location || '').split('#', 1)[0];
+    const key = baseLocation + '\\u0000' + item.doc._title;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    results.push({
+      location:item.doc.location,
+      title:item.doc.title,
+      page_title:item.doc.page_title,
+      kind:item.doc.kind,
+      snippet:snippetFor(item.doc, terms, item.firstIndex)
+    });
+    if (results.length >= (limit || 36)) break;
+  }
+  return results;
 }
 
 self.onmessage = event => {
