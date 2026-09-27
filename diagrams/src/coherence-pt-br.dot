@@ -1,0 +1,35 @@
+digraph coherence {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.65"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  subgraph cluster_topology {
+    label="Multiprocessador coerente";
+    c0 [label="CPU 0\ncache privada"];
+    c1 [label="CPU 1\ncache privada"];
+    fabric [label="interconexao de coerencia\nsnoop / diretorio"];
+    mem [label="memoria compartilhada"];
+    c0 -> fabric [label="ler / obter / expulsar"];
+    c1 -> fabric [label="ler / obter / expulsar"];
+    fabric -> c0 [label="dados / sondagem / ack"];
+    fabric -> c1 [label="dados / sondagem / ack"];
+    fabric -> mem [dir=both, label="preenchimento / writeback"];
+  }
+
+  subgraph cluster_mesi {
+    label="Modelo didatico de estados estaveis MESI";
+    I [label="I\nInvalid"];
+    S [label="S\nShared"];
+    E [label="E\nExclusive"];
+    M [label="M\nModified"];
+    I -> E [label="leitura, sem par"];
+    I -> S [label="leitura, existe par"];
+    I -> M [label="propriedade para escrita"];
+    E -> M [label="escrita local"];
+    E -> S [label="leitura por par"];
+    S -> M [label="upgrade + invalidacao"];
+    S -> I [label="propriedade do par"];
+    M -> S [label="leitura por par / intervencao"];
+    M -> I [label="propriedade do par / expulsao"];
+  }
+}
