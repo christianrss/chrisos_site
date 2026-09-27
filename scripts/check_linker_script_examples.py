@@ -110,8 +110,6 @@ def source_checks(source: Path) -> None:
         [
             "MEMORY {",
             "MEMORY{",
-            "AT(",
-            "AT (",
             "AT>",
             "LOADADDR(",
             "ASSERT(",
@@ -121,6 +119,9 @@ def source_checks(source: Path) -> None:
             "OVERLAY",
         ],
     )
+    # Match the AT keyword itself, not the "AT(" suffix inside OUTPUT_FORMAT.
+    if re.search(r"(?<![A-Za-z0-9_])AT\\s*\\(", text):
+        raise AssertionError(f"{linker}: unexpected current-policy AT(...) construct")
 
     require_text(
         makefile,
