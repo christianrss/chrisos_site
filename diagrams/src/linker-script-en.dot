@@ -1,0 +1,29 @@
+digraph linker_script {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  objs [label="Input objects\n.text.* / .rodata.* / .data.* / .bss.*\nLimine request sections"];
+  script [label="kernel/metal/linker.ld\nPHDRS + SECTIONS + expressions"];
+  loc [label="Location counter '.'\n0xffffffff80000000\nALIGN + synthetic reservations"];
+  req [label=".limine_requests\nKEEP\nRW PT_LOAD"];
+  text [label=".text + .rodata\nRX PT_LOAD"];
+  data [label=".data + .bss\n1 MiB stack\nRW PT_LOAD"];
+  syms [label="Synthetic symbols\n__kernel_start/end\n__stack_bottom/top"];
+  elf [label="kernel.elf\nELF64 program headers"];
+  limine [label="Limine\nmaps and enters kstart"];
+  chrisld [label="ChrisLd today\nRX + optional RW\nno production script parity", fillcolor="#f7f7f7"];
+
+  objs -> script;
+  script -> loc;
+  loc -> req;
+  loc -> text;
+  loc -> data;
+  loc -> syms;
+  req -> elf;
+  text -> elf;
+  data -> elf;
+  syms -> elf;
+  elf -> limine;
+  chrisld -> elf [style=dashed, label="future parity"];
+}
