@@ -8,7 +8,7 @@ policy:
 volumes:
   01-foundations:
     chapters:
-      - {id: atom-semiconductor, title: "Atom, charge and semiconductor physics", priority: foundation}
+      - {id: atom-semiconductor, title: "Matter, atoms, charge and physical models", priority: foundation}
       - {id: electric-charge-field-potential, title: "Electric charge, field, potential and energy", priority: foundation}
       - {id: voltage-current-resistance-power, title: "Voltage, current, resistance, energy and power", priority: expansion}
       - {id: ohm-kirchhoff-circuits, title: "Ohm's law, Kirchhoff's laws and circuit analysis", priority: expansion}
