@@ -10,24 +10,95 @@ sources: []
 
 # Computer architecture
 
-<div class="abstract">Datapaths, control, instruction sets, x86-64 execution, privilege, caches, memory hierarchy, buses, MMIO and DMA.</div>
+<div class="abstract">This volume bridges digital logic and operating-system-visible machine behavior: datapaths, pipelines, speculation, instruction sets, x86-64 execution, privilege, memory hierarchy, buses, MMIO, DMA and platform discovery.</div>
 
 ## Scope
 
-This volume defines the terminology and relationships required before implementation detail. General concepts remain separate from ChrisOS-specific decisions; when a chapter crosses into implementation, its source revision and relevant files are declared in frontmatter.
+The volume explains both the architectural contract consumed by ChrisOS and the implementation ideas needed to understand physical processors and ChrisCPU.
 
-## Core chapters
+The intended chain is:
 
-1. [CPU datapath and ISA](cpu-datapath-isa.md)
-2. [Machine code and relocatable meaning](machine-code.md)
-3. [Registers, aliases and flags](x86-registers-flags.md)
-4. [Instruction encoding and decoding](x86-instruction-encoding.md)
-5. [x86-64 memory and privilege](x86-64-memory-privilege.md)
-6. [Privilege rings and controlled entry](privilege-rings.md)
-7. [Buses, MMIO and DMA](buses-mmio-dma.md) — expansion pending.
+~~~text
+combinational + sequential logic
+    ↓
+datapath and control
+    ↓
+pipeline
+    ↓
+hazards / forwarding
+    ↓
+branch prediction / speculation
+    ↓
+renaming / out-of-order / retirement
+    ↓
+ISA
+    ↓
+machine-code encoding
+    ↓
+register / privilege / memory semantics
+    ↓
+DRAM controller + cache hierarchy
+    ↓
+coherence + atomics
+    ↓
+buses / PCIe / MMIO / DMA
+    ↓
+ACPI platform discovery
+    ↓
+ChrisOS
+~~~
 
-The [curriculum](../learning-path.md) also tracks unwritten prerequisites and subsequent chapters on caches, coherence, atomics, PCI and ACPI. A linked page is not a declaration of complete coverage.
+## Datapath and microarchitecture
+
+The curriculum now treats these as distinct subjects:
+
+1. CPU datapath and ISA.
+2. Pipeline structure.
+3. Data/control hazards and forwarding.
+4. Branch prediction and speculation.
+5. Register renaming, out-of-order execution and retirement.
+
+The ISA is an externally visible contract. Pipeline and OoO mechanisms are possible internal implementations of that contract.
+
+ChrisCPU currently targets the architectural contract rather than reproducing a speculative physical microarchitecture. This difference is explicit throughout the volume.
+
+## Machine code and x86-64
+
+The next group covers:
+
+1. Machine code and relocatable meaning.
+2. x86-64 registers, aliases and flags.
+3. Instruction encoding and decoding.
+4. x86-64 memory and privilege.
+5. Privilege rings and controlled entry.
+
+This provides the direct prerequisite chain for ChrisAsm, KCC, ChrisCPU and the ChrisOS kernel.
+
+## Memory system
+
+The memory sequence is:
+
+1. DRAM organization and the memory-controller role.
+2. Cache hierarchy and locality.
+3. Multiprocessor coherence.
+4. Atomic operations and memory ordering.
+
+This keeps physical DRAM cells, architectural memory and cache-coherent SMP semantics as separate layers.
+
+## Devices and platform
+
+The platform path covers:
+
+1. buses, port I/O, MMIO and DMA;
+2. PCI/PCIe configuration and device discovery;
+3. ACPI platform description.
+
+These chapters bridge instruction execution to the devices that ChrisOS actually controls.
 
 ## Reading rule
 
-Lower-layer details need not be memorized, but terms used by higher layers are defined before their first technical use. Diagrams show flow and responsibility; tables record contracts, layouts and states.
+General theory and current ChrisOS/ChrisCPU behavior are always separated.
+
+A physical processor may pipeline and execute instructions out of order while exposing the same ISA state transitions that ChrisCPU currently interprets sequentially.
+
+A linked or authored page is not automatically considered complete; coverage and depth gates remain authoritative.

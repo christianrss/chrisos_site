@@ -124,6 +124,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_kernel_model_examples.py --source .source
 
+      - name: Verify electrical foundation examples
+        working-directory: docs-repo
+        run: python scripts/check_electric_field_examples.py
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
