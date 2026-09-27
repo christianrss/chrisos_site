@@ -27,6 +27,7 @@ symbols:
   - chris_decode
 depends_on:
   - data-structures
+  - algorithmic-complexity
 related:
   - physical-memory
   - kernel-jobs-kthreads
