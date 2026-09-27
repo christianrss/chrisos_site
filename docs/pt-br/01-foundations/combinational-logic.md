@@ -10,7 +10,8 @@ sources:
 symbols:
 - read_modrm
 depends_on:
-- boolean-algebra
+  - boolean-algebra
+  - transistor-cmos
 related:
 - arithmetic-circuits
 - logic-sequential
