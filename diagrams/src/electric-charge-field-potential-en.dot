@@ -1,0 +1,21 @@
+digraph electric_foundations {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.5", ranksep="0.6"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  matter [label="Matter\natoms + charged particles"];
+  charge [label="Charge Q\n[C]"];
+  field [label="Electric field E\nforce per charge"];
+  potential [label="Potential V\nenergy per charge"];
+  diff [label="Potential difference\nvoltage"];
+  current [label="Charge motion\nI = dQ/dt"];
+  circuit [label="Circuit theory\nR, C, L, KCL/KVL"];
+  semi [label="Semiconductor electrostatics\nPN / MOS"];
+  cmos [label="CMOS logic levels"];
+  arch [label="Architectural bits\nregisters / ISA"];
+  os [label="ChrisOS\nMMIO / interrupts / memory"];
+
+  matter -> charge -> field -> potential -> diff;
+  diff -> current -> circuit -> semi -> cmos -> arch -> os;
+  field -> semi [style=dashed,label="electrostatic control"];
+}
