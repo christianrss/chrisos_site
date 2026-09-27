@@ -1,0 +1,19 @@
+digraph power_on_kstart {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  reset [label="Hardware reset"];
+  fw [label="Firmware\nUEFI / BIOS path"];
+  limine [label="Limine\nELF + requests + mappings"];
+  entry [label="Entry state\nRIP=kstart\nIF=0\nbootloader stack/GDT/CR3"];
+  early [label="Early kstart\nserial -> bootinfo -> GDT -> IDT"];
+  mem [label="Memory ownership\nPMM -> adopt CR3 -> MM -> heap/process"];
+  runtime [label="Runtime construction\ngfx -> APIC -> jobs -> SMP\nACPI -> storage -> fs -> lang"];
+  sti [label="STI\ninterrupt-driven runtime"];
+  desktop [label="desktop_run()"];
+  gaps [label="Remaining ownership gaps\nBSP stack\nboot responses\nbootloader page tables", fillcolor="#f7f7f7"];
+
+  reset -> fw -> limine -> entry -> early -> mem -> runtime -> sti -> desktop;
+  mem -> gaps [style=dashed];
+}
