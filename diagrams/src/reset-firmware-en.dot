@@ -1,0 +1,24 @@
+digraph reset_firmware {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  reset [label="x86 reset\nCS.base=FFFF0000h\nEIP=FFF0h"];
+  sec [label="Firmware early init / SEC\ntemporary execution state"];
+  pei [label="PEI\nDRAM + permanent memory\nHOB handoff"];
+  dxe [label="DXE\ndrivers + Boot Services"];
+  bds [label="BDS / UEFI Boot Manager"];
+  efi [label="BOOTX64.EFI\nLimine EFI application"];
+  limine [label="Limine\nELF loader + paging + protocol"];
+  info [label="Limine responses\nFB + HHDM + memmap + MP"];
+  kernel [label="ChrisOS higher-half ELF\nENTRY(kstart)"];
+  runtime [label="ChrisOS init\nPMM / MM / SMP / FS / desktop"];
+  chrisvm [label="ChrisVM v1\ndirect long-mode guest boot", fillcolor="#f7f7f7"];
+
+  reset -> sec -> pei -> dxe -> bds -> efi -> limine;
+  limine -> info;
+  limine -> kernel;
+  info -> kernel;
+  kernel -> runtime;
+  chrisvm -> kernel [style=dashed, label="future real-kernel protocol"];
+}
