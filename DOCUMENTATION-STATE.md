@@ -1,7 +1,7 @@
 # ChrisOS Documentation — Operational State Memory
 
 Snapshot date: 2026-09-27  
-Baseline documentation commit: `50f771ad30c791b98a69c6bbf11c98cb8645e98e`
+Baseline documentation commit: `09e478b0fd992174d742f2255a7cdadb6a22422b`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -21,16 +21,16 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **214**.
 
 Authored chapters:
-- EN: **73 present**
-- PT-BR: **73 present**
-- structurally bilingual authored pairs: **73**
-- structural coverage: **34.1%**
-- missing chapters in both languages: **141**
+- EN: **75 present**
+- PT-BR: **75 present**
+- structurally bilingual authored pairs: **75**
+- structural coverage: **35.0%**
+- missing chapters in both languages: **139**
 
 Depth-floor state:
-- EN: **48** chapters above the text floor; **25** present but below the floor.
-- PT-BR: **42** chapters above the text floor; **31** present but below the floor.
-- chapters above the floor in **both** languages: **42**.
+- EN: **50** chapters above the text floor; **25** present but below the floor.
+- PT-BR: **44** chapters above the text floor; **31** present but below the floor.
+- chapters above the floor in **both** languages: **44**.
 - chapters needing expansion in at least one language: **31**.
 - six kernel chapters meet the EN floor but still need PT-BR expansion: `idt-exceptions`, `interrupts-smp`, `pic-apic-ioapic`, `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
@@ -38,7 +38,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 ## Chapters currently above the depth floor in both languages
 
-`acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `atom-semiconductor`, `atomics-memory-model`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `elf-linking`, `emulator-theory`, `gdt-tss`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `registers-counters`, `reset-firmware`, `sram-dram`, `systems-algorithms`, `transistor-cmos`, `uefi`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
+`acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `atom-semiconductor`, `atomics-memory-model`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `elf-linking`, `emulator-theory`, `gdt-tss`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `registers-counters`, `reset-firmware`, `sram-dram`, `systems-algorithms`, `transistor-cmos`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
 
 ## Authored chapters that still require expansion
 
@@ -48,7 +48,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 | Volume | Missing |
 |---|---:|
-| 01-foundations | 25 |
+| 01-foundations | 23 |
 | 02-computer-architecture | 5 |
 | 03-boot | 0 |
 | 04-kernel | 0 |
@@ -65,7 +65,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 15-specifications | 7 |
 | 16-history | 3 |
 | 98-maintenance | 2 |
-| **Total** | **141** |
+| **Total** | **139** |
 
 For the exact ordered list, run:
 
@@ -88,8 +88,9 @@ Implemented and merged:
 - search JSON loaded with deployment version and no stale-cache reuse;
 - post-build reader smoke tests;
 - GitHub Pages build and deploy pipeline.
+- CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline: `50f771ad30c791b98a69c6bbf11c98cb8645e98e`.
+Last known successful reader/deploy baseline: `09e478b0fd992174d742f2255a7cdadb6a22422b`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
