@@ -1,0 +1,31 @@
+digraph atomics {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  source [label="Programa-fonte\nvolatile / atomicos / locks"];
+  compiler [label="Modelo do compilador\nreordenacao + barreiras"];
+  isa [label="Modelo arquitetural x86\nLOCK / fences / regras TSO"];
+  uarch [label="Microarquitetura\nexecucao fora de ordem + store buffer"];
+  coherence [label="Memoria compartilhada coerente\npropriedade de linhas"];
+
+  source -> compiler;
+  compiler -> isa;
+  isa -> uarch;
+  uarch -> coherence;
+
+  subgraph cluster_tso {
+    label="Modelo didatico com store buffers";
+    c0 [label="CPU0\nstore X=1\nload Y"];
+    b0 [label="store buffer FIFO\nX=1"];
+    mem [label="Memoria compartilhada\nX=0, Y=0"];
+    b1 [label="store buffer FIFO\nY=1"];
+    c1 [label="CPU1\nstore Y=1\nload X"];
+    c0 -> b0 [label="enfileirar"];
+    c1 -> b1 [label="enfileirar"];
+    b0 -> mem [label="drenar depois"];
+    b1 -> mem [label="drenar depois"];
+    mem -> c0 [label="load Y pode ver 0"];
+    mem -> c1 [label="load X pode ver 0"];
+  }
+}
