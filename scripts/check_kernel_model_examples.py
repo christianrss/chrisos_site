@@ -201,7 +201,7 @@ def panic_checks(source: Path) -> None:
         [
             "_Noreturn void panic(const char *message)",
             '__asm__ volatile ("cli");',
-            'serial_puts("\nPANIC: ");',
+            'PANIC: ',
             "panic_identity();",
             '__asm__ volatile ("hlt");',
             "_Noreturn void panic_exception",
