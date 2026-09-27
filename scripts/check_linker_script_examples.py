@@ -120,7 +120,7 @@ def source_checks(source: Path) -> None:
         ],
     )
     # Match the AT keyword itself, not the "AT(" suffix inside OUTPUT_FORMAT.
-    if re.search(r"(?<![A-Za-z0-9_])AT\\s*\\(", text):
+    if re.search(r"(^|[^A-Za-z0-9_])AT[ \t]*[(]", text, re.M):
         raise AssertionError(f"{linker}: unexpected current-policy AT(...) construct")
 
     require_text(
