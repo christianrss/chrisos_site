@@ -145,7 +145,7 @@ i3 = i1 + i2
 
 KCL does not say currents are physically identical in all branches. It constrains their signed sum at the connection.
 
-## When node charge matters
+## Node charge accumulation
 
 If charge can accumulate in an explicitly modeled capacitive structure, KCL still holds when the capacitor current is included.
 
