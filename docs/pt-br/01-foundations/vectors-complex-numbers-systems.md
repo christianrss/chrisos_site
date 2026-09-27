@@ -326,3 +326,34 @@ Este capítulo fornece a álgebra linear e os números complexos necessários ao
 Verdade matemática, representação numérica e implementação atual são camadas de evidência distintas.
 
 Revisado contra o `main` do ChrisOS na revisão `da3df29cb397932c43d32373871fb9380e688ade`. `sources` e `symbols` estão vazios porque não há afirmação de implementação neste capítulo.
+
+
+## Coordenadas afins e translação
+
+Transformações lineares preservam a origem: para um mapa linear `A`, `A0=0`. Translação não preserva a origem e não pode ser representada por uma matriz linear 3 por 3 comum agindo sobre uma posição tridimensional. Gráficos introduzem coordenadas homogêneas para compor transformações afins uniformemente. Uma posição torna-se `(x,y,z,1)`, enquanto uma direção pode ser `(x,y,z,0)`. Uma matriz 4 por 4 passa a transportar a translação em sua última linha ou coluna, conforme a convenção.
+
+A distinção entre posição e direção é semântica. Transladar um ponto muda sua localização; uma direção não deveria mudar. O componente homogêneo torna essa diferença visível na álgebra. Projeção em perspectiva também utiliza a quarta coordenada, seguida pela divisão de perspectiva. Os capítulos de gráficos derivam esse pipeline; aqui a regra essencial é que uma tupla só possui significado junto do espaço e da convenção em que é interpretada.
+
+## Mudança de base
+
+Suponha que as colunas de uma matriz inversível `B` sejam vetores de uma base expressos em um sistema de referência. Coordenadas `c` nessa base correspondem ao vetor
+
+~~~text
+v = B c
+~~~
+
+e a conversão de volta é
+
+~~~text
+c = B^-1 v
+~~~
+
+Uma transformação de câmera pode ser entendida como mudança de base combinada com translação, não como uma coleção arbitrária de coeficientes. Essa interpretação ajuda na depuração porque explicita quais eixos e origem a transformação representa.
+
+Bases ortonormais são convenientes. Se as colunas são vetores unitários mutuamente perpendiculares, então `B^-1=B^T` em aritmética exata. Precisão finita pode destruir gradualmente a ortogonalidade; atualizações repetidas podem exigir renormalização ou reconstrução.
+
+## Acumulação numérica e reprodutibilidade
+
+A ordem de redução importa em aritmética finita. Um produto escalar acumulado sequencialmente pode diferir de uma redução em árvore ou SIMD porque o arredondamento ocorre após somas intermediárias diferentes. Código paralelo pode produzir respostas numericamente próximas, mas não idênticas bit a bit, mesmo quando os cálculos estão corretos.
+
+A validação precisa escolher o contrato deliberadamente. Reprodutibilidade bit a bit exige representação e ordem de operações fixas. Equivalência numérica permite erro limitado e deve especificar tolerâncias absolutas e relativas. Testes também precisam incluir entradas zero, quase zero, muito grandes, muito pequenas, colineares, perpendiculares e quase singulares, não apenas vetores ordinários.

@@ -326,3 +326,34 @@ This chapter supplies the linear-algebra and complex-number machinery required b
 Mathematical truth, numerical representation and current implementation are separate evidence layers.
 
 Reviewed against ChrisOS `main` revision `da3df29cb397932c43d32373871fb9380e688ade`. `sources` and `symbols` are empty because no implementation claim is made here.
+
+
+## Affine coordinates and translation
+
+Pure linear transformations preserve the origin: for a linear map `A`, `A0=0`. Translation does not preserve the origin and therefore cannot be represented by an ordinary 3 by 3 linear matrix acting on a three-component position. Graphics commonly introduces homogeneous coordinates so affine transformations can be composed uniformly. A position becomes `(x,y,z,1)`, while a direction can be represented as `(x,y,z,0)`. A 4 by 4 matrix can then carry a translation in its final row or column according to the chosen convention.
+
+The distinction between position and direction is semantic, not cosmetic. Translating a point changes its location; translating a direction should not change it. The homogeneous component makes this distinction algebraically visible. Perspective projection also uses the fourth coordinate, followed by a perspective divide. The graphics chapters derive that pipeline in detail; here the important rule is that a coordinate tuple is meaningful only together with the space and convention in which it is interpreted.
+
+## Change of basis
+
+Suppose the columns of an invertible matrix `B` are basis vectors expressed in a reference coordinate system. Coordinates `c` in that basis correspond to the reference vector
+
+~~~text
+v = B c
+~~~
+
+and conversion back is
+
+~~~text
+c = B^-1 v
+~~~
+
+A camera transform can be understood as a change of basis plus translation rather than as an arbitrary collection of matrix coefficients. This interpretation is useful for debugging because it exposes which axes and origin a transform claims to represent.
+
+Orthonormal bases are especially convenient. If columns are mutually perpendicular unit vectors, then `B^-1=B^T` in exact arithmetic. Finite precision can gradually destroy orthogonality, so repeated updates may require renormalization or reconstruction depending on the algorithm.
+
+## Numerical accumulation and reproducibility
+
+Reduction order matters in finite arithmetic. A dot product accumulated left-to-right can differ from a tree reduction or SIMD implementation because rounding occurs after different intermediate sums. Parallel code may therefore produce numerically close but bitwise different answers even when every worker is correct.
+
+Systems validation must choose the required contract deliberately. Bitwise reproducibility demands fixed representation and operation order. Numerical equivalence instead permits bounded error and should specify absolute and relative tolerances. Tests should also include zero, near-zero, very large, very small, collinear, perpendicular and nearly singular inputs rather than only ordinary vectors.
