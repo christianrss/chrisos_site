@@ -11,8 +11,8 @@ symbols:
 - scan_usable_for_run
 - pmm_alloc
 depends_on:
-- data-representation-layout
-- algorithmic-complexity
+  - data-representation-layout
+  - algorithmic-complexity
 related:
 - systems-algorithms
 ---
