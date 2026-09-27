@@ -1,0 +1,31 @@
+digraph pci_pcie {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  cpu [label="CPU / ChrisOS"];
+  cfg [label="Core de configuracao PCI\nBDF + registradores"];
+  legacy [label="Backend legado\n0xCF8 / 0xCFC\n256 B/funcao"];
+  ecam [label="Backend ECAM futuro\nMCFG\n4096 B/funcao"];
+  root [label="Root Complex"];
+  bridge [label="Bridge PCIe / porta de switch"];
+  ep1 [label="Endpoint\nNVMe / AHCI / xHCI"];
+  ep2 [label="Endpoint\nVirtIO GPU / block / net"];
+  bar [label="Recursos BAR\nI/O ou MMIO"];
+  caps [label="Capabilities\nPCIe / MSI / MSI-X / vendor"];
+  dma [label="DMA / interrupcoes"];
+
+  cpu -> cfg;
+  cfg -> legacy [label="atual"];
+  cfg -> ecam [label="futuro"];
+  legacy -> root;
+  ecam -> root;
+  root -> bridge;
+  bridge -> ep1;
+  bridge -> ep2;
+  ep1 -> bar;
+  ep2 -> bar;
+  ep2 -> caps;
+  bar -> dma;
+  caps -> dma;
+}
