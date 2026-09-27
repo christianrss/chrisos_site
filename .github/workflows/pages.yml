@@ -92,6 +92,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_reset_firmware_examples.py --source .source
 
+      - name: Verify UEFI contracts and installer assumptions
+        working-directory: docs-repo
+        run: python scripts/check_uefi_examples.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
