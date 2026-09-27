@@ -68,6 +68,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_cache_examples.py
 
+      - name: Verify illustrative coherence transitions
+        working-directory: docs-repo
+        run: python scripts/check_coherence_examples.py
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
