@@ -3,7 +3,10 @@
   const pt = lang === 'pt-br';
   const body = document.body;
   const base = body.dataset.base || '.';
-  const root = new URL(base.replace(/\/$/, '') + '/', location.href);
+  const configuredRoot = body.dataset.siteRoot || '';
+  const root = configuredRoot
+    ? new URL(configuredRoot.endsWith('/') ? configuredRoot : configuredRoot + '/')
+    : new URL(base.replace(/\/$/, '') + '/', location.href);
 
   /* ---------- Book drawer ---------- */
   const navToggle = document.getElementById('nav-toggle');
@@ -61,6 +64,56 @@
     });
   }
 
+  /* ---------- Sidebar filtering ---------- */
+  const sidebarFilter = document.getElementById('sidebar-filter');
+  const sidebarFilterClear = document.getElementById('sidebar-filter-clear');
+  const sidebarFilterStatus = document.getElementById('sidebar-filter-status');
+
+  function filterSidebar() {
+    if (!navPanel || !sidebarFilter) return;
+    const term = normalize(sidebarFilter.value.trim());
+    const pages = [...navPanel.querySelectorAll('.book-page')];
+    const sections = [...navPanel.querySelectorAll('.section')];
+
+    if (!term) {
+      pages.forEach(item => item.hidden = false);
+      sections.forEach(item => item.hidden = false);
+      if (sidebarFilterStatus) sidebarFilterStatus.textContent = '';
+      return;
+    }
+
+    let visiblePages = 0;
+    pages.forEach(item => {
+      const match = normalize(item.textContent).includes(term);
+      item.hidden = !match;
+      if (match) visiblePages += 1;
+    });
+
+    [...sections].reverse().forEach(section => {
+      const ownTitle = normalize(section.querySelector(':scope > details > summary .section-title-link')?.textContent);
+      const childMatch = [...section.querySelectorAll('.book-page, .section')]
+        .some(child => child !== section && !child.hidden);
+      const match = ownTitle.includes(term) || childMatch;
+      section.hidden = !match;
+      const details = section.querySelector(':scope > details');
+      if (details && match) details.open = true;
+    });
+
+    if (sidebarFilterStatus) {
+      sidebarFilterStatus.textContent = pt
+        ? visiblePages + (visiblePages === 1 ? ' capítulo encontrado' : ' capítulos encontrados')
+        : visiblePages + (visiblePages === 1 ? ' chapter found' : ' chapters found');
+    }
+  }
+
+  sidebarFilter?.addEventListener('input', filterSidebar);
+  sidebarFilterClear?.addEventListener('click', () => {
+    if (!sidebarFilter) return;
+    sidebarFilter.value = '';
+    filterSidebar();
+    sidebarFilter.focus();
+  });
+
   /* ---------- Search ---------- */
   const searchToggle = document.getElementById('search-toggle');
   const searchDialog = document.getElementById('search-dialog');
@@ -83,24 +136,37 @@
 
   async function loadIndex() {
     if (!searchPromise) {
-      const url = new URL('search/' + lang + '.json', root);
-      searchPromise = fetch(url)
-        .then(response => {
-          if (!response.ok) throw new Error('search index ' + response.status);
-          return response.json();
-        })
-        .then(data => (data.docs || [])
-          .filter(doc => doc.location.startsWith(lang + '/'))
-          .map(doc => ({
-            ...doc,
-            _title: normalize(doc.title),
-            _location: normalize(doc.location),
-            _text: normalize(doc.text)
-          })))
-        .catch(error => {
-          searchPromise = null;
-          throw error;
-        });
+      searchPromise = (async () => {
+        const candidates = [
+          new URL('search/' + lang + '.json', root),
+          new URL('search/search_index.json', root)
+        ];
+        let lastError = null;
+
+        for (const url of candidates) {
+          try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            if (!response.ok) throw new Error('search index ' + response.status);
+            const data = await response.json();
+            const docs = (data.docs || [])
+              .filter(doc => String(doc.location || '').startsWith(lang + '/'))
+              .map(doc => ({
+                ...doc,
+                _title: normalize(doc.title),
+                _location: normalize(doc.location),
+                _text: normalize(doc.text)
+              }));
+            if (docs.length) return docs;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+
+        throw lastError || new Error('search index unavailable');
+      })().catch(error => {
+        searchPromise = null;
+        throw error;
+      });
     }
     return searchPromise;
   }
@@ -329,6 +395,33 @@
       if (details) details.open = false;
     });
   });
+
+  /* ---------- Reading position ---------- */
+  const scrollProgressBar = document.getElementById('reader-scroll-progress-bar');
+  let scrollProgressFrame = 0;
+
+  function updateScrollProgress() {
+    scrollProgressFrame = 0;
+    if (!scrollProgressBar) return;
+    const article = document.querySelector('article');
+    if (!article) {
+      scrollProgressBar.style.width = '0%';
+      return;
+    }
+    const start = article.offsetTop;
+    const end = start + article.offsetHeight - window.innerHeight;
+    const value = end <= start ? 1 : Math.min(1, Math.max(0, (window.scrollY - start) / (end - start)));
+    scrollProgressBar.style.width = (value * 100).toFixed(2) + '%';
+  }
+
+  function scheduleScrollProgress() {
+    if (scrollProgressFrame) return;
+    scrollProgressFrame = requestAnimationFrame(updateScrollProgress);
+  }
+
+  window.addEventListener('scroll', scheduleScrollProgress, { passive: true });
+  window.addEventListener('resize', scheduleScrollProgress, { passive: true });
+  updateScrollProgress();
 
   /* ---------- Tables and diagrams ---------- */
   document.querySelectorAll('article table').forEach(table => {
