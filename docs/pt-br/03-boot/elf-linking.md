@@ -720,3 +720,732 @@ __kernel_end
 ~~~
 
 A ordem influencia endereços, relocations e o hash do executável.
+
+
+## Ordem dos objetos e reprodutibilidade
+
+O makefile entrega os objetos ao ld em ordem determinística.
+
+Como input sections são concatenadas conforme política e ordem de entrada, reordenar objetos pode alterar:
+
+- endereços de funções;
+- endereços de globals;
+- displacements de relocations;
+- padding;
+- hash final do kernel.
+
+Um binário diferente não é necessariamente inválido, mas ordem determinística ajuda análise e comparação.
+
+## GOT e PLT
+
+Programas position-independent e dinâmicos frequentemente utilizam Global Offset Table e Procedure Linkage Table.
+
+O kernel atual desativa PIE/PIC e não depende de dynamic loader de userspace.
+
+Por isso não precisa de um resolver runtime de GOT/PLT como requisito de boot.
+
+Um objeto ainda pode conter R_X86_64_PLT32 e o static linker resolvê-lo diretamente.
+
+## Estruturas ELF dinâmicas
+
+Executáveis dinâmicos podem conter:
+
+~~~text
+PT_DYNAMIC
+.dynamic
+.dynsym
+.dynstr
+.rela.dyn
+.rela.plt
+~~~
+
+O kernel de produção não depende disso.
+
+O modelo atual é:
+
+~~~text
+ET_EXEC estático
++
+PT_LOAD
++
+entry fixo
+~~~
+
+## Comando de link de produção
+
+O link autoritativo equivale a:
+
+~~~text
+ld
+-m elf_x86_64
+-nostdlib
+-static
+-z max-page-size=0x1000
+-z noexecstack
+-T kernel/metal/linker.ld
+-o kernel.elf
+<object list...>
+~~~
+
+Depois o makefile executa stamp_kernel.
+
+O ChrisLd ainda não substitui esse pipeline.
+
+## Post-link stamping
+
+O artefato final não é somente a saída bruta do ld.
+
+Existe:
+
+~~~text
+stamp_kernel kernel.elf
+~~~
+
+após a linkedição.
+
+A futura reprodução self-hosted precisa considerar também a semântica desse estágio de proveniência.
+
+## ChrisO v2 atual
+
+O source atual define ChrisO versão 2.
+
+As classes de section são:
+
+~~~text
+TEXT
+RODATA
+DATA
+BSS
+~~~
+
+Symbols possuem:
+
+- name;
+- section;
+- offset;
+- size;
+- binding;
+- kind.
+
+Relocations possuem:
+
+- target section;
+- offset;
+- symbol index;
+- signed addend;
+- relocation type.
+
+Isso é consideravelmente mais avançado que alguns audits antigos do repositório.
+
+## ChrisO não é ELF ET_REL
+
+ChrisO é um object format próprio.
+
+A arquitetura é válida:
+
+~~~text
+KCC / ChrisAsm
+      |
+      v
+ChrisO
+      |
+      v
+ChrisLd
+      |
+      v
+ELF64 ET_EXEC
+~~~
+
+O formato intermediário não precisa ser ELF desde que carregue toda informação necessária ao link final.
+
+## Link de múltiplos objetos no ChrisLd
+
+chrisld_link_objects atual:
+
+- aceita vários ChrisO;
+- organiza section classes;
+- resolve globals;
+- rejeita duplicate globals;
+- resolve undefined symbols;
+- aplica relocations;
+- emite ELF64;
+- valida invariantes estruturais.
+
+É uma evolução significativa sobre o linker antigo de um único text blob.
+
+## Layout atual do ChrisLd
+
+O source atual pode emitir:
+
+~~~text
+PT_LOAD RX
+  text
+  rodata
+
+PT_LOAD RW
+  data
+  bss em memória
+~~~
+
+O segundo segmento aparece se data ou BSS existirem.
+
+## BSS no ChrisLd
+
+No segmento writable:
+
+~~~text
+p_filesz = data
+p_memsz  = data + bss
+~~~
+
+Essa é a representação ELF correta de zero-fill.
+
+## Resolução de symbols
+
+Para cada relocation o ChrisLd:
+
+1. obtém o symbol referenciado;
+2. diferencia binding local/global/undefined;
+3. busca definições globais;
+4. rejeita ambiguidade;
+5. calcula endereço final do symbol;
+6. calcula o place da relocation;
+7. aplica a fórmula;
+8. rejeita overflow ou tipo inválido.
+
+Esse é o núcleo de um static linker real.
+
+## Entry por comparação exata
+
+O ChrisLd atual procura exatamente:
+
+~~~text
+kstart
+~~~
+
+depois:
+
+~~~text
+main
+~~~
+
+e, se nenhum existir, usa load_addr.
+
+Isso é mais correto que audits antigos que descreviam prefix matching.
+
+## Validador atual do ChrisLd
+
+chrisld_validate verifica:
+
+- magic ELF;
+- ELFCLASS64;
+- little endian;
+- EM_X86_64;
+- tamanho esperado de program header;
+- phnum não zero;
+- p_filesz <= p_memsz;
+- nenhum PT_LOAD W+X;
+- ausência de overlap entre loads;
+- entry dentro de segmento executável.
+
+Essas invariantes são úteis, mas ainda não provam equivalência ao linker script de produção.
+
+## Source atual versus audits antigos
+
+Alguns documentos do repositório são explicitamente snapshots históricos.
+
+Eles podem ficar atrás da implementação.
+
+No commit revisado, o source já possui BSS, data, rodata, multiple objects e relocation types que certos textos antigos ainda listam como ausentes.
+
+Neste corpus:
+
+~~~text
+source revisado no commit atual
+=
+verdade da implementação
+
+audit histórico
+=
+registro de evolução
+~~~
+
+## O que falta ao ChrisLd para kernel.elf
+
+O linker nativo ainda não reproduz toda a política de produção.
+
+Faltam pontos como:
+
+- PT_LOAD separado para requests Limine;
+- coleta das três classes .limine_requests;
+- semântica equivalente a KEEP;
+- stack de 1 MiB criada no link;
+- __kernel_start;
+- __kernel_end;
+- __stack_bottom;
+- __stack_top;
+- ordem exata das output sections;
+- discard policy;
+- escala suficiente para todos os objetos;
+- cobertura de todas as combinations de relocations geradas pelo kernel completo;
+- prova de aceitação pelo Limine;
+- boot real até markers do ChrisOS.
+
+Portanto:
+
+~~~text
+emitir ELF64
+não significa
+linkar o kernel de produção
+~~~
+
+## Limite de objetos
+
+O ChrisLd usa:
+
+~~~text
+LD_OBJS = 32
+~~~
+
+O makefile do kernel possui muito mais que 32 objetos.
+
+É um blocker de escala imediato.
+
+## Limite de output
+
+O ChrisLd define:
+
+~~~text
+CHRISLD_ELF_MAX = 1 MiB
+~~~
+
+O linker de produção não pode depender de um teto pequeno fixo.
+
+O mecanismo de output precisa crescer conforme o tamanho real da imagem.
+
+## Capacidades fixas do ChrisO
+
+Existem limites como:
+
+~~~text
+CHRISO_SYM_MAX = 256
+CHRISO_REL_MAX = 512
+~~~
+
+São aceitáveis para bootstrap, mas precisam ser medidos contra o kernel completo.
+
+## Diferenças de alinhamento
+
+ChrisLd usa alinhamento interno de 16 bytes para contribuições e page alignment nos segmentos.
+
+O host linker alinha cada major output section a 4 KiB.
+
+Os layouts não são idênticos.
+
+Layouts diferentes podem ser executáveis válidos, mas symbols de fronteira e metadata Limine precisam manter equivalência semântica.
+
+## Simplificação de p_paddr
+
+O helper atual do ChrisLd grava o mesmo valor em p_vaddr e p_paddr.
+
+No kernel higher-half carregado pelo Limine, placement físico é controlado pelo loader.
+
+A política de p_paddr precisa ser validada contra o protocolo real e não interpretada como endereço físico canônico alto.
+
+## ELF loader de user mode
+
+kernel/metal/elf.c carrega executáveis de usuário, não kernel.elf.
+
+Mesmo assim, ele é uma segunda implementação útil das regras de ELF.
+
+Valida:
+
+- ELF64;
+- little endian;
+- ET_EXEC;
+- EM_X86_64;
+- bounds da program-header table;
+- máximo de program headers;
+- PT_NULL/PT_LOAD;
+- filesz <= memsz;
+- ausência de W+X;
+- congruência page offset/vaddr;
+- janela virtual de usuário;
+- ausência de overlap;
+- entry em segmento executável.
+
+## Janela de endereço de user mode
+
+O loader atual restringe:
+
+~~~text
+USER_LOAD_LO = 0x400000
+USER_LOAD_HI = 0x500000
+~~~
+
+Isso não tem relação com o higher half do kernel.
+
+ELF é o mesmo formato, mas cada loader aplica política própria.
+
+## BSS do user loader
+
+O loader aloca páginas e as zera antes de copiar os bytes do arquivo.
+
+A parte não copiada continua zero.
+
+Isso implementa naturalmente p_memsz maior que p_filesz.
+
+## W^X do user loader
+
+PF_W vira MM_WRITE.
+
+Se PF_X não estiver presente, o mapping recebe MM_NX.
+
+O loader rejeita W+X.
+
+Isso é coerente com ChrisLd e linker de produção.
+
+## Entry executável
+
+O user loader verifica que e_entry fica dentro de PT_LOAD executável.
+
+O ChrisLd validator também verifica.
+
+Isso evita entrar em data ou memória não executável.
+
+## Overlap
+
+PT_LOADs sobrepostos são rejeitados.
+
+Overlaps poderiam criar ambiguidades de permission, file copy e zero-fill.
+
+Rejeitar simplifica o modelo de segurança.
+
+## Bounds do arquivo
+
+O parser evita confiar em:
+
+~~~text
+offset + size
+~~~
+
+sem verificar overflow.
+
+A forma segura é:
+
+~~~text
+size <= limit
+offset <= limit - size
+~~~
+
+Parsing de executável é uma trust boundary.
+
+## Algoritmo de static linking
+
+Um linker estático minimamente completo realiza:
+
+### Parse
+
+Lê sections, symbols, relocations e metadata.
+
+### Validation
+
+Rejeita offsets, counts e records inválidos.
+
+### Grouping
+
+Agrupa inputs em classes como:
+
+~~~text
+requests
+text
+rodata
+data
+bss
+~~~
+
+### Layout
+
+Escolhe endereços virtuais alinhados.
+
+### Placement
+
+Registra a posição de cada input section dentro da output class.
+
+### Global symbol table
+
+Coleta globals e rejeita duplicatas.
+
+### Undefined resolution
+
+Toda dependência obrigatória precisa encontrar definição.
+
+### Final symbol address
+
+~~~text
+S =
+base da output class
++ placement do objeto
++ offset do symbol
+~~~
+
+### Relocation application
+
+Corrige code/data com fórmula e range check.
+
+### File emission
+
+Grava text, rodata e data.
+
+### Zero-fill representation
+
+Representa BSS e reservas por p_memsz.
+
+### ELF emission
+
+Escreve ELF header e program headers.
+
+### Validation
+
+Valida entry, permissions, overlap, alignment e sizes.
+
+O ChrisLd atual implementa um subset de bootstrap desse processo.
+
+## Linking como grafo
+
+Objetos formam um dependency graph.
+
+Exemplo:
+
+~~~text
+start.o
+  -> serial_init
+  -> bootinfo_init
+  -> gdt_init
+
+serial.o
+  -> outb
+  -> inb
+~~~
+
+Definitions são nodes e references são edges.
+
+O executable final exige todos os edges necessários resolvidos.
+
+## Layout antes da relocation final
+
+O endereço final depende de:
+
+- output section;
+- ordem de objetos;
+- alinhamento;
+- tamanhos anteriores;
+- gaps;
+- segment boundaries.
+
+Por isso o layout precisa ser conhecido antes de aplicar relocations finais.
+
+Concatenação ingênua de text não escala para um kernel.
+
+## Garbage collection
+
+Linkers podem eliminar sections não referenciadas.
+
+Requests Limine são observados externamente pelo bootloader e podem não aparecer no grafo normal de symbols.
+
+Por isso o host linker usa KEEP.
+
+Qualquer dead-section elimination futuro no ChrisLd precisa de mecanismo equivalente.
+
+## Determinismo
+
+Com mesmos inputs e configuração, o layout deve ser determinístico.
+
+Fontes de nondeterminism incluem:
+
+- ordem instável de objetos;
+- hash map iteration;
+- padding não inicializado;
+- timestamps implícitos;
+- IDs aleatórios.
+
+O ChrisOS grava proveniência de build deliberadamente, então builds diferentes podem produzir bytes diferentes por design.
+
+## Link map
+
+Um ChrisLd de produção deveria emitir mapa com:
+
+- sections;
+- addresses;
+- sizes;
+- object placement;
+- symbols;
+- segment permissions.
+
+Isso facilita crash analysis, size regression e comparação com host ld.
+
+## Gate diferencial
+
+Um teste forte pode linkar o mesmo conjunto compatível com:
+
+~~~text
+host ld
+~~~
+
+e:
+
+~~~text
+ChrisLd
+~~~
+
+e comparar propriedades semânticas:
+
+- entry;
+- higher-half;
+- segments;
+- permissions;
+- p_filesz/p_memsz;
+- required symbols;
+- relocation targets;
+- request discoverability.
+
+Não é necessário que os bytes sejam idênticos se ambos os layouts forem corretos.
+
+## Gate de equivalência para kernel
+
+Um milestone real de ChrisLd deveria exigir:
+
+~~~text
+ELFCLASS64
+ET_EXEC
+EM_X86_64
+ENTRY(kstart)
+higher-half
+segmento RW de requests Limine
+text RX
+data RW
+BSS zero-fill
+stack de 1 MiB
+kernel boundary symbols
+todas as references resolvidas
+nenhum PT_LOAD W+X
+imagem aceita pelo Limine
+QEMU alcança markers do ChrisOS
+~~~
+
+Só então faz sentido dizer que ChrisLd linka o kernel.
+
+## Fronteira self-hosted atual
+
+O repositório não prova SH4 ou SH5 atualmente.
+
+O compiler nativo ainda não compila o kernel inteiro.
+
+Assembly nativo ainda possui blockers.
+
+ChrisLd ainda não produziu BIN/KERNEL.ELF de produção que tenha bootado.
+
+O kernel autoritativo continua host-built e host-linked.
+
+## Checker reproduzível
+
+scripts/check_elf_linking_examples.py valida:
+
+1. tamanhos ELF64 e EM_X86_64;
+2. flags de program header;
+3. zero-fill por filesz/memsz;
+4. congruência de alinhamento;
+5. fórmulas R_X86_64_64, PC32 e PLT32;
+6. overflow PC32;
+7. ENTRY(kstart);
+8. base higher-half;
+9. três classes PT_LOAD de produção;
+10. BSS NOLOAD e stack de 1 MiB;
+11. linker flags do host;
+12. modelo ChrisO v2 atual;
+13. multi-object e relocations no ChrisLd;
+14. gaps atuais para kernel de produção;
+15. W^X, overlap e bounds do user ELF loader.
+
+O checker não chama host ld e não compila kernel.elf.
+
+## Matriz atual
+
+| Capability | Link host de produção | ChrisLd atual |
+|---|---:|---:|
+| ELF64 ET_EXEC | sim | sim |
+| EM_X86_64 | sim | sim |
+| virtual address higher-half | sim | pode emitir |
+| kstart exato | sim | sim |
+| múltiplos objetos | sim | sim, limitado |
+| global symbol resolution | sim | sim |
+| duplicate-global rejection | sim | sim |
+| undefined-symbol rejection | sim | sim |
+| R_X86_64_64 | sim | sim |
+| R_X86_64_PC32 | sim | sim |
+| R_X86_64_PLT32 | sim | sim |
+| R_X86_64_32 | sim | sim |
+| R_X86_64_32S completo | sim | parcial |
+| text | sim | sim |
+| rodata | sim | sim |
+| data | sim | sim |
+| BSS zero-fill | sim | sim |
+| RX/RW separados | sim | sim |
+| segmento Limine dedicado | sim | não |
+| linker-script policy | sim | não |
+| stack 1 MiB | sim | não |
+| boundary symbols | sim | não |
+| KEEP Limine | sim | não |
+| escala completa de objetos | sim | não |
+| kernel bootável de produção | sim | não provado |
+
+## Limite de validação
+
+Este capítulo foi conciliado com:
+
+~~~text
+ChrisOS main
+da3df29cb397932c43d32373871fb9380e688ade
+~~~
+
+O caminho autoritativo permanece:
+
+~~~text
+GCC / assembler do host
++
+ld do host
++
+kernel/metal/linker.ld
+~~~
+
+Quando audits históricos divergem do código atual, o source revisado é tratado como verdade da implementação.
+
+Execute:
+
+~~~text
+python scripts/check_elf_linking_examples.py --source .source
+~~~
+
+## Gatilhos de revisão
+
+Revisar quando:
+
+- flags do linker mudarem;
+- base virtual do kernel mudar;
+- policy de program headers mudar;
+- rodata ganhar segmento R separado;
+- novos relocation types surgirem;
+- ChrisO mudar de versão;
+- limites do ChrisLd mudarem;
+- ChrisLd implementar requests Limine;
+- ChrisLd implementar policy equivalente ao linker script;
+- reserva da stack mudar;
+- toolchain nativo linkar BIN/KERNEL.ELF;
+- um kernel produzido pelo ChrisLd bootar.
+
+## Referências primárias
+
+- System V ABI, formato ELF genérico.
+- AMD64 System V ABI, relocations x86-64.
+- linker script e makefile do ChrisOS.
+- Sources atuais de ChrisO, ChrisLd e ELF loader listados no front matter.
