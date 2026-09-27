@@ -18,7 +18,7 @@ sources:
   - kernel/metal/apic.c
   - kernel/metal/ioapic.c
   - kernel/metal/smp.c
-  - kernel/metal/sse_init.c
+  - kernel/gfx/sse_init.c
   - kernel/metal/proc.c
   - kernel/metal/linker.ld
   - docs/chrisvm-boot-protocol.md
