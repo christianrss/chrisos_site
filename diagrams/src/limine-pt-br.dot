@@ -1,0 +1,28 @@
+digraph limine {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  fw [label="firmware UEFI / BIOS"];
+  limine [label="bootloader Limine\nv9.x fixado no ChrisOS"];
+  elf [label="ELF64 ChrisOS\nhigher-half"];
+  req [label="Requests embutidos\nbase rev 3\nFB + HHDM + memmap + MP + cmdline"];
+  resp [label="Responses Limine\nmemoria bootloader-reclaimable"];
+  entry [label="estado x86-64 na entrada\nSysV + paging + stack\nENTRY(kstart)"];
+  snap [label="bootinfo.c\nnormalizacao parcial"];
+  kernel [label="Consumidores do kernel\nPMM / MM / SMP / graficos / ACPI"];
+  reclaim [label="Transicao futura de ownership\ncopiar responses + page tables proprias\nreclaim memoria do bootloader", fillcolor="#f7f7f7"];
+  vm [label="boot direto ChrisVM\nsem Limine hoje", fillcolor="#f7f7f7"];
+
+  fw -> limine;
+  limine -> elf;
+  elf -> req;
+  req -> limine [label="scan"];
+  limine -> resp;
+  limine -> entry;
+  resp -> snap;
+  entry -> snap;
+  snap -> kernel;
+  kernel -> reclaim [style=dashed, label="futuro"];
+  vm -> snap [style=dashed, label="adaptador futuro"];
+}
