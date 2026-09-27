@@ -1,7 +1,7 @@
 # ChrisOS Documentation — Operational State Memory
 
 Snapshot date: 2026-09-27  
-Baseline documentation commit: `6c028eaa25d25a0af55fbd6e64257339791f1324`
+Baseline documentation commit: `2bae73d67ccddef82cc35f56bf435db91ebbfcc8`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -21,16 +21,16 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **214**.
 
 Authored chapters:
-- EN: **80 present**
-- PT-BR: **80 present**
-- structurally bilingual authored pairs: **80**
-- structural coverage: **37.4%**
-- missing chapters in both languages: **134**
+- EN: **81 present**
+- PT-BR: **81 present**
+- structurally bilingual authored pairs: **81**
+- structural coverage: **37.9%**
+- missing chapters in both languages: **133**
 
 Depth-floor state:
-- EN: **55** chapters above the text floor; **25** present but below the floor.
-- PT-BR: **49** chapters above the text floor; **31** present but below the floor.
-- chapters above the floor in **both** languages: **49**.
+- EN: **56** chapters above the text floor; **25** present but below the floor.
+- PT-BR: **50** chapters above the text floor; **31** present but below the floor.
+- chapters above the floor in **both** languages: **50**.
 - chapters needing expansion in at least one language: **31**.
 - six kernel chapters meet the EN floor but still need PT-BR expansion: `idt-exceptions`, `interrupts-smp`, `pic-apic-ioapic`, `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
@@ -38,7 +38,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 ## Chapters currently above the depth floor in both languages
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `atom-semiconductor`, `atomics-memory-model`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gdt-tss`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `ohm-kirchhoff-circuits`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `rc-rlc-transients`, `registers-counters`, `reset-firmware`, `sram-dram`, `systems-algorithms`, `transistor-cmos`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
+`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `atom-semiconductor`, `atomics-memory-model`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `transmission-lines-differential-signals`, `elf-linking`, `emulator-theory`, `gdt-tss`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `ohm-kirchhoff-circuits`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `rc-rlc-transients`, `registers-counters`, `reset-firmware`, `sram-dram`, `systems-algorithms`, `transistor-cmos`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
 
 ## Authored chapters that still require expansion
 
@@ -48,7 +48,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 | Volume | Missing |
 |---|---:|
-| 01-foundations | 18 |
+| 01-foundations | 17 |
 | 02-computer-architecture | 5 |
 | 03-boot | 0 |
 | 04-kernel | 0 |
@@ -65,7 +65,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 15-specifications | 7 |
 | 16-history | 3 |
 | 98-maintenance | 2 |
-| **Total** | **134** |
+| **Total** | **133** |
 
 For the exact ordered list, run:
 
