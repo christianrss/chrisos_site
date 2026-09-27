@@ -18,3 +18,12 @@ article table{border-collapse:collapse;margin:1rem 0 1.7rem;min-width:60%;font-s
 @media(max-width:540px){.brand img{width:42px;height:42px}.brand small{font-size:.7rem}.brand b{font-size:.95rem}article h1{font-size:1.7rem}article h2{font-size:1.25rem}}
 
 .prerequisites,.page-toc{border:1px solid #999;padding:.6rem .8rem;margin:.8rem 0;font-size:.85rem}.prerequisites ul{margin:.3rem 0}.page-toc summary{cursor:pointer;font-weight:bold}.edition-link{font-size:.8rem}.table-scroll{overflow-x:auto;max-width:100%}.figure a{display:block}.sidebar{max-height:100vh;overflow:auto;position:sticky;top:0}.document-record ul{padding-left:1.3rem}article .table-scroll table{min-width:100%}@media(max-width:900px){.sidebar{position:static;max-height:72vh}}
+
+
+.curriculum-context,.dependents{border:1px solid #999;padding:.65rem .8rem;margin:.8rem 0;font-size:.84rem;background:#efeee7}
+.curriculum-context dl{display:grid;grid-template-columns:max-content 1fr;gap:.2rem .75rem;margin:.4rem 0 0}
+.curriculum-context dt{font-weight:700}
+.curriculum-context dd{margin:0}
+.dependents ul{margin:.3rem 0}
+.missing-step{color:#666;font-size:.8rem}
+@media(max-width:620px){.curriculum-context dl{grid-template-columns:1fr}.curriculum-context dt{margin-top:.25rem}}
