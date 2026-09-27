@@ -1,0 +1,26 @@
+digraph kernel_trust {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  user [label="Aplicacao nativa ring 3"];
+  vm [label="Guest CLVM"];
+  net [label="Input de rede / disco"];
+  sys [label="Syscall + user copy"];
+  interp [label="Interpreter + bridge CLVM"];
+  parsers [label="Parsers ELF / FS / rede"];
+  mm [label="MM / PMM / processo\npage tables + lifetime"];
+  drv [label="Drivers privilegiados\nMMIO + DMA"];
+  iommu [label="Dominio IOMMU\nnao presumido hoje", fillcolor="#f7f7f7"];
+  ram [label="Memoria do kernel / hardware"];
+
+  user -> sys [label="boundary de hardware"];
+  vm -> interp [label="boundary em software"];
+  net -> parsers [label="dados nao confiaveis"];
+  sys -> mm;
+  interp -> mm;
+  parsers -> mm;
+  mm -> drv;
+  drv -> ram [label="authority CPU / DMA"];
+  drv -> iommu [style=dashed,label="isolamento futuro"];
+}
