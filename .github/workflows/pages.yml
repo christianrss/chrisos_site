@@ -96,6 +96,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_uefi_examples.py --source .source
 
+      - name: Verify Limine contracts and ownership boundaries
+        working-directory: docs-repo
+        run: python scripts/check_limine_examples.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
