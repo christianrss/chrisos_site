@@ -144,7 +144,29 @@ def on_post_build(config):
     data['docs'] = [d for d in data['docs'] if '/99-source-atlas/generated/' not in d['location']]
     target.write_text(json.dumps(data, separators=(',', ':'), ensure_ascii=False))
     for lang in ('en', 'pt-br'):
-        payload = {'docs': [d for d in data['docs'] if d['location'].startswith(lang + '/')]}
-        (target.parent / f'{lang}.json').write_text(
+        language_docs = [d for d in data['docs'] if d['location'].startswith(lang + '/')]
+        page_titles = {
+            d['location']: d.get('title', d['location'])
+            for d in language_docs
+            if '#' not in d['location']
+        }
+        reader_docs = []
+        for doc in language_docs:
+            location = doc['location']
+            base_location = location.split('#', 1)[0]
+            kind = 'section' if '#' in location else 'page'
+            text = ' '.join(str(doc.get('text', '')).split())
+            # Page entries duplicate the full section corpus. Keep enough for a useful
+            # page-level abstract while section entries retain the searchable detail.
+            text_limit = 1200 if kind == 'page' else 6000
+            reader_docs.append({
+                'location': location,
+                'title': doc.get('title', location),
+                'page_title': page_titles.get(base_location, doc.get('title', location)),
+                'kind': kind,
+                'text': text[:text_limit],
+            })
+        payload = {'schema_version': 1, 'language': lang, 'docs': reader_docs}
+        (target.parent / f'reader-{lang}.json').write_text(
             json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
         )

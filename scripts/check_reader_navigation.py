@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static contracts for the documentation book-reader navigation."""
+"""Static contracts for the documentation reader before MkDocs rendering."""
 
 from pathlib import Path
 import argparse
@@ -10,7 +10,7 @@ def require(path: Path, needles: list[str]) -> str:
     text = path.read_text(encoding="utf-8")
     missing = [needle for needle in needles if needle not in text]
     if missing:
-        raise AssertionError(f"{path}: missing navigation contracts {missing}")
+        raise AssertionError(f"{path}: missing reader contracts {missing}")
     return text
 
 
@@ -18,8 +18,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--docs", default="docs")
     args = parser.parse_args()
-
     docs = Path(args.docs)
+
     theme = require(
         Path("theme/main.html"),
         [
@@ -28,10 +28,11 @@ def main() -> None:
             'id="global-search"',
             'class="chapter-rail"',
             'class="mobile-bookbar"',
-            'class="reading-progress"',
             'class="book-pager"',
-            'class="reader-current-title"',
             'class="section-title-link"',
+            'class="section-toggle"',
+            'class="chapter-info"',
+            'class="reader-current-title"',
         ],
     )
     require(
@@ -39,10 +40,20 @@ def main() -> None:
         [
             "function openNav()",
             "function openSearch()",
-            "section-title-link",
+            "search-worker.js",
+            "reader-",
             "active-section",
             "ArrowDown",
-            "IntersectionObserver",
+            "section-toggle",
+        ],
+    )
+    require(
+        docs / "assets/search-worker.js",
+        [
+            "function normalize(",
+            "function scoreDocument(",
+            "async function initialize(",
+            "type:'results'",
         ],
     )
     require(
@@ -51,29 +62,27 @@ def main() -> None:
             ".search-dialog",
             ".chapter-rail",
             ".mobile-bookbar",
-            "@media(max-width:820px)",
+            "@media(max-width:1120px)",
+            "@media(max-width:720px)",
             ".sidebar.is-open",
             ".section-title-link",
-            ".reader-current-title",
         ],
     )
 
     for lang in ("en", "pt-br"):
         path = docs / lang / "learning-path.md"
         text = path.read_text(encoding="utf-8")
-        linked_levels = re.findall(r"^## \[[^\]]+\]\([^)]+\)", text, re.M)
-        linked_modules = re.findall(r"^### \[[^\]]+\]\([^)]+\)", text, re.M)
-        if not linked_levels:
+        if not re.findall(r"^## \[[^\]]+\]\([^)]+\)", text, re.M):
             raise AssertionError(f"{path}: no curriculum level links to authored content")
-        if not linked_modules:
+        if not re.findall(r"^### \[[^\]]+\]\([^)]+\)", text, re.M):
             raise AssertionError(f"{path}: no curriculum module links to authored content")
 
     if 'aria-label="{{ \'Sumário do livro\'' not in theme:
         raise AssertionError("theme/main.html: bilingual book-contents accessibility label missing")
 
     print(
-        "reader navigation contracts passed: linked section titles, curriculum links, "
-        "book drawer, chapter TOC, global search and mobile chapter bar are present"
+        "reader contracts passed: hierarchical book navigation, responsive drawer, "
+        "worker search, chapter TOC and sequential reading controls are present"
     )
 
 

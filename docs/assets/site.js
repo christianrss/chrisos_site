@@ -1,180 +1,185 @@
 (() => {
+  const body = document.body;
   const lang = document.documentElement.lang === 'pt-br' ? 'pt-br' : 'en';
   const pt = lang === 'pt-br';
-  const body = document.body;
-  const base = body.dataset.base || '.';
-  const root = new URL(base.replace(/\/$/, '') + '/', location.href);
+  const base = (body.dataset.base || '.').replace(/\/+$/, '');
+  const root = new URL((base || '.') + '/', location.href);
 
-  /* ---------- Book drawer ---------- */
+  const navPanel = document.getElementById('nav-panel');
   const navToggle = document.getElementById('nav-toggle');
   const navClose = document.getElementById('nav-close');
-  const navPanel = document.getElementById('nav-panel');
   const navBackdrop = document.getElementById('nav-backdrop');
   const mobileMenu = document.querySelector('.mobile-book-menu');
+  const activeBookLink = navPanel ? navPanel.querySelector('.book-page > a.active') : null;
+
+  function openActiveAncestors() {
+    if (!activeBookLink) return;
+    let node = activeBookLink.parentElement;
+    while (node && node !== navPanel) {
+      if (node.classList && node.classList.contains('section-children')) {
+        node.hidden = false;
+        const section = node.parentElement;
+        section && section.classList.add('is-open');
+        const toggle = section && section.querySelector(':scope > .section-row > .section-toggle');
+        toggle && toggle.setAttribute('aria-expanded', 'true');
+      }
+      node = node.parentElement;
+    }
+  }
+
+  function centerActiveLink() {
+    if (!navPanel || !activeBookLink) return;
+    const panelRect = navPanel.getBoundingClientRect();
+    const linkRect = activeBookLink.getBoundingClientRect();
+    navPanel.scrollTop += linkRect.top - panelRect.top - navPanel.clientHeight * 0.42;
+  }
 
   function openNav() {
     if (!navPanel) return;
+    openActiveAncestors();
     navPanel.classList.add('is-open');
     body.classList.add('nav-open');
-    navToggle?.setAttribute('aria-expanded', 'true');
+    navToggle && navToggle.setAttribute('aria-expanded', 'true');
     if (navBackdrop) navBackdrop.hidden = false;
-    navClose?.focus({ preventScroll: true });
+    requestAnimationFrame(() => {
+      centerActiveLink();
+      navClose && navClose.focus({preventScroll:true});
+    });
   }
 
-  function closeNav({ restoreFocus = false } = {}) {
+  function closeNav(restoreFocus) {
     if (!navPanel) return;
     navPanel.classList.remove('is-open');
     body.classList.remove('nav-open');
-    navToggle?.setAttribute('aria-expanded', 'false');
+    navToggle && navToggle.setAttribute('aria-expanded', 'false');
     if (navBackdrop) navBackdrop.hidden = true;
-    if (restoreFocus) navToggle?.focus({ preventScroll: true });
+    if (restoreFocus && navToggle) navToggle.focus({preventScroll:true});
   }
 
-  navToggle?.addEventListener('click', () => {
-    navPanel?.classList.contains('is-open') ? closeNav() : openNav();
-  });
-  navClose?.addEventListener('click', () => closeNav({ restoreFocus: true }));
-  navBackdrop?.addEventListener('click', () => closeNav());
-  mobileMenu?.addEventListener('click', openNav);
+  navToggle && navToggle.addEventListener('click', () => navPanel.classList.contains('is-open') ? closeNav(false) : openNav());
+  navClose && navClose.addEventListener('click', () => closeNav(true));
+  navBackdrop && navBackdrop.addEventListener('click', () => closeNav(false));
+  mobileMenu && mobileMenu.addEventListener('click', openNav);
 
-  navPanel?.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', () => {
-      if (matchMedia('(max-width: 820px)').matches) closeNav();
+  document.querySelectorAll('.section-toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const section = button.closest('.book-section');
+      const children = section && section.querySelector(':scope > .section-children');
+      if (!children) return;
+      const opening = children.hidden;
+      children.hidden = !opening;
+      section.classList.toggle('is-open', opening);
+      button.setAttribute('aria-expanded', opening ? 'true' : 'false');
     });
   });
 
-  /* Section titles are real links; clicking the title navigates, while clicking
-     the remaining summary row expands or collapses the hierarchy. */
-  navPanel?.querySelectorAll('.section-title-link').forEach(link => {
-    link.addEventListener('click', event => event.stopPropagation());
+  navPanel && navPanel.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (matchMedia('(max-width:1120px)').matches) closeNav(false);
+    });
   });
 
-  const activeBookLink = navPanel?.querySelector('a.active');
-  if (activeBookLink) {
-    let node = activeBookLink.parentElement;
-    while (node && node !== navPanel) {
-      if (node.tagName === 'DETAILS') node.open = true;
-      node = node.parentElement;
-    }
-    requestAnimationFrame(() => {
-      activeBookLink.scrollIntoView({ block: 'center', inline: 'nearest' });
-    });
+  openActiveAncestors();
+  if (activeBookLink && !matchMedia('(max-width:1120px)').matches) {
+    requestAnimationFrame(centerActiveLink);
   }
 
-  /* ---------- Search ---------- */
-  const searchToggle = document.getElementById('search-toggle');
   const searchDialog = document.getElementById('search-dialog');
+  const searchToggle = document.getElementById('search-toggle');
   const searchClose = document.getElementById('search-close');
   const searchInput = document.getElementById('global-search');
+  const searchStatus = document.getElementById('search-status');
   const searchOutput = document.getElementById('global-search-results');
   const openSearchButtons = document.querySelectorAll('.open-global-search');
 
-  let searchPromise = null;
+  let searchWorker = null;
+  let searchReady = false;
+  let pendingQuery = '';
+  let requestId = 0;
+  let latestRequest = 0;
   let searchTimer = null;
-  let searchSequence = 0;
   let selectedResult = -1;
 
-  function normalize(text) {
-    return String(text || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLocaleLowerCase();
+  function setSearchStatus(message) {
+    if (searchStatus) searchStatus.textContent = message;
   }
 
-  async function loadIndex() {
-    if (!searchPromise) {
-      const url = new URL('search/' + lang + '.json', root);
-      searchPromise = fetch(url)
-        .then(response => {
-          if (!response.ok) throw new Error('search index ' + response.status);
-          return response.json();
-        })
-        .then(data => (data.docs || [])
-          .filter(doc => doc.location.startsWith(lang + '/'))
-          .map(doc => ({
-            ...doc,
-            _title: normalize(doc.title),
-            _location: normalize(doc.location),
-            _text: normalize(doc.text)
-          })))
-        .catch(error => {
-          searchPromise = null;
-          throw error;
-        });
+  function ensureSearchWorker() {
+    if (searchWorker || !window.Worker) {
+      if (!window.Worker) setSearchStatus(pt ? 'Este navegador não oferece suporte ao mecanismo de busca.' : 'This browser does not support the search engine.');
+      return;
     }
-    return searchPromise;
+
+    setSearchStatus(pt ? 'Carregando índice de busca…' : 'Loading search index…');
+    const workerUrl = new URL('assets/search-worker.js', root);
+    const indexUrl = new URL('search/reader-' + lang + '.json', root);
+
+    try {
+      searchWorker = new Worker(workerUrl);
+    } catch (error) {
+      setSearchStatus(pt ? 'Não foi possível iniciar a busca.' : 'Could not start search.');
+      return;
+    }
+
+    searchWorker.addEventListener('message', event => {
+      const data = event.data || {};
+      if (data.type === 'ready') {
+        searchReady = true;
+        setSearchStatus(pt ? 'Índice pronto. ' + data.count + ' entradas pesquisáveis.' : 'Index ready. ' + data.count + ' searchable entries.');
+        if (pendingQuery) runSearch(pendingQuery);
+      } else if (data.type === 'results') {
+        if (data.requestId !== latestRequest) return;
+        renderSearchResults(data.results || [], data.query || '');
+      } else if (data.type === 'error') {
+        setSearchStatus(pt ? 'Busca indisponível: ' + data.message : 'Search unavailable: ' + data.message);
+      }
+    });
+
+    searchWorker.addEventListener('error', () => {
+      searchReady = false;
+      setSearchStatus(pt ? 'Falha ao carregar o mecanismo de busca.' : 'Failed to load search engine.');
+    });
+
+    searchWorker.postMessage({type:'init', indexUrl:indexUrl.href});
   }
 
   function openSearch() {
     if (!searchDialog) return;
-    closeNav();
+    closeNav(false);
     searchDialog.hidden = false;
     body.classList.add('search-open');
-    searchToggle?.setAttribute('aria-expanded', 'true');
-    selectedResult = -1;
-    requestAnimationFrame(() => searchInput?.focus());
+    searchToggle && searchToggle.setAttribute('aria-expanded', 'true');
+    ensureSearchWorker();
+    requestAnimationFrame(() => searchInput && searchInput.focus());
   }
 
-  function closeSearch({ restoreFocus = false } = {}) {
+  function closeSearch(restoreFocus) {
     if (!searchDialog) return;
     searchDialog.hidden = true;
     body.classList.remove('search-open');
-    searchToggle?.setAttribute('aria-expanded', 'false');
-    if (restoreFocus) searchToggle?.focus({ preventScroll: true });
+    searchToggle && searchToggle.setAttribute('aria-expanded', 'false');
+    if (restoreFocus && searchToggle) searchToggle.focus({preventScroll:true});
   }
 
-  searchToggle?.addEventListener('click', openSearch);
-  searchClose?.addEventListener('click', () => closeSearch({ restoreFocus: true }));
+  searchToggle && searchToggle.addEventListener('click', openSearch);
+  searchClose && searchClose.addEventListener('click', () => closeSearch(true));
   openSearchButtons.forEach(button => button.addEventListener('click', openSearch));
-  searchDialog?.addEventListener('click', event => {
-    if (event.target === searchDialog) closeSearch();
+  searchDialog && searchDialog.addEventListener('click', event => {
+    if (event.target === searchDialog) closeSearch(false);
   });
 
-  function snippetFor(doc, terms) {
-    const raw = String(doc.text || '').replace(/\s+/g, ' ').trim();
-    if (!raw) return '';
-    const low = normalize(raw);
-    let index = Infinity;
-    for (const term of terms) {
-      const found = low.indexOf(term);
-      if (found >= 0) index = Math.min(index, found);
-    }
-    if (!Number.isFinite(index)) index = 0;
-    const start = Math.max(0, index - 72);
-    const end = Math.min(raw.length, start + 210);
-    return (start ? '…' : '') + raw.slice(start, end).trim() + (end < raw.length ? '…' : '');
-  }
-
-  function resultScore(doc, terms) {
-    const title = doc._title ?? normalize(doc.title);
-    const location = doc._location ?? normalize(doc.location);
-    const text = doc._text ?? normalize(doc.text);
-    let score = 0;
-    for (const term of terms) {
-      if (!text.includes(term) && !title.includes(term) && !location.includes(term)) return null;
-      if (title === term) score += 40;
-      else if (title.startsWith(term)) score += 22;
-      else if (title.includes(term)) score += 14;
-      if (location.includes(term)) score += 5;
-      const occurrences = text.split(term).length - 1;
-      score += Math.min(occurrences, 6);
-    }
-    if (doc.location === lang + '/') score -= 2;
-    return score;
-  }
-
   function setSelected(index) {
-    const links = [...(searchOutput?.querySelectorAll('.search-result') || [])];
+    const links = searchOutput ? Array.from(searchOutput.querySelectorAll('.search-result')) : [];
     if (!links.length) {
       selectedResult = -1;
       return;
     }
     selectedResult = Math.max(0, Math.min(index, links.length - 1));
     links.forEach((link, i) => link.classList.toggle('is-selected', i === selectedResult));
-    links[selectedResult]?.scrollIntoView({ block: 'nearest' });
+    links[selectedResult].scrollIntoView({block:'nearest'});
   }
 
-  function renderResults(results, terms) {
+  function renderSearchResults(results, query) {
     if (!searchOutput) return;
     searchOutput.replaceChildren();
     selectedResult = -1;
@@ -182,85 +187,87 @@
     if (!results.length) {
       const empty = document.createElement('div');
       empty.className = 'search-empty';
-      empty.textContent = pt ? 'Nenhum resultado.' : 'No results.';
+      empty.textContent = pt ? 'Nenhum resultado para “' + query + '”.' : 'No results for “' + query + '”.';
       searchOutput.append(empty);
+      setSearchStatus(pt ? '0 resultados.' : '0 results.');
       return;
     }
 
     const fragment = document.createDocumentFragment();
-    for (const { doc } of results) {
+    results.forEach(result => {
       const link = document.createElement('a');
       link.className = 'search-result';
       link.setAttribute('role', 'option');
-      link.href = new URL(doc.location, root);
+      link.href = new URL(result.location, root).href;
 
       const title = document.createElement('span');
       title.className = 'search-result-title';
-      title.textContent = doc.title || doc.location;
+      title.textContent = result.title || result.page_title || result.location;
 
-      const path = document.createElement('span');
-      path.className = 'search-result-path';
-      path.textContent = doc.location;
+      if (result.page_title && result.page_title !== result.title) {
+        const context = document.createElement('span');
+        context.className = 'search-result-context';
+        context.textContent = result.page_title;
+        link.append(title, context);
+      } else {
+        link.append(title);
+      }
 
-      const snippet = document.createElement('span');
-      snippet.className = 'search-result-snippet';
-      snippet.textContent = snippetFor(doc, terms);
+      if (result.snippet) {
+        const snippet = document.createElement('span');
+        snippet.className = 'search-result-snippet';
+        snippet.textContent = result.snippet;
+        link.append(snippet);
+      }
 
-      link.append(title, path, snippet);
       fragment.append(link);
-    }
+    });
+
     searchOutput.append(fragment);
+    setSearchStatus(pt ? results.length + ' resultados.' : results.length + ' results.');
   }
 
-  searchInput?.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    const current = ++searchSequence;
-    const query = searchInput.value.trim();
-    searchOutput?.replaceChildren();
+  function runSearch(query) {
+    const value = String(query || '').trim();
+    pendingQuery = value;
+    if (!searchOutput) return;
 
-    if (query.length < 2) {
-      if (searchOutput) {
-        const help = document.createElement('div');
-        help.className = 'search-empty';
-        help.textContent = pt ? 'Digite pelo menos dois caracteres.' : 'Type at least two characters.';
-        searchOutput.append(help);
-      }
+    if (value.length < 2) {
+      latestRequest = ++requestId;
+      searchOutput.replaceChildren();
+      setSearchStatus(pt ? 'Digite ao menos 2 caracteres.' : 'Type at least 2 characters.');
       return;
     }
 
-    const terms = normalize(query).split(/\s+/).filter(Boolean);
-    searchTimer = setTimeout(async () => {
-      try {
-        const docs = await loadIndex();
-        if (current !== searchSequence) return;
-        const results = docs
-          .map(doc => ({ doc, score: resultScore(doc, terms) }))
-          .filter(item => item.score !== null)
-          .sort((a, b) => b.score - a.score || String(a.doc.title).localeCompare(String(b.doc.title)))
-          .slice(0, 24);
-        renderResults(results, terms);
-      } catch {
-        if (current !== searchSequence || !searchOutput) return;
-        searchOutput.replaceChildren();
-        const error = document.createElement('div');
-        error.className = 'search-empty';
-        error.textContent = pt ? 'Busca indisponível. Recarregue a página e tente novamente.' : 'Search unavailable. Reload the page and retry.';
-        searchOutput.append(error);
-      }
-    }, 110);
+    ensureSearchWorker();
+    if (!searchReady || !searchWorker) {
+      setSearchStatus(pt ? 'Preparando busca…' : 'Preparing search…');
+      return;
+    }
+
+    pendingQuery = '';
+    latestRequest = ++requestId;
+    searchWorker.postMessage({type:'search', query:value, limit:36, requestId:latestRequest});
+  }
+
+  searchInput && searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const value = searchInput.value;
+    searchTimer = setTimeout(() => runSearch(value), 80);
   });
 
-  searchInput?.addEventListener('keydown', event => {
-    const links = [...(searchOutput?.querySelectorAll('.search-result') || [])];
+  searchInput && searchInput.addEventListener('keydown', event => {
+    const links = searchOutput ? Array.from(searchOutput.querySelectorAll('.search-result')) : [];
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       setSelected(selectedResult + 1);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setSelected(selectedResult <= 0 ? links.length - 1 : selectedResult - 1);
-    } else if (event.key === 'Enter' && selectedResult >= 0 && links[selectedResult]) {
+    } else if (event.key === 'Enter' && links.length) {
       event.preventDefault();
-      links[selectedResult].click();
+      const target = selectedResult >= 0 ? links[selectedResult] : links[0];
+      target && target.click();
     }
   });
 
@@ -269,58 +276,51 @@
     const typing = target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement ||
-      target?.isContentEditable;
+      (target && target.isContentEditable);
 
-    if (event.key === '/' && !typing && searchDialog?.hidden) {
+    if (event.key === '/' && !typing && searchDialog && searchDialog.hidden) {
       event.preventDefault();
       openSearch();
     }
 
     if (event.key === 'Escape') {
-      if (searchDialog && !searchDialog.hidden) closeSearch({ restoreFocus: true });
-      else if (navPanel?.classList.contains('is-open')) closeNav({ restoreFocus: true });
+      if (searchDialog && !searchDialog.hidden) closeSearch(true);
+      else if (navPanel && navPanel.classList.contains('is-open')) closeNav(true);
     }
   });
 
-  /* ---------- In-page contents ---------- */
-  const tocLinks = [
-    ...document.querySelectorAll('.chapter-rail a[href^="#"], .mobile-page-toc a[href^="#"]')
-  ];
-
-  const targets = new Map();
-  for (const link of tocLinks) {
+  const tocLinks = Array.from(document.querySelectorAll('.chapter-rail a[href^="#"], .mobile-page-toc a[href^="#"]'));
+  const tocTargets = [];
+  tocLinks.forEach(link => {
     const hash = link.getAttribute('href');
-    if (!hash || hash === '#') continue;
-    const id = decodeURIComponent(hash.slice(1));
+    if (!hash || hash === '#') return;
+    let id = '';
+    try { id = decodeURIComponent(hash.slice(1)); } catch { id = hash.slice(1); }
     const target = document.getElementById(id);
-    if (target) {
-      if (!targets.has(target)) targets.set(target, []);
-      targets.get(target).push(link);
+    if (target) tocTargets.push({target, link});
+  });
+
+  let tocTicking = false;
+  function updateActiveToc() {
+    tocTicking = false;
+    if (!tocTargets.length) return;
+    let active = null;
+    for (const item of tocTargets) {
+      if (item.target.getBoundingClientRect().top <= 110) active = item.target;
+      else break;
     }
+    tocLinks.forEach(link => link.classList.remove('active-section'));
+    if (!active && tocTargets.length) active = tocTargets[0].target;
+    tocTargets.filter(item => item.target === active).forEach(item => item.link.classList.add('active-section'));
   }
 
-  if ('IntersectionObserver' in window && targets.size) {
-    const visible = new Map();
-    const updateActive = () => {
-      const entries = [...visible.entries()]
-        .filter(([, value]) => value)
-        .map(([element]) => element)
-        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-
-      const current = entries[0] || [...targets.keys()]
-        .filter(el => el.getBoundingClientRect().top <= 100)
-        .pop();
-
-      tocLinks.forEach(link => link.classList.remove('active-section'));
-      if (current) (targets.get(current) || []).forEach(link => link.classList.add('active-section'));
-    };
-
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) visible.set(entry.target, entry.isIntersecting);
-      updateActive();
-    }, { rootMargin: '-12% 0px -74% 0px', threshold: [0, 1] });
-
-    targets.forEach((_, element) => observer.observe(element));
+  if (tocTargets.length) {
+    updateActiveToc();
+    addEventListener('scroll', () => {
+      if (tocTicking) return;
+      tocTicking = true;
+      requestAnimationFrame(updateActiveToc);
+    }, {passive:true});
   }
 
   document.querySelectorAll('.mobile-page-toc a[href^="#"]').forEach(link => {
@@ -330,9 +330,8 @@
     });
   });
 
-  /* ---------- Tables and diagrams ---------- */
   document.querySelectorAll('article table').forEach(table => {
-    if (table.parentElement?.classList.contains('table-scroll')) return;
+    if (table.parentElement && table.parentElement.classList.contains('table-scroll')) return;
     const box = document.createElement('div');
     box.className = 'table-scroll';
     box.tabIndex = 0;

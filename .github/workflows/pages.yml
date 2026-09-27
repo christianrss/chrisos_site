@@ -130,11 +130,17 @@ jobs:
 
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
-        run: node --check docs/assets/site.js
+        run: |
+          node --check docs/assets/site.js
+          node --check docs/assets/search-worker.js
 
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
+
+      - name: Smoke test generated reader
+        working-directory: docs-repo
+        run: python scripts/check_built_reader.py --site site
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
