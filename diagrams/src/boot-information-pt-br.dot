@@ -1,0 +1,26 @@
+digraph boot_information {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  raw [label="Dados externos de boot\nresponses Limine / adaptador ChrisVM"];
+  validate [label="Validar\nrevisions + limites + ranges"];
+  normalize [label="Normalizar\ntipos pertencentes ao ChrisOS"];
+  snap [label="BootSnapshot\nfatos imutaveis do kernel"];
+  pmm [label="PMM\nownership de paginas"];
+  mm [label="MM\npage tables proprias"];
+  smp [label="SMP\ntopologia/stacks proprias"];
+  fw [label="Firmware roots\nRSDP / SMBIOS"];
+  reclaim [label="Barrier de release\nbootloader-reclaimable"];
+  rawmem [label="Estado atual borrowed/adopted\nmemmap_response\nMP response\nCR3 herdado", fillcolor="#f7f7f7"];
+
+  raw -> validate -> normalize -> snap;
+  snap -> pmm;
+  snap -> mm;
+  snap -> smp;
+  snap -> fw;
+  pmm -> reclaim;
+  mm -> reclaim;
+  smp -> reclaim;
+  rawmem -> normalize [style=dashed, label="alvo atual do refactor"];
+}
