@@ -116,6 +116,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_higher_half_examples.py --source .source
 
+      - name: Verify power-on and kstart boot contracts
+        working-directory: docs-repo
+        run: python scripts/check_power_on_kstart_examples.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
