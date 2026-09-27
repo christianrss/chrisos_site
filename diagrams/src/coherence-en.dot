@@ -1,0 +1,35 @@
+digraph coherence {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.45", ranksep="0.65"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  subgraph cluster_topology {
+    label="Coherent multiprocessor";
+    c0 [label="CPU 0\nprivate cache"];
+    c1 [label="CPU 1\nprivate cache"];
+    fabric [label="coherence fabric\nsnoop / directory"];
+    mem [label="shared memory"];
+    c0 -> fabric [label="read / own / evict"];
+    c1 -> fabric [label="read / own / evict"];
+    fabric -> c0 [label="data / probe / ack"];
+    fabric -> c1 [label="data / probe / ack"];
+    fabric -> mem [dir=both, label="fill / writeback"];
+  }
+
+  subgraph cluster_mesi {
+    label="MESI stable-state teaching model";
+    I [label="I\nInvalid"];
+    S [label="S\nShared"];
+    E [label="E\nExclusive"];
+    M [label="M\nModified"];
+    I -> E [label="read, no sharer"];
+    I -> S [label="read, peer exists"];
+    I -> M [label="write ownership"];
+    E -> M [label="local write"];
+    E -> S [label="peer read"];
+    S -> M [label="upgrade + invalidate"];
+    S -> I [label="peer ownership"];
+    M -> S [label="peer read / intervention"];
+    M -> I [label="peer ownership / eviction"];
+  }
+}
