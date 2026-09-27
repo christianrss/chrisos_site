@@ -146,6 +146,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_transients_ac_examples.py
 
+      - name: Verify induction and transformer examples
+        working-directory: docs-repo
+        run: python scripts/check_induction_transformer_examples.py
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
