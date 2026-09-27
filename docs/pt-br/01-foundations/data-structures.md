@@ -25,11 +25,11 @@ Estrutura de dados é uma representação acompanhada de invariantes escolhidos 
 
 ## Representação, invariante e operação
 
-Uma estrutura deve ser descrita por três perguntas:
+Uma estrutura é especificada por três dimensões:
 
-1. **Representação:** como os elementos são armazenados?
-2. **Invariante:** o que precisa continuar verdadeiro após toda operação?
-3. **Operações:** quais consultas e mutações precisam ser eficientes?
+1. **Representação:** organização de armazenamento dos elementos.
+2. **Invariante:** propriedades preservadas por toda operação válida.
+3. **Operações:** consultas e mutações para as quais a representação é selecionada.
 
 Em uma fila circular, por exemplo, a representação pode ser array fixo mais <code>head</code>, <code>tail</code> e <code>count</code>. O invariante garante índices dentro da capacidade e count nunca acima do limite. Enqueue/dequeue tornam-se atualizações modulares.
 
