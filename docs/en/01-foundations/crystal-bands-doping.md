@@ -8,7 +8,8 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources: []
 symbols: []
 depends_on:
-- atom-semiconductor
+  - atom-semiconductor
+  - electric-charge-field-potential
 related:
 - pn-junction
 - transistor-cmos
@@ -128,7 +129,7 @@ Three different diagrams should not be confused:
 
 Keeping these representations separate prevents many common conceptual errors.
 
-## Why doping is the bridge to devices
+## Doping as the bridge to device physics
 
 Digital logic requires regions with predictable carrier types and regions whose carrier density can be altered by an electric field. Doping supplies the fixed background that makes both junctions and MOS channels possible.
 
