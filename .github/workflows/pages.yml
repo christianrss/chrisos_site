@@ -88,6 +88,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_acpi_examples.py
 
+      - name: Verify reset and firmware contracts
+        working-directory: docs-repo
+        run: python scripts/check_reset_firmware_examples.py --source .source
+
       - name: Build static site
         working-directory: docs-repo
         run: mkdocs build --strict
