@@ -59,7 +59,20 @@
     {% if page %}
       <div class="crumbs"><a href="{{ ('pt-br/' if page.meta.lang == 'pt-br' else 'en/')|url }}">ChrisOS</a>{% for ancestor in page.ancestors|reverse %}<span>/</span><span>{{ ancestor.title }}</span>{% endfor %}<span>/</span><span>{{ page.title }}</span></div>
       {% if translation.url %}<p class="edition-link"><a href="{{ translation.url|url }}" hreflang="{{ 'en' if page.meta.lang == 'pt-br' else 'pt-br' }}">{{ 'Read this chapter in English' if page.meta.lang == 'pt-br' else 'Ler este capítulo em português' }}</a></p>{% endif %}
-      {% if prerequisites %}<aside class="prerequisites"><b>{{ 'Pré-requisitos' if page.meta.lang == 'pt-br' else 'Prerequisites' }}</b><ul>{% for dep in prerequisites %}<li>{% if dep.url %}<a href="{{ dep.url|url }}">{{ dep.title }}</a>{% else %}{{ dep.title }} — {{ 'capítulo ausente' if page.meta.lang == 'pt-br' else 'missing chapter' }}{% endif %}</li>{% endfor %}</ul></aside>{% endif %}
+      {% if curriculum_context %}
+      <aside class="curriculum-context">
+        <b>{{ 'Posição no currículo' if page.meta.lang == 'pt-br' else 'Curriculum position' }}</b>
+        <dl>
+          <dt>{{ 'Nível' if page.meta.lang == 'pt-br' else 'Level' }}</dt><dd>{{ curriculum_context.level }}</dd>
+          <dt>{{ 'Módulo' if page.meta.lang == 'pt-br' else 'Module' }}</dt><dd>{{ curriculum_context.module }}</dd>
+          <dt>{{ 'Sequência' if page.meta.lang == 'pt-br' else 'Sequence' }}</dt><dd>{{ curriculum_context.position }} / {{ curriculum_context.total }}</dd>
+          {% if curriculum_context.previous %}<dt>{{ 'Anterior' if page.meta.lang == 'pt-br' else 'Previous' }}</dt><dd>{% if curriculum_context.previous.url %}<a href="{{ curriculum_context.previous.url|url }}">{{ curriculum_context.previous.title }}</a>{% else %}<code>{{ curriculum_context.previous.id }}</code> — {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }}{% endif %}</dd>{% endif %}
+          {% if curriculum_context.next %}<dt>{{ 'Seguinte' if page.meta.lang == 'pt-br' else 'Next' }}</dt><dd>{% if curriculum_context.next.url %}<a href="{{ curriculum_context.next.url|url }}">{{ curriculum_context.next.title }}</a>{% else %}<code>{{ curriculum_context.next.id }}</code> — {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }}{% endif %}</dd>{% endif %}
+        </dl>
+      </aside>
+      {% endif %}
+      {% if prerequisites %}<aside class="prerequisites"><b>{{ 'Pré-requisitos técnicos' if page.meta.lang == 'pt-br' else 'Technical prerequisites' }}</b><ul>{% for dep in prerequisites %}<li>{% if dep.url %}<a href="{{ dep.url|url }}">{{ dep.title }}</a>{% else %}<code>{{ dep.id }}</code> — {{ 'capítulo ausente' if page.meta.lang == 'pt-br' else 'missing chapter' }}{% endif %}</li>{% endfor %}</ul></aside>{% endif %}
+      {% if dependents %}<aside class="dependents"><b>{{ 'Continuações que dependem deste capítulo' if page.meta.lang == 'pt-br' else 'Authored continuations depending on this chapter' }}</b><ul>{% for dep in dependents %}<li><a href="{{ dep.url|url }}">{{ dep.title }}</a></li>{% endfor %}</ul></aside>{% endif %}
       {% if page.toc|length %}<details class="page-toc"><summary>{{ 'Neste capítulo' if page.meta.lang == 'pt-br' else 'In this chapter' }}</summary><ul>{% for item in page.toc %}<li><a href="{{ item.url }}">{{ item.title }}</a>{% if item.children %}<ul>{% for child in item.children %}<li><a href="{{ child.url }}">{{ child.title }}</a></li>{% endfor %}</ul>{% endif %}</li>{% endfor %}</ul></details>{% endif %}
       <article>{{ page.content }}</article>
       <div class="document-record">
@@ -70,8 +83,12 @@
         {% if page.meta.type %}<span>Class: <code>{{ page.meta.type }}</code></span>{% endif %}
       </div>
       <nav class="pager">
-        {% if page.previous_page and page.previous_page.meta.lang == page.meta.lang %}<a href="{{ page.previous_page.url|url }}">← {{ page.previous_page.title }}</a>{% else %}<span></span>{% endif %}
-        {% if page.next_page and page.next_page.meta.lang == page.meta.lang %}<a href="{{ page.next_page.url|url }}">{{ page.next_page.title }} →</a>{% endif %}
+        {% if curriculum_context and curriculum_context.previous %}
+          {% if curriculum_context.previous.url %}<a href="{{ curriculum_context.previous.url|url }}">← {{ curriculum_context.previous.title }}</a>{% else %}<span class="missing-step">← <code>{{ curriculum_context.previous.id }}</code> · {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }}</span>{% endif %}
+        {% elif page.previous_page and page.previous_page.meta.lang == page.meta.lang %}<a href="{{ page.previous_page.url|url }}">← {{ page.previous_page.title }}</a>{% else %}<span></span>{% endif %}
+        {% if curriculum_context and curriculum_context.next %}
+          {% if curriculum_context.next.url %}<a href="{{ curriculum_context.next.url|url }}">{{ curriculum_context.next.title }} →</a>{% else %}<span class="missing-step"><code>{{ curriculum_context.next.id }}</code> · {{ 'ausente' if page.meta.lang == 'pt-br' else 'missing' }} →</span>{% endif %}
+        {% elif page.next_page and page.next_page.meta.lang == page.meta.lang %}<a href="{{ page.next_page.url|url }}">{{ page.next_page.title }} →</a>{% endif %}
       </nav>
     {% endif %}
   </main>
