@@ -19,9 +19,10 @@ symbols:
 - chris_machine_create
 - chris_machine_destroy
 depends_on:
-- transistor-cmos
-- logic-sequential
-- clock-timing
+  - latches-flipflops
+  - clock-timing
+  - transistor-cmos
+  - capacitance-inductance
 related:
 - physical-memory
 - virtual-memory
@@ -80,7 +81,7 @@ That example is a logical organization, not a chip pinout. A DRAM interface can 
 
 ![Memory layers and distinct units](../../assets/diagrams/memory-cells.svg)
 
-## What a C load or store means
+## C load/store abstraction
 
 A C pointer denotes an address under the language implementation and execution environment. A load may be satisfied by a cache rather than by accessing a DRAM row. A store can update a cached line and become visible to other observers according to the processor's memory model and the mapping's attributes. Device memory can obey different rules from ordinary RAM. Physical cell technology alone does not specify those architectural ordering guarantees.
 
