@@ -30,6 +30,8 @@ def main() -> None:
             'class="mobile-bookbar"',
             'class="reading-progress"',
             'class="book-pager"',
+            'class="reader-current-title"',
+            'class="section-title-link"',
         ],
     )
     require(
@@ -37,7 +39,7 @@ def main() -> None:
         [
             "function openNav()",
             "function openSearch()",
-            "section-entry",
+            "section-title-link",
             "active-section",
             "ArrowDown",
             "IntersectionObserver",
@@ -51,6 +53,8 @@ def main() -> None:
             ".mobile-bookbar",
             "@media(max-width:820px)",
             ".sidebar.is-open",
+            ".section-title-link",
+            ".reader-current-title",
         ],
     )
 
@@ -68,8 +72,8 @@ def main() -> None:
         raise AssertionError("theme/main.html: bilingual book-contents accessibility label missing")
 
     print(
-        "reader navigation contracts passed: linked curriculum sections, book drawer, "
-        "chapter TOC, global search and mobile chapter bar are present"
+        "reader navigation contracts passed: linked section titles, curriculum links, "
+        "book drawer, chapter TOC, global search and mobile chapter bar are present"
     )
 
 
