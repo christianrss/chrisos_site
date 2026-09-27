@@ -3,7 +3,14 @@
   const lang = document.documentElement.lang === 'pt-br' ? 'pt-br' : 'en';
   const pt = lang === 'pt-br';
   const base = (body.dataset.base || '.').replace(/\/+$/, '');
+  const buildVersion = body.dataset.buildVersion || '';
   const root = new URL((base || '.') + '/', location.href);
+
+  function versionedUrl(path) {
+    const url = new URL(path, root);
+    if (buildVersion) url.searchParams.set('v', buildVersion);
+    return url;
+  }
 
   const navPanel = document.getElementById('nav-panel');
   const navToggle = document.getElementById('nav-toggle');
@@ -92,55 +99,149 @@
   const searchOutput = document.getElementById('global-search-results');
   const openSearchButtons = document.querySelectorAll('.open-global-search');
 
-  let searchWorker = null;
-  let searchReady = false;
-  let pendingQuery = '';
-  let requestId = 0;
-  let latestRequest = 0;
+  let searchIndexPromise = null;
   let searchTimer = null;
+  let searchSequence = 0;
   let selectedResult = -1;
 
   function setSearchStatus(message) {
     if (searchStatus) searchStatus.textContent = message;
   }
 
-  function ensureSearchWorker() {
-    if (searchWorker || !window.Worker) {
-      if (!window.Worker) setSearchStatus(pt ? 'Este navegador não oferece suporte ao mecanismo de busca.' : 'This browser does not support the search engine.');
-      return;
+  function normalizeSearch(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase();
+  }
+
+  function prepareSearchDocument(doc) {
+    return {
+      ...doc,
+      _title: normalizeSearch(doc.title),
+      _pageTitle: normalizeSearch(doc.page_title),
+      _location: normalizeSearch(doc.location),
+      _text: normalizeSearch(doc.text)
+    };
+  }
+
+  async function loadSearchIndex() {
+    if (!searchIndexPromise) {
+      const indexUrl = versionedUrl('search/reader-' + lang + '.json');
+      searchIndexPromise = fetch(indexUrl, {cache:'no-store', credentials:'same-origin'})
+        .then(response => {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.json();
+        })
+        .then(data => {
+          const docs = Array.isArray(data.docs) ? data.docs.map(prepareSearchDocument) : [];
+          if (!docs.length) throw new Error('empty-index');
+          return docs;
+        })
+        .catch(error => {
+          searchIndexPromise = null;
+          throw error;
+        });
     }
+    return searchIndexPromise;
+  }
 
-    setSearchStatus(pt ? 'Carregando índice de busca…' : 'Loading search index…');
-    const workerUrl = new URL('assets/search-worker.js', root);
-    const indexUrl = new URL('search/reader-' + lang + '.json', root);
-
-    try {
-      searchWorker = new Worker(workerUrl);
-    } catch (error) {
-      setSearchStatus(pt ? 'Não foi possível iniciar a busca.' : 'Could not start search.');
-      return;
+  function searchSnippet(doc, terms, firstIndex) {
+    const raw = String(doc.text || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return '';
+    const low = doc._text || normalizeSearch(raw);
+    let index = Number.isFinite(firstIndex) ? firstIndex : Infinity;
+    if (!Number.isFinite(index)) {
+      terms.forEach(term => {
+        const found = low.indexOf(term);
+        if (found >= 0) index = Math.min(index, found);
+      });
     }
+    if (!Number.isFinite(index)) index = 0;
+    const start = Math.max(0, index - 85);
+    const finish = Math.min(raw.length, start + 230);
+    return (start ? '…' : '') + raw.slice(start, finish).trim() + (finish < raw.length ? '…' : '');
+  }
 
-    searchWorker.addEventListener('message', event => {
-      const data = event.data || {};
-      if (data.type === 'ready') {
-        searchReady = true;
-        setSearchStatus(pt ? 'Índice pronto. ' + data.count + ' entradas pesquisáveis.' : 'Index ready. ' + data.count + ' searchable entries.');
-        if (pendingQuery) runSearch(pendingQuery);
-      } else if (data.type === 'results') {
-        if (data.requestId !== latestRequest) return;
-        renderSearchResults(data.results || [], data.query || '');
-      } else if (data.type === 'error') {
-        setSearchStatus(pt ? 'Busca indisponível: ' + data.message : 'Search unavailable: ' + data.message);
+  function scoreSearchDocument(doc, terms) {
+    let score = 0;
+    let firstIndex = Infinity;
+
+    for (const term of terms) {
+      let matched = false;
+
+      if (doc._title === term) {
+        score += 90;
+        matched = true;
+      } else if (doc._title.startsWith(term)) {
+        score += 48;
+        matched = true;
+      } else if (doc._title.includes(term)) {
+        score += 30;
+        matched = true;
       }
-    });
 
-    searchWorker.addEventListener('error', () => {
-      searchReady = false;
-      setSearchStatus(pt ? 'Falha ao carregar o mecanismo de busca.' : 'Failed to load search engine.');
-    });
+      if (doc._pageTitle === term) {
+        score += 42;
+        matched = true;
+      } else if (doc._pageTitle.includes(term)) {
+        score += 16;
+        matched = true;
+      }
 
-    searchWorker.postMessage({type:'init', indexUrl:indexUrl.href});
+      if (doc._location.includes(term)) {
+        score += 8;
+        matched = true;
+      }
+
+      const textIndex = doc._text.indexOf(term);
+      if (textIndex >= 0) {
+        matched = true;
+        firstIndex = Math.min(firstIndex, textIndex);
+        score += Math.max(3, 13 - Math.floor(textIndex / 500));
+      }
+
+      if (!matched) return null;
+    }
+
+    if (doc.kind === 'page') score += 4;
+    return {score, firstIndex};
+  }
+
+  function searchDocuments(documents, query, limit) {
+    const terms = normalizeSearch(query).split(/\s+/).filter(Boolean);
+    if (!terms.length) return [];
+
+    const ranked = [];
+    for (const doc of documents) {
+      const match = scoreSearchDocument(doc, terms);
+      if (!match) continue;
+      ranked.push({doc, score:match.score, firstIndex:match.firstIndex});
+    }
+
+    ranked.sort((a, b) =>
+      b.score - a.score ||
+      String(a.doc.page_title || '').localeCompare(String(b.doc.page_title || '')) ||
+      String(a.doc.title || '').localeCompare(String(b.doc.title || ''))
+    );
+
+    const results = [];
+    const seen = new Set();
+    for (const item of ranked) {
+      const baseLocation = String(item.doc.location || '').split('#', 1)[0];
+      const key = baseLocation + '\u0000' + item.doc._title;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push({
+        location:item.doc.location,
+        title:item.doc.title,
+        page_title:item.doc.page_title,
+        kind:item.doc.kind,
+        snippet:searchSnippet(item.doc, terms, item.firstIndex)
+      });
+      if (results.length >= (limit || 36)) break;
+    }
+    return results;
   }
 
   function openSearch() {
@@ -149,7 +250,15 @@
     searchDialog.hidden = false;
     body.classList.add('search-open');
     searchToggle && searchToggle.setAttribute('aria-expanded', 'true');
-    ensureSearchWorker();
+    setSearchStatus(pt ? 'Carregando índice de busca…' : 'Loading search index…');
+    loadSearchIndex()
+      .then(docs => {
+        setSearchStatus(pt ? 'Índice pronto. ' + docs.length + ' entradas pesquisáveis.' : 'Index ready. ' + docs.length + ' searchable entries.');
+        if (searchInput && searchInput.value.trim().length >= 2) runSearch(searchInput.value);
+      })
+      .catch(() => {
+        setSearchStatus(pt ? 'Busca indisponível. Recarregue a página.' : 'Search unavailable. Reload the page.');
+      });
     requestAnimationFrame(() => searchInput && searchInput.focus());
   }
 
@@ -227,33 +336,34 @@
     setSearchStatus(pt ? results.length + ' resultados.' : results.length + ' results.');
   }
 
-  function runSearch(query) {
+  async function runSearch(query) {
     const value = String(query || '').trim();
-    pendingQuery = value;
+    const sequence = ++searchSequence;
     if (!searchOutput) return;
 
     if (value.length < 2) {
-      latestRequest = ++requestId;
       searchOutput.replaceChildren();
       setSearchStatus(pt ? 'Digite ao menos 2 caracteres.' : 'Type at least 2 characters.');
       return;
     }
 
-    ensureSearchWorker();
-    if (!searchReady || !searchWorker) {
-      setSearchStatus(pt ? 'Preparando busca…' : 'Preparing search…');
-      return;
+    setSearchStatus(pt ? 'Buscando…' : 'Searching…');
+    try {
+      const docs = await loadSearchIndex();
+      if (sequence !== searchSequence) return;
+      const results = searchDocuments(docs, value, 36);
+      renderSearchResults(results, value);
+    } catch {
+      if (sequence !== searchSequence) return;
+      searchOutput.replaceChildren();
+      setSearchStatus(pt ? 'Busca indisponível. Recarregue a página.' : 'Search unavailable. Reload the page.');
     }
-
-    pendingQuery = '';
-    latestRequest = ++requestId;
-    searchWorker.postMessage({type:'search', query:value, limit:36, requestId:latestRequest});
   }
 
   searchInput && searchInput.addEventListener('input', () => {
     clearTimeout(searchTimer);
     const value = searchInput.value;
-    searchTimer = setTimeout(() => runSearch(value), 80);
+    searchTimer = setTimeout(() => runSearch(value), 100);
   });
 
   searchInput && searchInput.addEventListener('keydown', event => {
