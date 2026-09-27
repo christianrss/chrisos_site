@@ -40,20 +40,13 @@ def main() -> None:
         [
             "function openNav()",
             "function openSearch()",
-            "search-worker.js",
+            "function loadSearchIndex()",
+            "function searchDocuments(",
+            "versionedUrl(",
             "reader-",
             "active-section",
             "ArrowDown",
             "section-toggle",
-        ],
-    )
-    require(
-        docs / "assets/search-worker.js",
-        [
-            "function normalize(",
-            "function scoreDocument(",
-            "async function initialize(",
-            "type:'results'",
         ],
     )
     require(
@@ -82,7 +75,7 @@ def main() -> None:
 
     print(
         "reader contracts passed: hierarchical book navigation, responsive drawer, "
-        "worker search, chapter TOC and sequential reading controls are present"
+        "direct indexed search, chapter TOC and sequential reading controls are present"
     )
 
 
