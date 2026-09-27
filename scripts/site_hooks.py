@@ -1,5 +1,6 @@
 """MkDocs hook: curriculum-driven navigation, language pairs and source provenance."""
 from pathlib import Path
+import os
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from curriculum import load_catalog
@@ -20,6 +21,9 @@ def _url_for(rel):
 def on_config(config):
     global PAGES, PAGE_META, PLANNED, CURRICULUM_CONTEXT, CURRICULUM_ORDER
     docs = Path(config['docs_dir'])
+    extra = dict(config.get('extra') or {})
+    extra['build_version'] = os.environ.get('GITHUB_SHA', 'dev')[:12]
+    config['extra'] = extra
     curriculum, planned, chapters = load_catalog(docs)
     PLANNED = planned
     PAGES = {}
