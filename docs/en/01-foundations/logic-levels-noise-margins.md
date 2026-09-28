@@ -103,7 +103,7 @@ Both must be positive for a conventional direct connection under the specified c
 
 Noise margin is therefore a voltage-domain budget, not a complete signal-integrity proof.
 
-## Why output levels depend on load
+## Output-level dependence on load
 
 An output is not an ideal voltage source. The pull-up and pull-down networks have finite impedance. Datasheets therefore specify V_OH and V_OL together with output-current conditions.
 
