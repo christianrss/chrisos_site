@@ -1,0 +1,22 @@
+digraph hazards {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  id [label="ID\nconsumer sources"];
+  ex [label="EX\nALU / address"];
+  mem [label="MEM\nload result"];
+  wb [label="WB\narchitectural write"];
+  detect [label="Hazard detector\ncompare source vs pending destinations", shape=diamond, fillcolor="#f7f7f7"];
+  mux [label="Forwarding mux\nnewest available producer wins", shape=diamond, fillcolor="#f7f7f7"];
+  stall [label="Interlock\nhold fetch/decode + inject bubble", fillcolor="#dddddd"];
+
+  id -> detect;
+  detect -> mux [label="value available"];
+  detect -> stall [label="value not ready"];
+  mux -> ex [label="selected operand"];
+  ex -> mem -> wb;
+  ex -> mux [style=dashed, label="EX/MEM bypass", constraint=false];
+  mem -> mux [style=dashed, label="MEM/WB bypass", constraint=false];
+  stall -> id [style=dashed, label="retry next cycle", constraint=false];
+}
