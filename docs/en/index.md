@@ -22,6 +22,14 @@ sources:
 <b>Abstract.</b> ChrisOS is an experimental systems ecosystem containing an x86-64 kernel, ChrisC and CLVM, native compiler/assembler/linker components, ChrisFS, graphics and desktop subsystems, networking, and the ChrisVM/ChrisCPU machine-emulation stack. The documentation is organized as a dependency-ordered technical corpus from physical foundations to operating-system research.
 </div>
 
+<div class="author-signature" role="group" aria-label="Project authorship">
+<span class="author-signature-kicker">A computing system by</span>
+<strong>Christian Rafael de Souza Silva</strong>
+<span class="author-signature-role">Creator &amp; Lead Developer of ChrisOS</span>
+<span class="author-credentials">Data Science Technologist · Specialist in Electronic Engineering &amp; Robotics</span>
+<span class="author-studies">Current undergraduate studies: Mathematics · Economics · Electrical Engineering · Mechanical Engineering</span>
+</div>
+
 ## Canonical organization
 
 The documentation has two independent organizational layers:
