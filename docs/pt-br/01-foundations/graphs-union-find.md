@@ -35,7 +35,7 @@ related:
 Grafos modelam relações arbitrárias em vez de uma única hierarquia. Correção e custo dependem da representação exata de vertices e edges, da direção e dos pesos das edges e dos invariantes exigidos pelo subsistema. Union-find, também chamado disjoint-set union, resolve um problema mais específico: manter uma partição de elementos sob operações repetidas de merge e consultas de conectividade. Este capítulo desenvolve modelos de graph, adjacency representations, reachability, componentes, ciclos, DAGs e disjoint-set forests com path compression e union by rank ou size. A fronteira com o ChrisOS atual é explícita. O semantic analyzer de shaders guarda lexical scopes em um parent array, e ChrisFS percorre uma hierarquia de diretórios enraizada. Ambos são casos especiais tree-shaped; não são generic graph containers nem union-find. A revisão analisada não estabelece implementação reutilizável de graph ou DSU, portanto esses mecanismos são documentados como fundamento, não como recurso implementado do ChrisOS.
 </div>
 
-## Por que graph é diferente de tree
+## Graphs além das restrições de trees
 
 Tree impõe forte estrutura:
 
@@ -242,7 +242,7 @@ cada scope não-root aponta para ancestor criado anteriormente
 
 Portanto a relação correta é acíclica.
 
-## Por que scope_parent não é union-find
+## Hierarquia scope_parent versus union-find
 
 Em DSU, parent[x] é link interno até o representative da equivalence class.
 
