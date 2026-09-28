@@ -16,8 +16,6 @@ sources:
   - kernel/metal/smp.c
   - kernel/metal/pci.c
   - kernel/metal/start.c
-  - docs/CURRENT_HARDWARE_AUDIT.md
-  - docs/REAL_HARDWARE_PLAN.md
 symbols:
   - acpi_probe
   - bootinfo_phys_to_virt
