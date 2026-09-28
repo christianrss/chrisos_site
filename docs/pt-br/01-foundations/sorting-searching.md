@@ -511,6 +511,179 @@ Logo nenhuma comparison-only sort garante o(n log n) comparisons em arbitrary in
 
 Counting/radix usam propriedades adicionais do key domain.
 
+## Invariantes de correção por algoritmo
+
+Cada família possui um invariant diferente, e esse invariant é mais importante que memorizar pseudocode.
+
+Em insertion sort, antes de iniciar iteration i:
+
+~~~text
+a[0..i) está ordenado
+~~~
+
+A iteration remove conceitualmente a[i], desloca elementos maiores e restaura a propriedade para:
+
+~~~text
+a[0..i+1)
+~~~
+
+Em merge sort, o merge mantém:
+
+~~~text
+output já produzido está ordenado
+e
+contém exatamente os menores elementos já consumidos das duas runs
+~~~
+
+Em binary search, o invariant deve dizer onde a resposta ainda pode estar. Para lower_bound:
+
+~~~text
+todos os índices < lo já são estritamente menores que key
+todos os índices >= hi já são candidatos não menores
+~~~
+
+A cada iteration o intervalo [lo, hi) diminui.
+
+Em quicksort, partition deve preservar regiões de comparação em torno do pivot. Sem esse invariant, um loop que apenas "parece mover índices na direção certa" pode perder elements, duplicar swaps ou não terminar com duplicates.
+
+## Custo de movimentação versus custo de comparação
+
+Big-O de comparisons não descreve todo o custo.
+
+Para records grandes, trocar o payload completo pode ser muito mais caro que comparar keys.
+
+Uma técnica comum é ordenar:
+
+~~~text
+array de índices ou pointers
+~~~
+
+em vez dos records.
+
+Depois o sistema pode:
+
+- manter a indirect order;
+- aplicar permutation ao final;
+- iterar na ordem indireta.
+
+Isso reduz bytes movimentados, mas adiciona pointer/index indirection e pode piorar locality durante consumo.
+
+Selection sort, apesar de O(n²) comparisons, realiza apenas O(n) swaps e por isso aparece em cenários em que write cost é excepcionalmente alto.
+
+## Locality e comportamento de cache
+
+Insertion sort acessa regiões próximas e costuma ter ótima locality em arrays pequenos.
+
+Merge sort faz passes relativamente sequenciais, favorecendo prefetch/cache bandwidth, mas precisa de auxiliary buffer em sua forma clássica para arrays.
+
+Heapsort salta entre parent/child positions:
+
+~~~text
+i
+2i+1
+2i+2
+~~~
+
+e por isso tende a produzir acesso menos sequencial em heaps grandes.
+
+Quicksort pode ter boa locality dentro de partitions, porém recursive partitioning e pivot behavior determinam o padrão real.
+
+Assim, dois algoritmos com O(n log n) podem ter tempos muito diferentes na mesma CPU.
+
+## Duplicates e comparator equality
+
+Datasets de sistemas frequentemente possuem keys repetidas:
+
+- priorities;
+- timestamps truncados;
+- device classes;
+- status codes.
+
+Em quicksort two-way simples, muitos values iguais ao pivot podem produzir partitions ruins.
+
+Three-way partition separa:
+
+~~~text
+< pivot
+== pivot
+> pivot
+~~~
+
+e evita retrabalho sobre a faixa igual.
+
+Em binary search, duplicates exigem decidir se a API quer:
+
+- qualquer occurrence;
+- first occurrence;
+- last occurrence;
+- lower_bound;
+- upper_bound;
+- equal range.
+
+Sem esse contrato, duas implementações corretas podem retornar índices diferentes e quebrar callers que assumem first match.
+
+## Busca indexada e custo de manutenção
+
+Manter sorted index transforma algumas queries de O(n) para O(log n), mas updates deixam de ser gratuitos.
+
+Em array sorted, inserir no meio pode exigir:
+
+~~~text
+O(n)
+~~~
+
+movimentos.
+
+Uma balanced tree oferece:
+
+~~~text
+O(log n)
+~~~
+
+search e update, com maior metadata e pointer cost.
+
+Hash table oferece expected O(1) equality lookup, porém perde ordered traversal natural.
+
+No editor ChrisC, g_line_starts ilustra a mesma troca: line lookup é O(log L) quando o index está válido, mas text edits invalidam o index e podem provocar rebuild O(N).
+
+## Busca em storage não contíguo
+
+Binary search exige random access eficiente ao elemento mid.
+
+Em linked list, localizar o midpoint por traversal custa O(n), eliminando o principal benefício.
+
+Para linked data, alternativas incluem:
+
+- manter auxiliary array/index;
+- usar balanced tree;
+- reorganizar representação;
+- aceitar linear scan.
+
+A estrutura de dados e o algoritmo de busca precisam ser escolhidos juntos.
+
+## Boundary cases e termination proof
+
+Binary search bugs normalmente aparecem em:
+
+- empty range;
+- one-element range;
+- key abaixo do mínimo;
+- key acima do máximo;
+- duplicates;
+- midpoint bias incompatível com update de lo/hi.
+
+No line_for_pos atual, hi começa em g_line_count-1 e midpoint é biased upward:
+
+~~~text
+(lo + hi + 1) / 2
+~~~
+
+Quando o predicate é true, lo = mid.
+
+Quando false, hi = mid-1.
+
+Em ambos os casos, se lo < hi, o intervalo diminui estritamente. Essa é a termination proof local.
+
 ## qsort no teste do PMM
 
 tools/test_pmm_heap_smp.c coleta physical addresses obtidos em threads host concorrentes.
