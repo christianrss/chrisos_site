@@ -4,7 +4,7 @@ lang: en
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/pit.c
   - kernel/metal/pit.h
@@ -45,6 +45,18 @@ ChrisOS defines `PIT_INPUT_HZ = 1193182` and computes the divisor using integer 
 
 The divisor is constrained to 16 bits. A requested frequency that produces divisor zero would be too high for the integer representation; a divisor above `0xffff` is too low for the selected PIT mode. `pit_init` rejects both cases, and also rejects zero frequency before division.
 
+## Accepted frequency range and API contract
+
+The implementation's validation implies a concrete integer input domain. Because the divisor is computed as `floor(1,193,182 / frequency_hz)`, it must satisfy:
+
+```text
+1 <= divisor <= 65,535
+```
+
+For integer requests, 19 Hz is accepted while 18 Hz produces a divisor above 16 bits. At the high end, a request up to 1,193,182 Hz produces divisor 1; a larger request truncates the quotient to zero and is rejected. These are software acceptance bounds, not a claim that every frequency inside the interval is useful or physically accurate.
+
+The API returns only success/failure. It does not return the chosen divisor or actual realized frequency, so callers cannot recover quantization error through the current interface. The boot path avoids that ambiguity operationally by selecting one known policy value, 60 Hz.
+
 ## Programming sequence
 
 `pit_init(frequency_hz)` performs:
@@ -74,6 +86,51 @@ T = 1 / 60 s ≈ 16.6667 ms
 Because `1193182 / 60` is integer division, the actual programmed divisor is 19,886 rather than a fractional value. The actual frequency is therefore the PIT input divided by 19,886, close to but not mathematically identical to 60.000000 Hz. Any long-term timekeeping derived solely from this tick count would accumulate the corresponding quantization and oscillator error.
 
 ChrisOS currently uses the tick primarily as a system cadence/scheduling signal rather than presenting it as a precision real-time clock.
+
+## Divisor quantization and accumulated error
+
+The PIT cannot represent an arbitrary real-valued frequency. ChrisOS computes an integer divisor with truncating division:
+
+```text
+divisor = floor(1,193,182 / requested_hz)
+actual_hz = 1,193,182 / divisor
+```
+
+For the boot request of 60 Hz:
+
+```text
+divisor = 19,886
+actual_hz ≈ 60.0011063 Hz
+actual_period ≈ 16.666359 ms
+```
+
+The difference is small for scheduler cadence, but it illustrates an important timekeeping rule: a periodic interrupt count is not automatically a calibrated wall clock. The accumulated phase error after (N) handled ticks depends on the programmed oscillator/divisor error plus interrupt-service latency and any lost or delayed deliveries. If software later derives seconds from `ticks / 60`, that conversion intentionally uses the nominal policy frequency, not a measured physical clock.
+
+A more precise subsystem would keep an explicit conversion ratio or calibrated clocksource and use the PIT only as a clock-event source. ChrisOS does not currently maintain such a calibration state.
+
+## State ownership and update path
+
+The timer path has a small state machine:
+
+```text
+pit_init
+  -> validate frequency
+  -> reset ticks
+  -> register IRQ0 callback
+  -> program channel 0
+  -> unmask IRQ0
+
+IRQ0
+  -> pit_irq
+  -> ticks = ticks + 1
+  -> proc_on_tick
+  -> g_slice = 1
+  -> generic IRQ layer sends EOI
+```
+
+Only the interrupt path increments `ticks`; ordinary code reads it through `pit_ticks`. Similarly, timer code does not clear `g_slice`: the consumer acknowledges the scheduling request with `proc_slice_ack`. This separation means the timer produces an event while scheduler/process code owns consumption.
+
+There is no queue of pending slices. Repeated timer interrupts while `g_slice` is already 1 collapse into the same boolean state. The current design therefore records “at least one scheduling boundary is due,” not how many quanta elapsed. That is sufficient for the present deferred scheduling contract but would lose accounting information if the kernel later needed one-to-one quantum consumption.
 
 ## Interrupt route
 
@@ -200,4 +257,4 @@ The timer is fixed at boot to 60 Hz, uses legacy PIT/PIC delivery, exposes only 
 
 ## Source map
 
-`kernel/metal/pit.c`/`pit.h` implement programming and counting. `kernel/metal/irq.c` supplies vector-to-IRQ dispatch and EOI. `kernel/metal/proc.c` owns the slice flag. `kernel/metal/start.c` chooses 60 Hz and defines the boot ordering. The Source Atlas includes every file in full at revision `da3df29cb397932c43d32373871fb9380e688ade`.
+`kernel/metal/pit.c`/`pit.h` implement programming and counting. `kernel/metal/irq.c` supplies vector-to-IRQ dispatch and EOI. `kernel/metal/proc.c` owns the slice flag. `kernel/metal/start.c` chooses 60 Hz and defines the boot ordering. The Source Atlas includes every file in full at revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
