@@ -154,25 +154,49 @@ def on_post_build(config):
             for d in language_docs
             if '#' not in d['location']
         }
-        reader_docs = []
+        raw_reader_docs = []
         for doc in language_docs:
             location = doc['location']
             base_location = location.split('#', 1)[0]
             kind = 'section' if '#' in location else 'page'
-            text = ' '.join(str(doc.get('text', '')).split())
-            # Page records duplicate their section corpus. Keep only a compact
-            # page-level lead and a bounded section body so the direct client-side
-            # search index remains usable on mobile as the 214-chapter corpus grows.
-            # Section titles and anchor locations remain indexed independently.
-            text_limit = 240 if kind == 'page' else 800
-            reader_docs.append({
+            raw_reader_docs.append({
                 'location': location,
                 'title': doc.get('title', location),
                 'page_title': page_titles.get(base_location, doc.get('title', location)),
                 'kind': kind,
-                'text': text[:text_limit],
+                'text': ' '.join(str(doc.get('text', '')).split()),
             })
-        payload = {'schema_version': 1, 'language': lang, 'docs': reader_docs}
-        (target.parent / f'reader-{lang}.json').write_text(
-            json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
-        )
+
+        # Page records duplicate their section corpus. Keep page leads compact and
+        # adapt the section excerpt budget to corpus growth. The reader performs
+        # direct client-side JSON search, so unbounded per-section text eventually
+        # turns a complete 214-chapter corpus into a multi-megabyte mobile payload.
+        # Preserve every section title/location and shrink only body excerpts.
+        page_text_limit = 160
+        section_text_limit = 800
+        min_section_text_limit = 240
+        target_bytes = 1_700_000
+
+        while True:
+            reader_docs = []
+            for doc in raw_reader_docs:
+                text_limit = page_text_limit if doc['kind'] == 'page' else section_text_limit
+                reader_docs.append({
+                    'location': doc['location'],
+                    'title': doc['title'],
+                    'page_title': doc['page_title'],
+                    'kind': doc['kind'],
+                    'text': doc['text'][:text_limit],
+                })
+            payload = {'schema_version': 1, 'language': lang, 'docs': reader_docs}
+            encoded = json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
+            if len(encoded.encode('utf-8')) <= target_bytes:
+                break
+            if section_text_limit <= min_section_text_limit:
+                break
+            section_text_limit = max(
+                min_section_text_limit,
+                int(section_text_limit * 0.85),
+            )
+
+        (target.parent / f'reader-{lang}.json').write_text(encoded)
