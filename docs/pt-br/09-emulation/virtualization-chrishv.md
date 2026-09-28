@@ -9,7 +9,6 @@ sources:
   - chrisvm/cpu/hv/chrishv.c
   - chrisvm/cpu/hv/vmx/vmx.h
   - chrisvm/cpu/hv/svm/svm.h
-  - docs/chrisvm/architecture.md
 symbols: []
 depends_on:
   - chrisvm-chriscpu
