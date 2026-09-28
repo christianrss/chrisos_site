@@ -336,6 +336,36 @@ Isso cria uma ordem parcial que evita ciclo simples.
 
 A enumeração com callback é exceção controlada porque PMM chama código do caller enquanto está locked. O callback precisa obedecer regras restritas de reentrada e não introduzir ordem inversa.
 
+## Zero como sentinel de falha
+
+A API usa endereço físico zero para representar falha de allocation.
+
+Essa convenção é segura porque a inicialização reserva todo o primeiro 1 MiB, incluindo frame zero. Uma alocação legítima nunca pode colidir com o sentinel.
+
+Existe, portanto, um invariante ligando política de init ao contrato da API:
+
+```text
+frame 0 permanentemente indisponível
+    -> pmm_alloc pode retornar 0 em falha
+    -> caller testa "if (phys == 0)"
+```
+
+Se uma versão futura tornar a página física zero alocável, o contrato de retorno ficará ambíguo e precisará mudar.
+
+O mesmo sentinel aparece nas operações contíguas e em claim-at. Zero não significa “a página física zero foi alocada com sucesso”.
+
+## Ponto de linearização da alocação
+
+Sob o lock do PMM, o ponto conceitual em que uma allocation se torna efetiva é a transição em que `claim_run` liga os bits.
+
+Antes disso os frames estão livres; depois disso nenhuma chamada corretamente sincronizada pode devolvê-los novamente.
+
+Em `pmm_claim_at`, validação e mutation acontecem dentro da mesma região crítica. Não existe janela unlocked entre “observei livre” e “reclamei”.
+
+No free, a transição é o clear dos bits enquanto o mesmo lock global permanece adquirido.
+
+Essas transições protegidas pelo lock fornecem unicidade entre CPUs; o bitmap isolado não fornece segurança concorrente.
+
 ## Complexidade de uma página
 
 Se P páginas forem examinadas:
