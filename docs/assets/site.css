@@ -536,6 +536,104 @@ footer{
   font:.68rem Arial,sans-serif;
 }
 
+.author-signature{
+  max-width:80ch;
+  margin:1.1rem 0 2rem;
+  padding:1rem 1.1rem;
+  border:1px solid var(--line-dark);
+  border-left:5px solid var(--ink);
+  background:var(--paper-soft);
+  box-shadow:3px 3px 0 var(--paper-deep);
+}
+.author-signature-kicker{
+  display:block;
+  margin-bottom:.2rem;
+  color:var(--muted);
+  font:700 .66rem/1.3 "Courier New",monospace;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.author-signature strong{
+  display:block;
+  margin:.08rem 0 .18rem;
+  font:700 clamp(1.18rem,2.3vw,1.55rem)/1.2 Georgia,"Times New Roman",serif;
+}
+.author-signature-role{
+  display:block;
+  color:#2f2f2b;
+  font:700 .78rem/1.45 Arial,sans-serif;
+}
+.author-credentials,
+.author-studies{
+  display:block;
+  margin-top:.2rem;
+  color:var(--muted);
+  font:.72rem/1.45 Arial,sans-serif;
+}
+.author-studies{font-style:italic}
+
+.site-footer{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:1.25rem;
+  margin-top:2rem;
+  padding-top:1.15rem;
+  border-top:1px solid var(--line);
+}
+.site-footer-signature{
+  display:grid;
+  gap:.1rem;
+  max-width:760px;
+}
+.site-footer-project{
+  color:var(--ink);
+  font:700 .67rem/1.35 "Courier New",monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.site-footer-byline{
+  color:var(--muted);
+  font:.68rem/1.35 Arial,sans-serif;
+}
+.site-footer-author{
+  width:max-content;
+  max-width:100%;
+  color:var(--ink);
+  font:700 .92rem/1.35 Georgia,"Times New Roman",serif;
+  text-decoration-thickness:1px;
+  text-underline-offset:2px;
+}
+.site-footer-author:visited{color:var(--ink)}
+.site-footer-credentials{
+  color:var(--muted);
+  font:.66rem/1.4 Arial,sans-serif;
+}
+.site-footer-record{
+  margin:0;
+  flex:0 0 auto;
+  color:var(--muted);
+  font:.64rem/1.35 "Courier New",monospace;
+  text-align:right;
+}
+
+@media(max-width:720px){
+  .author-signature{
+    margin:1rem 0 1.6rem;
+    padding:.85rem .9rem;
+    box-shadow:2px 2px 0 var(--paper-deep);
+  }
+  .author-signature strong{font-size:1.18rem}
+  .site-footer{
+    display:block;
+    padding-bottom:5.2rem;
+  }
+  .site-footer-record{
+    margin-top:.75rem;
+    text-align:left;
+  }
+}
+
 /* Medium desktop: remove right rail before compressing the text column */
 @media(max-width:1380px){
   .reader-layout.has-toc{grid-template-columns:var(--sidebar-width) minmax(0,1fr)}
