@@ -14,10 +14,6 @@ sources:
   - iso_root/boot/limine/limine.conf
   - scripts/qemu.mk
   - makefile
-  - docs/INSTALLATION.md
-  - docs/REAL_HARDWARE_PLAN.md
-  - docs/HARDWARE_COMPATIBILITY.md
-  - docs/NATIVE_TOOLCHAIN_AUDIT.md
 symbols:
   - bootinfo_init
   - bootinfo_get
