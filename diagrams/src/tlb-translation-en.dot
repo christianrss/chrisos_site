@@ -1,0 +1,18 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  va [label="Virtual address"];
+  tlb [label="TLB lookup"];
+  hit [label="Cached translation + permissions"];
+  walk [label="Page-table walk\nCR3 -> PML4 -> PDPT -> PD -> PT"];
+  pa [label="Physical address / access"];
+  inval [label="Mapping changes\nINVLPG or CR3 switch"];
+  va -> tlb;
+  tlb -> hit [label="hit"];
+  hit -> pa;
+  tlb -> walk [label="miss"];
+  walk -> pa;
+  inval -> tlb [label="invalidate stale entry"];
+}
