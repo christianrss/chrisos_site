@@ -4,7 +4,7 @@ lang: pt-br
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/idt.c
   - kernel/metal/idt.h
@@ -102,6 +102,14 @@ O assembly registra que vector fica a +120, error a +128 e RIP a +136 a partir d
 
 Quando há mudança de privilégio, a CPU também empilha estado adicional, como RSP e SS anteriores. A estrutura C expõe a parte comum utilizada pelo kernel; código não deve inferir que todas as origens têm palavras adicionais idênticas além do contrato declarado.
 
+## Frame arquitetural em mudança de privilégio
+
+O frame visível ao kernel depende de como a entrada ocorreu. Em uma exceção originada no mesmo nível de privilégio, o hardware empilha a parte arquitetural necessária para o retorno, incluindo RIP, CS e RFLAGS, além do error code quando aquela exceção o fornece. Quando a entrada cruza de ring 3 para ring 0, a CPU também precisa preservar a stack anterior para que `iretq` possa reconstruir o contexto de usuário. Isso acrescenta os valores antigos de RSP e SS à porção produzida pelo hardware.
+
+Essa diferença é importante porque `struct irq_frame` representa o prefixo comum que o dispatcher utiliza, não uma afirmação de que toda origem produz exatamente o mesmo número de palavras abaixo dele. Código que examina estado adicional precisa primeiro saber se houve transição de privilégio. O teste usual parte dos bits baixos do CS salvo: CPL zero indica origem privilegiada; CPL não zero identifica entrada a partir de user mode.
+
+A normalização realizada pelos stubs resolve outro problema: o error code não é empilhado por todas as exceções. Ao adicionar um zero sintético quando necessário, o assembly mantém `vector`, `error`, RIP, CS e RFLAGS em posições previsíveis para o código C. Esse contrato entre hardware, assembly e C é uma ABI interna do kernel. Alterar a ordem dos pushes, a definição de `irq_frame` ou a política de normalização exige mudança coordenada nas três camadas.
+
 ## Estado SIMD/FPU
 
 Preservar apenas registradores inteiros seria insuficiente quando o código interrompido ou o próprio kernel utiliza estado x87/SSE. O ChrisOS reserva 528 bytes, calcula endereço alinhado a 16 bytes e executa `fxsave` antes de chamar `irq_dispatch`. Depois do retorno, `fxrstor` restaura o estado.
@@ -158,6 +166,14 @@ A entrada usa a stack privilegiada ativa, salvo quando uma transição de privil
 Interrupções aninhadas, NMIs e faults consomem profundidade adicional. A stack de kernel criada pelo linker possui 1 MiB, mas tamanho não resolve recuperação quando a própria stack está corrompida. Para isso seria necessário configurar IST independente para exceções selecionadas.
 
 Handlers chamam subsistemas com suas próprias regras de locking. Código executado em contexto de interrupção não pode adquirir locks em ordem que gere deadlock com código interrompido que já os possua. Essas regras pertencem aos capítulos dos subsistemas específicos.
+
+## Invariantes de ABI, alinhamento e retorno
+
+A chamada de `irq_dispatch` ocorre a partir de assembly, portanto o stub é responsável por satisfazer as expectativas de ABI do compilador. Isso inclui alinhar RSP antes do `call`, manter estáveis os endereços usados para localizar o frame e restaurar a stack exatamente para o ponto em que os registradores gerais foram salvos. O espaço temporário usado por FXSAVE não pode deslocar permanentemente o frame arquitetural nem ser confundido com palavras que `iretq` consumirá.
+
+O retorno também é uma operação de segurança. Antes de `iretq`, o stub precisa restaurar o estado estendido, recuperar os registradores na ordem inversa, remover somente os campos artificiais de vector/error e deixar a parte criada pela CPU intacta. Um ajuste incorreto de RSP pode fazer `iretq` interpretar dados comuns como RIP, CS ou RFLAGS, produzindo nova exceção durante a própria saída.
+
+O fato de o dispatcher receber um ponteiro mutável permite ao kernel alterar deliberadamente o destino de retorno. O caminho de contenção de falha de usuário usa essa propriedade para impedir retorno a um processo que acabou de ser encerrado. Isso deve ser tratado como edição controlada de estado arquitetural salvo, não como uma conveniência genérica: qualquer escrita nesses campos modifica diretamente o contexto que a CPU restaurará.
 
 ## Propriedades de segurança
 
