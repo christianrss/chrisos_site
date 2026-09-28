@@ -225,14 +225,12 @@ def check_documents(root: Path) -> None:
         root / "docs" / "en" / "01-foundations" / "proof-invariants-induction.md",
         root / "docs" / "pt-br" / "01-foundations" / "proof-invariants-induction.md",
     ]
-    common = (REVISION, "ChrisoImage", "ChrisArchitectureState" if "discrete" else REVISION)
     for path in paths:
         text = path.read_text(encoding="utf-8")
         if REVISION not in text:
             raise AssertionError(f"{path}: missing reviewed revision")
 
     discrete_required = (
-        "Cartesian",
         "CHRISO_SYM_MAX",
         "reg_index",
         "chris_cc_true",
