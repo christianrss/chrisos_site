@@ -2,7 +2,7 @@
 
 Snapshot date: 2026-09-28  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `cace8a27604a706abe85cedcfb0b0ae98a40d731`
+Baseline documentation commit: `2d835d5b16f7a51dd8197c8e58060b627d664a5f`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -22,16 +22,16 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **221**.
 
 Authored chapters:
-- EN: **110 present**
-- PT-BR: **110 present**
-- structurally bilingual authored pairs: **110**
-- structural coverage: **49.8%**
-- missing chapters in both languages: **111**
+- EN: **112 present**
+- PT-BR: **112 present**
+- structurally bilingual authored pairs: **112**
+- structural coverage: **50.7%**
+- missing chapters in both languages: **109**
 
 Depth-floor state:
-- EN: **84** chapters above the text floor; **26** present but below the floor.
-- PT-BR: **77** chapters above the text floor; **33** present but below the floor.
-- chapters above the floor in **both** languages: **77**.
+- EN: **86** chapters above the text floor; **26** present but below the floor.
+- PT-BR: **79** chapters above the text floor; **33** present but below the floor.
+- chapters above the floor in **both** languages: **79**.
 - chapters needing expansion in at least one language: **33**.
 - four kernel chapters meet the EN floor but still need PT-BR expansion: `interrupts-smp`, `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
@@ -39,7 +39,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 ## Chapters currently above the depth floor in both languages
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `cmos-switching-power`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `higher-half-kernel`, `idt-exceptions`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `microarchitecture-pipeline`, `mos-capacitor`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `panic-logging`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `sorting-searching`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
+`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `cmos-switching-power`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `hhdm`, `higher-half-kernel`, `idt-exceptions`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `microarchitecture-pipeline`, `mos-capacitor`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `panic-logging`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pmm-algorithms`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `sorting-searching`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
 
 ## Authored chapters that still require expansion
 
@@ -53,7 +53,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 02-computer-architecture | 0 |
 | 03-boot | 0 |
 | 04-kernel | 0 |
-| 05-memory | 9 |
+| 05-memory | 7 |
 | 06-storage | 12 |
 | 07-language-systems | 17 |
 | 08-graphics | 17 |
@@ -67,7 +67,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 16-history | 3 |
 | 17-developer-guide | 0 |
 | 98-maintenance | 2 |
-| **Total** | **111** |
+| **Total** | **109** |
 
 For the exact ordered list, run:
 
@@ -93,7 +93,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline: `e0a9852e6cb6fd30f17898c65c86e1442261acd2`.
+Last known successful reader/deploy baseline: `e088c7a5607460a1a316cd204376dcf1033d8894`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
