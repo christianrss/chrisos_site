@@ -41,7 +41,7 @@ def source_checks(source: Path) -> None:
     pmm_path = source / "kernel/metal/pmm.c"
     mm_path = source / "kernel/metal/mm.c"
     ioapic_path = source / "kernel/metal/ioapic.c"
-    chrisvm_path = source / "docs/chrisvm-boot-protocol.md"
+    readme_path = source / "README.md"
 
     start = read(start_path)
     bootinfo = read(bootinfo_path)
@@ -54,7 +54,7 @@ def source_checks(source: Path) -> None:
     pmm = read(pmm_path)
     mm = read(mm_path)
     ioapic = read(ioapic_path)
-    chrisvm = read(chrisvm_path)
+    readme = read(readme_path)
 
     require(linker, linker_path, ["ENTRY(kstart)", ". = 0xffffffff80000000;"])
 
@@ -237,11 +237,11 @@ def source_checks(source: Path) -> None:
     )
 
     require(
-        chrisvm,
-        chrisvm_path,
+        readme,
+        readme_path,
         [
-            "higher-half ELF is outside boot protocol v1",
-            "O protocolo 2 precisa carregar um ELF higher-half",
+            "| Boot | Limine BIOS/UEFI boot path |",
+            "| Virtualization | ChrisVM with the ChrisCPU emulator backend; ChrisHV remains an architectural target |",
         ],
     )
 

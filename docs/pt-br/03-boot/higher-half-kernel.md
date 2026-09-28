@@ -17,7 +17,6 @@ sources:
   - kernel/metal/smp.c
   - compiler/jit/jit.c
   - compiler/chrisld/chrisld.c
-  - docs/chrisvm-boot-protocol.md
   - makefile
 symbols:
   - kstart

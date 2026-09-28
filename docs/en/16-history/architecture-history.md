@@ -4,12 +4,10 @@ lang: en
 type: technical-chapter
 volume: 16-history
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: 92fb561574bd929522ea005b9fd433138bea3236
 sources:
-  - docs/STABILITY_AUDIT.md
-  - docs/NATIVE_TOOLCHAIN_AUDIT.md
-  - docs/CURRENT_GRAPHICS_AUDIT.md
-  - docs/chrisvm/architecture.md
+  - README.md
+  - docs/README.md
 symbols: []
 depends_on: []
 related:
@@ -26,9 +24,9 @@ Architecture history records when a design existed, why it changed and which new
 
 ## Audit documents as snapshots
 
-The ChrisOS repository contains audits tied to older campaign branches as well as current status documents. An older audit may say VirGL is unsupported or KCC accepts only a tiny subset while newer source implements significantly more.
+The source repository no longer carries the old technical audit corpus. On revision 92fb561574bd929522ea005b9fd433138bea3236 those duplicated technical documents were deliberately retired so that chrisos_site is the canonical documentation surface. Historical audit snapshots remain recoverable from Git history, while current claims must be reconstructed from current source, executable gates and revision-bound documentation here.
 
-The correct interpretation is not to delete the historical record. It is to label its revision and point current documentation at newer evidence.
+The correct interpretation is to preserve historical evidence through version control without keeping stale copies in the live source tree. A historical statement must name the revision or interval in which it was true; current chapters must point at current implementation evidence.
 
 ## Change categories
 
@@ -48,9 +46,9 @@ The project moved from software rendering and experimental VirtIO scanout toward
 
 ## Example: native toolchain
 
-Early audits documented a very limited KCC/ChrisAsm/ChrisLd sketch. Current KCC status shows compilation of all `kernel/metal` units under the host gate while still recording major blockers to a complete kernel.
+Early revisions contained a much smaller KCC/ChrisAsm/ChrisLd surface. The current compiler sources and executable gates provide the evidence for present behavior; older audit prose is historical evidence only when recovered at its original Git revision.
 
-Both documents are useful when ordered chronologically.
+The chronology is therefore carried by Git history plus revision-bound site pages, not by duplicated status files in the source repository.
 
 ## Example: ChrisVM
 

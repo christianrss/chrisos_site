@@ -54,7 +54,7 @@ def source_checks(source: Path) -> None:
     pmm = source / "kernel/metal/pmm.c"
     gdt = source / "kernel/metal/gdt.c"
     jit = source / "compiler/jit/jit.c"
-    chrisvm = source / "docs/chrisvm-boot-protocol.md"
+    readme = source / "README.md"
     chrisld = source / "compiler/chrisld/chrisld.c"
 
     require_text(
@@ -136,11 +136,10 @@ def source_checks(source: Path) -> None:
         raise AssertionError("expected current JIT relative/stale PDPT comment")
 
     require_text(
-        chrisvm,
+        readme,
         [
-            "paginação de 4 níveis ligada",
-            "higher-half ELF is outside boot protocol v1",
-            "O protocolo 2 precisa carregar um ELF higher-half",
+            "| Kernel | x86-64 higher-half kernel; GDT/TSS, IDT, paging, PMM/heap, SMP, processes, timers and interrupts |",
+            "| Virtualization | ChrisVM with the ChrisCPU emulator backend; ChrisHV remains an architectural target |",
         ],
     )
 

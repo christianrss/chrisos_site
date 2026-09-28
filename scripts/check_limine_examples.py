@@ -65,7 +65,7 @@ def source_checks(source: Path) -> None:
     mm = source / "kernel/metal/mm.c"
     makefile = source / "makefile"
     install = source / ".cursor/install.sh"
-    chrisvm = source / "docs/chrisvm-boot-protocol.md"
+    readme = source / "README.md"
 
     boot_text = require_text(
         bootinfo,
@@ -169,11 +169,10 @@ def source_checks(source: Path) -> None:
     )
 
     require_text(
-        chrisvm,
+        readme,
         [
-            "Não há BIOS, MBR, UEFI, Limine interno nem modo real.",
-            "higher-half ELF is outside boot protocol v1",
-            "Não há estrutura de boot info nesta versão.",
+            "| Boot | Limine BIOS/UEFI boot path |",
+            "| Virtualization | ChrisVM with the ChrisCPU emulator backend; ChrisHV remains an architectural target |",
         ],
     )
 

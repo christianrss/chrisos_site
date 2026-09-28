@@ -4,12 +4,10 @@ lang: pt-br
 type: technical-chapter
 volume: 16-history
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: 92fb561574bd929522ea005b9fd433138bea3236
 sources:
-  - docs/STABILITY_AUDIT.md
-  - docs/NATIVE_TOOLCHAIN_AUDIT.md
-  - docs/CURRENT_GRAPHICS_AUDIT.md
-  - docs/chrisvm/architecture.md
+  - README.md
+  - docs/README.md
 symbols: []
 depends_on: []
 related:

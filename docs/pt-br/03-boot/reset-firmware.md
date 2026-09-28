@@ -13,9 +13,6 @@ sources:
   - kernel/metal/gdt.c
   - kernel/metal/mm.c
   - iso_root/boot/limine/limine.conf
-  - docs/REAL_HARDWARE_PLAN.md
-  - docs/NATIVE_TOOLCHAIN_AUDIT.md
-  - docs/chrisvm-boot-protocol.md
   - README.md
 symbols:
   - kstart

@@ -190,6 +190,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_sort_graph_algorithms.py --source .source
 
+      - name: Verify string matching and parsing algorithms
+        working-directory: docs-repo
+        run: python scripts/check_string_parsing_algorithms.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |

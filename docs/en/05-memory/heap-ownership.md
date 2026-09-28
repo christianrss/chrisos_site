@@ -8,8 +8,6 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
   - kernel/metal/heap.c
   - kernel/metal/pmm.c
-  - docs/RESOURCE_OWNERSHIP.md
-  - docs/LOCKING.md
 symbols:
   - heap_init
   - kmalloc

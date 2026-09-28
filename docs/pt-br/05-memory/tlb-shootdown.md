@@ -10,7 +10,6 @@ sources:
   - kernel/metal/tlb_proto.c
   - kernel/metal/tlb_proto.h
   - kernel/metal/smp.c
-  - docs/LOCKING.md
 symbols: []
 depends_on:
   - virtual-memory

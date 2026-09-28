@@ -29,9 +29,6 @@ sources:
   - kernel/net/net.c
   - kernel/wm/main.c
   - compiler/clvm/clvm_vm.c
-  - docs/LOCKING.md
-  - docs/RESOURCE_OWNERSHIP.md
-  - docs/FOUNDATION_AUDIT.md
 symbols:
   - kstart
   - enter_user

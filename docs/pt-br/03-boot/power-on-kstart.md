@@ -21,7 +21,6 @@ sources:
   - kernel/gfx/sse_init.c
   - kernel/metal/proc.c
   - kernel/metal/linker.ld
-  - docs/chrisvm-boot-protocol.md
   - makefile
 symbols:
   - kstart

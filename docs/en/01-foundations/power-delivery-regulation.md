@@ -8,8 +8,6 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
   - kernel/metal/acpi.c
   - kernel/metal/acpi.h
-  - docs/CURRENT_HARDWARE_AUDIT.md
-  - docs/REAL_HARDWARE_PLAN.md
 symbols:
   - acpi_probe
 depends_on:

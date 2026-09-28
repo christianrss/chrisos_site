@@ -16,10 +16,6 @@ sources:
   - iso_root/boot/limine/limine.conf
   - makefile
   - .cursor/install.sh
-  - docs/REAL_HARDWARE_PLAN.md
-  - docs/NATIVE_TOOLCHAIN_AUDIT.md
-  - docs/CURRENT_SELFHOST_AUDIT.md
-  - docs/chrisvm-boot-protocol.md
 symbols:
   - kstart
   - bootinfo_init

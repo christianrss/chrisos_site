@@ -97,7 +97,7 @@ def source_checks(source: Path) -> None:
     pmm = source / "kernel/metal/pmm.c"
     mm = source / "kernel/metal/mm.c"
     smp = source / "kernel/metal/smp.c"
-    chrisvm = source / "docs/chrisvm-boot-protocol.md"
+    readme = source / "README.md"
 
     require_text(
         boot_h,
@@ -164,11 +164,10 @@ def source_checks(source: Path) -> None:
     )
 
     require_text(
-        chrisvm,
+        readme,
         [
-            "Não há estrutura de boot info nesta versão.",
-            "higher-half ELF is outside boot protocol v1",
-            "O protocolo 2 precisa carregar um ELF higher-half, publicar um boot info explícito",
+            "| Boot | Limine BIOS/UEFI boot path |",
+            "| Virtualization | ChrisVM with the ChrisCPU emulator backend; ChrisHV remains an architectural target |",
         ],
     )
 
@@ -241,7 +240,7 @@ def main() -> None:
     )
     print(
         "Current-source findings: memmap and MP remain Limine-owned, inherited CR3 "
-        "is adopted, bootloader-reclaimable memory stays reserved, ChrisVM v1 has no boot info."
+        "is adopted, bootloader-reclaimable memory stays reserved, and ChrisVM is a separate virtualization subsystem."
     )
     print(
         "Scope: synthetic normalization and repository-contract checks only; "

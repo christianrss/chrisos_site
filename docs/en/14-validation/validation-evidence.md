@@ -6,9 +6,6 @@ volume: 14-validation
 status: maintained
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
-  - docs/STABILITY_AUDIT.md
-  - docs/STABILITY_REPORT.md
-  - docs/CURRENT_CAPABILITIES.md
   - makefile
   - tests
 symbols: []

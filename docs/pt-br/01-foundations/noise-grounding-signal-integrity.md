@@ -8,7 +8,6 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
   - kernel/metal/pci.c
   - kernel/metal/pci.h
-  - docs/CURRENT_HARDWARE_AUDIT.md
 symbols: [pci_read, pci_write]
 depends_on: [transmission-lines-differential-signals, ac-signals-frequency-impedance]
 related: [power-delivery-regulation, clock-timing, buses-mmio-dma, pci-pcie]

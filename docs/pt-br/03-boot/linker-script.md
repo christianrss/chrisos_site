@@ -15,8 +15,6 @@ sources:
   - compiler/chrisld/chrisld.c
   - compiler/chrisld/chrisld.h
   - compiler/chrisld/chriso.h
-  - docs/CHRISLD_STATUS.md
-  - docs/CURRENT_SELFHOST_AUDIT.md
 symbols:
   - kstart
   - __kernel_start
