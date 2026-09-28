@@ -162,6 +162,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_power_delivery_examples.py --source .source
 
+      - name: Verify MOS electrostatics and CMOS switching examples
+        working-directory: docs-repo
+        run: python scripts/check_mos_cmos_examples.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
