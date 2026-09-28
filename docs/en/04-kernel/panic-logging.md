@@ -48,6 +48,22 @@ This ordering makes serial part of the diagnostic root. Boot information, memory
 
 A low-level log path should have as few dependencies as possible. If it required the heap, filesystem or window manager, failures in those layers could make the diagnostic path recursively fail.
 
+## Serial initialization and availability state
+
+`serial_init` begins by initializing klog, then programs COM1 and performs a loopback probe. It writes test byte `0xAE` while the modem-control register is in loopback mode and verifies that reading the data register returns the same value. Failure sets `serial_available = false` and returns false; success restores normal modem control, marks serial available and initializes `g_serial_lock`.
+
+The boot path treats failure as fatal before most kernel initialization: `kstart` executes `cli` and halts without calling the normal `panic` formatter. This is a distinct early-boot failure path because the normal panic transport is exactly the subsystem that failed initialization.
+
+After successful initialization, the per-character lock order is fixed:
+
+```text
+g_lock (klog) -> g_serial_lock (COM1)
+```
+
+The current serial code does not acquire those locks in the reverse order, which avoids one ordinary AB/BA inversion inside the logging subsystem. However, the locks are still non-recursive, so re-entering logging while already holding either lock remains unsafe.
+
+A failed COM1 probe does not make `serial_putc` incapable of storing bytes in klog: the function records the byte before checking `serial_available`. In the normal boot flow this fallback is of limited use because `kstart` halts immediately when `serial_init` fails, but the distinction matters when reasoning about the API itself.
+
 ## Fatal panic
 
 `panic(message)` is declared `_Noreturn`.
