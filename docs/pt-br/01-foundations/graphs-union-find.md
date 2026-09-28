@@ -514,6 +514,154 @@ Defesas incluem limits de V/E, range checks, traversal budgets, visited set e ov
 
 DSU otimizado mantém excelente asymptotic behavior, mas ainda requer validação de índices.
 
+## Custos por representação
+
+A escolha entre matrix, adjacency list e edge list precisa ser orientada pelas operações dominantes.
+
+| Operação | Matrix | Adjacency list | Edge list |
+|---|---:|---:|---:|
+| testar edge u→v | O(1) | O(deg(u)) sem índice extra | O(E) |
+| enumerar neighbors de u | O(V) | O(deg(u)) | O(E) |
+| percorrer todas as edges | O(V²) | O(V+E) | O(E) |
+| memória sparse | O(V²) | O(V+E) | O(E) |
+| inserir edge | O(1) em storage fixo | depende do container | append O(1) amortized |
+
+Esses bounds assumem representações básicas. Sorted vectors, hash sets ou compressed sparse row mudam constants e algumas operações.
+
+Em sistemas, memory locality pode ser tão importante quanto o bound assintótico. Matrix é contígua mas grande; pointer adjacency lists são compactas em número de edges, porém podem espalhar nodes. CSR e arrays indexados preservam densidade e são atraentes para graphs quase imutáveis.
+
+## Directed, undirected e multigraph
+
+A mesma lista de pares pode ter semânticas diferentes.
+
+Em directed graph:
+
+~~~text
+(u, v) != (v, u)
+~~~
+
+Em undirected graph, uma implementação por adjacency list normalmente precisa representar os dois sentidos.
+
+Multigraph permite múltiplas edges entre o mesmo par. Simple graph não permite.
+
+Self-loop:
+
+~~~text
+(u, u)
+~~~
+
+pode ser válido ou erro de input, dependendo do domain.
+
+Essas decisões afetam degree counts, cycle detection e deduplication. Um parser não pode deduzir a policy depois de construir a estrutura.
+
+## Ownership de vertices e edges
+
+Uma implementação em kernel precisa definir quem possui a memória.
+
+Possibilidades:
+
+- graph possui vertices e edges;
+- subsystem externo possui objects, graph guarda apenas ids;
+- immutable graph referencia storage estável;
+- edges são intrusive records dentro dos próprios objects.
+
+Ids evitam raw pointer lifetime problems, mas introduzem geração/reuse concerns: se slot 12 for liberado e reutilizado para outro object, uma stale edge para 12 pode passar range check e ainda apontar para entidade errada.
+
+Uma solução é combinar index com generation counter.
+
+## Correctness de union-find
+
+O significado matemático de DSU é uma equivalence relation.
+
+Ela deve ser:
+
+- reflexiva: x está conectado a x;
+- simétrica: se x está no mesmo set que y, y está no mesmo set que x;
+- transitiva: se x~y e y~z, então x~z.
+
+make_set cria classes singleton. union substitui duas classes por sua união. find fornece um canonical representative por classe.
+
+Path compression não altera a partition porque cada node continua apontando para um ancestor dentro do mesmo set.
+
+Union by size também não altera membership: apenas escolhe qual root passa a representar o conjunto combinado.
+
+## Proof intuition para union by size
+
+Quando a tree menor é anexada à maior, sempre que a profundidade de um element aumenta por uma union, o tamanho do set que o contém ao menos dobra.
+
+Assim, sem path compression, um element não pode aumentar de profundidade mais que:
+
+~~~text
+floor(log2 n)
+~~~
+
+vezes.
+
+Isso explica por que union by size sozinho já impede chains lineares produzidas por unions arbitrárias.
+
+Path compression reduz ainda mais o custo amortizado.
+
+## Rebuild versus incremental connectivity
+
+DSU é especialmente útil quando as edges só são adicionadas.
+
+Quando uma edge é removida, DSU básico não consegue desfazer uma union.
+
+Para dynamic connectivity com deletions, alternativas incluem:
+
+- rebuild periódico;
+- offline algorithms com rollback DSU;
+- dynamic trees;
+- estruturas específicas do workload.
+
+Portanto DSU não é um banco de dados completo de topologia.
+
+## Serialization e ABI
+
+Se graph ou DSU forem persistidos, índices precisam de formato estável.
+
+Itens que devem ser definidos:
+
+- integer width;
+- endianness;
+- vertex count;
+- edge count;
+- bounds;
+- duplicate policy;
+- representative metadata;
+- versioning.
+
+Persistir o parent array de uma DSU como se fosse semântica externa é geralmente frágil: path compression pode alterar a representação sem alterar a partition.
+
+Quando o que importa é equivalence class, o formato deve definir o significado lógico, não depender de uma shape específica da forest.
+
+## Concorrência mais detalhada
+
+Coarse locking torna union/find simples, mas serializa queries.
+
+Read-mostly graph pode usar immutable snapshots e publicar uma nova versão depois de mutation.
+
+Per-vertex locking exige lock ordering para operações com duas endpoints; ordenar locks por vertex id evita uma classe de deadlocks.
+
+Concurrent DSU é mais delicado porque find pode modificar parent links por compression. Uma implementação que oferece lock-free reads precisa declarar se find comprime paths, se usa atomic loads/stores e qual consistency model é esperado.
+
+Nenhum desses modelos concorrentes é atribuído ao ChrisOS atual neste capítulo; eles estabelecem o espaço de design.
+
+## Failure containment
+
+Ao consumir graph externo, validação deve ocorrer antes de traversal intensiva.
+
+Uma sequência defensiva típica:
+
+1. validar V e E contra limites;
+2. validar cada endpoint;
+3. verificar overflow do tamanho de allocation;
+4. construir representation;
+5. opcionalmente deduplicar edges;
+6. executar cycle/component checks necessários ao domain.
+
+Isso evita que malformed metadata transforme uma simples range violation em pointer corruption ou unbounded traversal.
+
 ## Modelo de validação
 
 O checker determinístico associado valida adjacency list e matrix em graph pequeno, connected components, directed versus undirected semantics, cycle detection em parent chains, make/find/union, union by size, path compression, representative equality e set sizes.
