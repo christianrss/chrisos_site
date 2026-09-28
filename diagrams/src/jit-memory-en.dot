@@ -1,0 +1,18 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  pmm [label="pmm_alloc_contig"];
+  phys [label="Physical JIT frames"];
+  w [label="Writable HHDM alias\nbuf->w"];
+  emit [label="jit_emit / patch"];
+  seal [label="jit_seal"];
+  x [label="Executable alias\nbuf->x\nPRESENT, !WRITE, !NX"];
+  run [label="Native execution"];
+  unmap [label="jit_free: unmap exec alias"];
+  shoot [label="TLB shootdown"];
+  free [label="PMM free\nor quarantine"];
+  pmm -> phys -> w -> emit -> seal -> x -> run -> unmap -> shoot -> free;
+  w -> x [label="same physical frames", style=dashed];
+}
