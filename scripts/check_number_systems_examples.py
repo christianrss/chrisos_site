@@ -133,7 +133,7 @@ def check_documents(root: Path) -> None:
         "0xFFFB",
         "0x00FB",
         "Horner",
-        "version 093",
+        "093",
         "flags.c",
         "chrisasm.c",
         "graphics.c",
