@@ -41,7 +41,8 @@ The documentation has two independent organizational layers:
 
 The learning curriculum is authoritative for reading order. Directory numbering is retained for URL stability and repository maintenance; it does not override prerequisite order.
 
-[Learning path and current gaps](learning-path.md)
+[Learning path and current gaps](learning-path.md)  
+[Developer Guide](17-developer-guide/index.md)
 
 ## Dependency chain
 
@@ -98,6 +99,7 @@ Missing chapters remain visible in the curriculum and are not bypassed by the ca
 | 10 · Networks and protocol state | Ethernet, IPv4, UDP, TCP, VirtIO-net and sockets |
 | 11 · Emulation and virtualization | x86 emulation, ChrisVM/ChrisCPU, VMX/SVM and second-level translation |
 | 12 · Bootstrap, validation and research | self-hosting, real hardware, validation, specifications, history and corpus maintenance |
+| 13 · Development environment and contribution | Linux, Windows/WSL2, build, debugging, testing, troubleshooting and contribution workflow |
 
 ## Document structure
 
@@ -148,6 +150,7 @@ The stable repository collections remain available for reference navigation:
 | [Validation](14-validation/index.md) | tests, gates, faults and measurements |
 | [Specifications](15-specifications/index.md) | project formats, ABIs and protocol contracts |
 | [Architecture history](16-history/index.md) | revision-bound architectural history |
+| [Developer Guide](17-developer-guide/index.md) | workstation setup, build/run/debug, testing and contribution workflow |
 
 ## Evidence policy
 
