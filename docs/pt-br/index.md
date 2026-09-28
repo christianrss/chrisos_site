@@ -41,7 +41,8 @@ A documentação possui duas camadas organizacionais independentes:
 
 O currículo é a autoridade para a ordem de leitura. A numeração dos diretórios permanece por estabilidade de URLs e manutenção do repositório; ela não substitui a ordem de pré-requisitos.
 
-[Percurso de aprendizado e lacunas atuais](learning-path.md)
+[Percurso de aprendizado e lacunas atuais](learning-path.md)  
+[Guia do desenvolvedor](17-developer-guide/index.md)
 
 ## Cadeia de dependências
 
@@ -98,6 +99,7 @@ Capítulos ausentes permanecem visíveis no currículo e não são ignorados pel
 | 10 · Redes e estados de protocolo | Ethernet, IPv4, UDP, TCP, VirtIO-net e sockets |
 | 11 · Emulação e virtualização | emulação x86, ChrisVM/ChrisCPU, VMX/SVM e tradução de segundo nível |
 | 12 · Bootstrap, validação e pesquisa | self-hosting, hardware real, validação, especificações, história e manutenção do corpus |
+| 13 · Ambiente de desenvolvimento e contribuição | Linux, Windows/WSL2, build, depuração, testes, troubleshooting e fluxo de contribuição |
 
 ## Estrutura dos documentos
 
@@ -148,6 +150,7 @@ As coleções estáveis permanecem disponíveis para consulta temática:
 | [Validação](14-validation/index.md) | testes, gates, faults e medições |
 | [Especificações](15-specifications/index.md) | formatos, ABIs e contratos de protocolo |
 | [História da arquitetura](16-history/index.md) | histórico arquitetural vinculado a revisões |
+| [Guia do desenvolvedor](17-developer-guide/index.md) | setup de workstation, build/run/debug, testes e contribuição |
 
 ## Política de evidência
 
