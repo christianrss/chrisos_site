@@ -108,6 +108,14 @@ The build metadata functions make it possible to answer “which kernel produced
 
 The site documentation is also revision-bound. Matching a panic Git/build identifier to the documented revision prevents analysis against the wrong source state.
 
+## Build identity storage and formatting contract
+
+The kernel image contains a fixed marker string beginning with `CHRISOSHASH:` followed by 64 zero characters. The build stamping tool locates that marker after linking and replaces the zero field with the SHA-256 of the linked image while the placeholder is still in its known form. `build_kernel_sha256()` returns a pointer directly into that static identity string after the 12-character prefix.
+
+Git revision, build ID and date are supplied through compile-time macros, while compiler identity comes from `__VERSION__`. `build_info_format` concatenates these fields into a caller-provided buffer without heap allocation. It returns -1 if the capacity cannot hold all text plus a terminator.
+
+This makes build identity available both during ordinary boot logging and during panic reporting without needing filesystem metadata. It is still important to distinguish identity from integrity verification: printing a hash proves which value was embedded in the running image; independent verification requires comparing it with a trusted artifact or reproducible build output.
+
 ## Kernel log ring
 
 `klog.c` defines an 8,192-byte static char array, write position, current length, spinlock and initialized flag.
