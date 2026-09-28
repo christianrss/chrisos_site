@@ -11,9 +11,6 @@ sources:
   - chrisvm/machine/machine.c
   - chrisvm/cpu/emulator/execute.c
   - chrisvm/cpu/common/cpuid.c
-  - docs/chrisvm/architecture.md
-  - docs/chrisvm/machine-model.md
-  - docs/chrisvm-boot-protocol.md
 symbols:
   - chris_machine_create
   - chris_cpuid
