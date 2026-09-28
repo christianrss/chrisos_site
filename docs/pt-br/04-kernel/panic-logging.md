@@ -4,7 +4,7 @@ lang: pt-br
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/panic.c
   - kernel/metal/panic.h
@@ -119,6 +119,21 @@ Isso recompõe corretamente a ordem depois do wrap.
 
 A função retorna count e não insere NUL. Consumer deve tratar como bytes.
 
+## Invariantes do ring e custo das operações
+
+O ring mantém dois estados diferentes: `g_pos` aponta para o próximo slot físico a ser sobrescrito e `g_len` representa quantos bytes válidos existem, limitado por `KLOG_CAP`. Os invariantes são:
+
+```text
+0 <= g_pos < KLOG_CAP
+0 <= g_len <= KLOG_CAP
+```
+
+Cada escrita custa O(1), desconsiderando contenção do spinlock. `klog_copy` custa O(n) para os bytes efetivamente copiados. Nenhuma dessas operações usa heap, de modo que a memória consumida pelo log permanece limitada estaticamente a 8.192 bytes.
+
+Quando o caller fornece capacidade menor que o conteúdo retido, a expressão `start = (g_pos + KLOG_CAP - n) % KLOG_CAP` seleciona os `n` bytes mais recentes, não o prefixo mais antigo. Por isso o buffer de 4.096 bytes usado para persistir o boot log captura a metade mais recente de um ring completamente cheio.
+
+O desenho é orientado a bytes e não possui limites de record. Depois de wrap ou truncamento, uma cópia pode começar no meio de uma linha. Além disso, chamadas concorrentes de `klog_puts` podem intercalar caracteres. Consumers devem interpretar o ring como stream cronológico de bytes, não como conjunto de mensagens atômicas.
+
 ## Persistência no boot
 
 Depois de storage/fs/install, `kstart` verifica backend ChrisFS. Usa buffer estático de 4096 bytes e chama `klog_copy`. Se houver dados, escreve `SYS/BOOT.LOG`.
@@ -129,11 +144,38 @@ Portanto:
 
 O snapshot é de até 4 KiB, embora ring comporte 8 KiB.
 
-## Serial versus klog
+## Fan-out real entre serial e klog
 
-São mecanismos distintos. Não se deve assumir que todo `serial_puts` automaticamente entra no ring sem verificar serial implementation.
+A implementação atual acopla a saída serial ao ring em memória. `serial_putc` executa `klog_putc(value)` antes mesmo de verificar se a COM1 está disponível. Portanto todo caractere enviado pela API serial é registrado primeiro no klog, inclusive quando a saída física ou virtual da serial está indisponível.
 
-`panic.c` chama serial diretamente. Isso é útil porque fatal path não depende de `g_lock` do klog. Se outro CPU morresse segurando esse lock, panic baseado obrigatoriamente em klog poderia deadlockar.
+`serial_puts` também converte cada newline em carriage return seguido de newline chamando `serial_putc('\r')` e depois `serial_putc('\n')`. O ring recebe, portanto, o mesmo par CRLF gerado para o transporte serial.
+
+O caminho efetivo é:
+
+```text
+serial_puts
+  -> serial_putc
+      -> klog_putc
+          -> adquire g_lock
+          -> atualiza ring de 8 KiB
+          -> libera g_lock
+      -> se COM1 indisponível: retorna
+      -> adquire g_serial_lock
+      -> espera transmitter-ready
+      -> outb(COM1, byte)
+      -> libera g_serial_lock
+```
+
+Esse fan-out oferece uma propriedade útil: depois que `serial_init` inicializa o klog, diagnósticos continuam preservados em memória mesmo se a COM1 não puder receber o byte. Porém isso também significa que o fatal path não é independente dos locks de logging.
+
+## Dependência de locks no panic path
+
+`panic` e `panic_exception` executam `cli` e depois chamam `serial_puts`. Como `serial_putc` passa primeiro por `klog_putc`, o panic pode adquirir `g_lock`; se serial estiver disponível, também pode adquirir `g_serial_lock`.
+
+O spinlock usado pelo kernel é um loop CAS não reentrante. Não há owner, bypass de panic nem try-lock. Assim, se uma exception fatal ocorrer enquanto a própria CPU já possui um desses locks, a tentativa de imprimir o panic pode girar indefinidamente antes de alcançar o loop final de `hlt`. Desabilitar interrupções não libera lock já adquirido e não interrompe outra CPU que esteja segurando o recurso.
+
+Essa é uma limitação real da revisão atual. Um caminho fatal mais robusto poderia ter saída serial de emergência sem locks, try-lock com fallback forçado ou um modo de panic que ignore o fan-out comum. O código analisado ainda não implementa essa proteção.
+
 
 ## Fault user não é panic global
 
@@ -219,4 +261,4 @@ A base existente ainda é sólida: serial cedo, identidade revisionada, fatal fa
 
 ## Mapa de fonte
 
-Panic: `kernel/metal/panic.c`/`panic.h`. Ring: `klog.c`/`klog.h`. Serial: `serial.c`/`serial.h`. Build metadata: `buildid.c`/`buildid.h`. Fault user: `syscall.c`. Persistência: `start.c`. O Source Atlas publica tudo integralmente na revisão `da3df29cb397932c43d32373871fb9380e688ade`.
+Panic: `kernel/metal/panic.c`/`panic.h`. Ring: `klog.c`/`klog.h`. Serial: `serial.c`/`serial.h`. Build metadata: `buildid.c`/`buildid.h`. Fault user: `syscall.c`. Persistência: `start.c`. O Source Atlas publica tudo integralmente na revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
