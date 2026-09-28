@@ -158,6 +158,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_signal_integrity_examples.py --source .source
 
+      - name: Verify power delivery regulation and decoupling examples
+        working-directory: docs-repo
+        run: python scripts/check_power_delivery_examples.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
