@@ -64,7 +64,7 @@ Cada estágio adiciona impedância e limites dinâmicos.
 
 Entrega de potência e gerenciamento de energia por software são relacionados, mas distintos. Software pode solicitar estados ou alterar carga; ele não elimina a dinâmica elétrica da PDN.
 
-## Por que um rail se move
+## Desvio de tensão no rail
 
 Para uma corrente de carga i(t) passando por impedância de alimentação não nula Z_PDN,
 
@@ -381,7 +381,7 @@ Abaixo da ressonância predomina comportamento capacitivo.
 
 Acima, predomina comportamento indutivo.
 
-## Por que posicionamento importa
+## Posicionamento e indutância de conexão
 
 Um capacitor conectado por trilhas/vias longas adiciona indutância.
 
@@ -760,7 +760,7 @@ Isso é descoberta/log.
 
 Não é um interpretador ACPI completo nem implementação de power management.
 
-## O que o código ACPI atual não estabelece
+## Limites da evidência da implementação ACPI atual
 
 O acpi_probe citado não mostra:
 
