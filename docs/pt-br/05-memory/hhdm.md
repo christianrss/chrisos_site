@@ -122,6 +122,43 @@ O contrato correto é:
 
 Não é uma função genérica “torne qualquer endereço físico dereferenciável”.
 
+## HHDM versus identity mapping
+
+Direct map não significa que endereço virtual seja igual ao físico.
+
+Identity mapping obedeceria:
+
+```text
+virtual = físico
+```
+
+enquanto HHDM obedece:
+
+```text
+virtual = físico + offset
+```
+
+A diferença é relevante porque um endereço físico numericamente válido pode não ser ponteiro válido do kernel. Ambientes de firmware às vezes possuem identity mappings e podem esconder bugs: cast acidental de físico para ponteiro parece funcionar até o kernel operar somente no higher half.
+
+O ChrisOS precisa manter essa distinção conceitual mesmo que ambos os valores sejam representados como `uint64_t`. Frame devolvido pelo PMM deve ser convertido ou explicitamente mapeado antes de dereference em C.
+
+## Dependência da ordem de boot
+
+A ordem funcional é:
+
+```text
+Limine estabelece page tables e HHDM
+    -> kernel entra
+    -> bootinfo_init valida resposta HHDM
+    -> bootinfo_ready = 1
+    -> PMM inicializa usando memory map
+    -> PMM/heap/MM podem usar bootinfo_phys_to_virt
+```
+
+Usar o helper antes disso é violação de invariante e causa panic.
+
+Isso também mostra que o PMM não cria o HHDM. O direct map já existe antes de `pmm_init`; o allocator apenas o consome.
+
 ## HHDM e PMM
 
 O PMM trabalha em frames físicos.
