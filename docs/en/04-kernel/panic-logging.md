@@ -4,7 +4,7 @@ lang: en
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/panic.c
   - kernel/metal/panic.h
@@ -126,6 +126,21 @@ This is important: raw physical array order after wrap is not chronological. The
 
 The function returns byte count and does not append a NUL terminator. The consumer must treat it as a byte log, not assume C-string termination.
 
+## Ring invariants and operation cost
+
+The ring maintains two independent indices: `g_pos` is the next physical slot to overwrite and `g_len` is the number of valid bytes, capped at `KLOG_CAP`. The invariant is:
+
+```text
+0 <= g_pos < KLOG_CAP
+0 <= g_len <= KLOG_CAP
+```
+
+Each write is O(1) in storage and time apart from lock contention. `klog_copy` is O(n) for the number of bytes requested. No heap allocation occurs in either operation, so log capacity is statically bounded at 8,192 bytes.
+
+When a caller requests fewer bytes than the retained log length, the formula `start = (g_pos + KLOG_CAP - n) % KLOG_CAP` selects the newest `n` bytes, not the oldest prefix. This is why the 4,096-byte boot persistence buffer captures the most recent half of a full 8 KiB ring.
+
+The byte-oriented design has no record boundaries. A wrapped or truncated snapshot can start in the middle of a textual line, and concurrent `klog_puts` calls can interleave character-by-character. Consumers must therefore treat the ring as an ordered byte stream rather than a database of atomic messages.
+
 ## Persistence after filesystem initialization
 
 In `kstart`, after storage initialization, filesystem initialization and installation logic, the kernel checks whether the active backend is ChrisFS.
@@ -138,13 +153,38 @@ This produces a staged logging architecture:
 
 Only up to 4,096 bytes are copied at this point even though the ring capacity is 8,192, so the persistence operation records at most the newest 4 KiB selected by `klog_copy` semantics.
 
-## Relationship between serial and klog
+## Actual serial-to-klog fan-out
 
-Serial and klog are separate mechanisms. The reviewed source does not imply that every `serial_puts` automatically enters `klog` unless the serial implementation explicitly does so. Documentation must trace actual call paths rather than assume one unified logging fan-out.
+The current implementation does couple serial output to the in-memory ring. `serial_putc` executes `klog_putc(value)` before checking whether COM1 is available. Therefore every character emitted through `serial_putc` is first recorded in klog, even when physical/virtual serial output is unavailable.
 
-The panic path shown in `panic.c` directly calls serial functions. This guarantees a fatal message does not depend on acquiring the klog spinlock or on log initialization.
+`serial_puts` also converts each newline into carriage-return plus newline by calling `serial_putc('\r')` and then `serial_putc('\n')`. The ring consequently records the same CRLF pair produced for the serial transport.
 
-If a CPU panics while another CPU holds `g_lock`, a panic implementation that required klog could deadlock. The direct serial path avoids that dependency.
+The effective normal-output path is:
+
+```text
+serial_puts
+  -> serial_putc
+      -> klog_putc
+          -> acquire g_lock
+          -> update 8 KiB ring
+          -> release g_lock
+      -> if COM1 unavailable: return
+      -> acquire g_serial_lock
+      -> poll transmitter-ready bit
+      -> outb(COM1, byte)
+      -> release g_serial_lock
+```
+
+This fan-out gives useful resilience: after `serial_init` has initialized klog, later serial diagnostics still remain in memory even if COM1 becomes unavailable. It also means the fatal path is not independent of klog locking.
+
+## Panic-path lock dependency
+
+`panic` and `panic_exception` execute `cli` and then call `serial_puts`. Because `serial_putc` first calls `klog_putc`, fatal reporting can acquire `g_lock`; when serial is available it can then acquire `g_serial_lock` as well.
+
+The spinlock implementation is a non-recursive CAS loop. It has no owner field and no panic bypass. Consequently, if a fatal exception occurs on a CPU while that same CPU already owns either logging lock, attempting to print the panic can spin forever instead of reaching the final `hlt` loop. Disabling interrupts does not release a lock already held by interrupted code, and it does not stop another CPU that owns the lock.
+
+This is an important current limitation. A stronger panic path would normally provide an emergency lockless/polled serial primitive, a try-lock with forced fallback, or a panic mode that bypasses ordinary logging locks. The reviewed ChrisOS source does not yet implement such a mechanism.
+
 
 ## User faults are not kernel panic
 
@@ -249,4 +289,4 @@ The existing design provides a robust minimal base: early serial, revision ident
 
 ## Source map
 
-Fatal handling is `kernel/metal/panic.c`/`panic.h`. The ring is `kernel/metal/klog.c`/`klog.h`. Transport is `kernel/metal/serial.c`/`serial.h`. Revision fields come from `kernel/metal/buildid.c`/`buildid.h`. User-fault containment is in `kernel/metal/syscall.c`, and boot persistence is wired in `kernel/metal/start.c`. All are mirrored completely in the Source Atlas for revision `da3df29cb397932c43d32373871fb9380e688ade`.
+Fatal handling is `kernel/metal/panic.c`/`panic.h`. The ring is `kernel/metal/klog.c`/`klog.h`. Transport is `kernel/metal/serial.c`/`serial.h`. Revision fields come from `kernel/metal/buildid.c`/`buildid.h`. User-fault containment is in `kernel/metal/syscall.c`, and boot persistence is wired in `kernel/metal/start.c`. All are mirrored completely in the Source Atlas for revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
