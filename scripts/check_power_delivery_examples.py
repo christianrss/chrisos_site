@@ -72,8 +72,7 @@ def check_load_line_and_efficiency() -> None:
 def check_source_contract(source_root: Path) -> None:
     acpi_c = (source_root / "kernel" / "metal" / "acpi.c").read_text(encoding="utf-8")
     acpi_h = (source_root / "kernel" / "metal" / "acpi.h").read_text(encoding="utf-8")
-    audit = (source_root / "docs" / "CURRENT_HARDWARE_AUDIT.md").read_text(encoding="utf-8")
-    plan = (source_root / "docs" / "REAL_HARDWARE_PLAN.md").read_text(encoding="utf-8")
+    readme = (source_root / "README.md").read_text(encoding="utf-8")
 
     for anchor in (
         "void acpi_probe(void)",
@@ -91,11 +90,8 @@ def check_source_contract(source_root: Path) -> None:
     if "void acpi_probe(void);" not in acpi_h:
         raise AssertionError("acpi.h missing reviewed acpi_probe declaration")
 
-    if "No physical machine was booted." not in audit:
-        raise AssertionError("hardware audit no longer states reviewed physical-test boundary")
-
-    if "suspend and resume" not in plan:
-        raise AssertionError("real-hardware plan no longer carries reviewed suspend/resume boundary")
+    if "QEMU is the primary integration environment." not in readme or "Real-hardware support is not yet a general supported deployment target." not in readme:
+        raise AssertionError("README.md no longer carries the reviewed real-hardware boundary")
 
 
 def check_documents(root: Path) -> None:
@@ -115,8 +111,6 @@ def check_documents(root: Path) -> None:
         "acpi_probe",
         "kernel/metal/acpi.c",
         "kernel/metal/acpi.h",
-        "docs/CURRENT_HARDWARE_AUDIT.md",
-        "docs/REAL_HARDWARE_PLAN.md",
         "ACPI Specification Version 6.6",
         "USB Power Delivery Specification Revision 3.2 Version 1.2",
         "BIPM",
