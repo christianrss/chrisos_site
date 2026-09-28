@@ -17,8 +17,6 @@ sources:
   - chrisvm/cpu/emulator/decode.c
   - chrisvm/cpu/emulator/execute.c
   - chrisvm/cpu/emulator/chriscpu.c
-  - docs/KCC_STATUS.md
-  - docs/CHRISASM_STATUS.md
 symbols:
   - cas_u32
   - atomic_add_u32
