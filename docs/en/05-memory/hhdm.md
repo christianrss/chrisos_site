@@ -130,6 +130,43 @@ Thus the API contract is better stated as:
 
 It is not a general “make any physical address safe to dereference” function.
 
+## HHDM versus identity mapping
+
+A direct map does not imply that virtual address equals physical address.
+
+An identity mapping would satisfy:
+
+```text
+virtual = physical
+```
+
+whereas the HHDM satisfies:
+
+```text
+virtual = physical + offset
+```
+
+The distinction matters in low-level code because the same numeric physical address can be valid hardware state while being an invalid kernel pointer. Early firmware environments sometimes use identity mappings, which can hide bugs: code that accidentally casts a physical address to a pointer may appear to work until the kernel runs only in the higher half.
+
+ChrisOS should therefore preserve the type distinction conceptually even though both values are represented as `uint64_t`. A physical frame returned by PMM must be converted or deliberately mapped before C dereference.
+
+## Boot-order dependency
+
+The usable order is:
+
+```text
+Limine establishes page tables and HHDM
+    -> kernel enters
+    -> bootinfo_init validates HHDM response
+    -> bootinfo_ready = 1
+    -> PMM initializes from memory map
+    -> PMM/heap/MM code may use bootinfo_phys_to_virt
+```
+
+Calling the helper earlier is treated as an invariant violation and panics.
+
+This ordering also means the PMM does not bootstrap the HHDM. The HHDM exists before PMM initialization; PMM merely consumes it.
+
 ## HHDM and the PMM
 
 The PMM deals in physical frames.
