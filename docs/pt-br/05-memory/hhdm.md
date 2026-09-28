@@ -332,6 +332,22 @@ Isso reforça por que HHDM não deve ser usado como alias universal de device.
 
 O caminho MMIO atual instala flags de cache específicas. Os atributos do HHDM vêm das page tables criadas pelo bootloader e pertencem ao contrato de RAM/direct map.
 
+## Conversão de endereço não transfere ownership
+
+Calcular um ponteiro HHDM não reserva nem fixa o frame físico.
+
+Um caller pode calcular o alias de página que está livre, pertence a outro subsistema ou está prestes a ser reutilizada. A soma não conhece lifetime do PMM.
+
+Um acesso correto exige dois preconditions independentes:
+
+```text
+mapping existe com atributos adequados
+AND
+caller possui razão válida de lifetime/ownership para acessar o frame
+```
+
+Essa separação é essencial no teardown. Manter ponteiro HHDM antigo não impede que o frame volte ao PMM e seja entregue a outro owner.
+
 ## Segurança
 
 O HHDM expõe RAM física dentro do espaço virtual privilegiado do kernel. User mode não pode ganhar acesso simplesmente porque process address spaces compartilham a metade superior do PML4.
