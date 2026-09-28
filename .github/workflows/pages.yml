@@ -182,6 +182,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_hash_tree_examples.py --source .source
 
+      - name: Verify graphs, union-find and compact structures
+        working-directory: docs-repo
+        run: python scripts/check_graph_compact_structures.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
