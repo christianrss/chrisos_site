@@ -1,8 +1,8 @@
 # ChrisOS Documentation — Operational State Memory
 
 Snapshot date: 2026-09-28  
-Current reconciled ChrisOS source revision: `92fb561574bd929522ea005b9fd433138bea3236`  
-Baseline documentation commit: `4e7b45c61fcb90229156d524157db7fb90f08532`
+Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
+Baseline documentation commit: `6767d3570819e4e2e825beec824de73c01293d93`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -19,61 +19,27 @@ Never treat this memory file as stronger evidence than those sources.
 
 ## Current corpus state
 
-Planned chapters: **214**.
+Planned chapters: **221**.
 
 Authored chapters:
-- EN: **98 present**
-- PT-BR: **98 present**
-- structurally bilingual authored pairs: **98**
-- structural coverage: **45.8%**
-- missing chapters in both languages: **116**
+- EN: **110 present**
+- PT-BR: **110 present**
+- structurally bilingual authored pairs: **110**
+- structural coverage: **49.8%**
+- missing chapters in both languages: **111**
 
 Depth-floor state:
-- EN: **73** chapters above the text floor; **25** present but below the floor.
-- PT-BR: **67** chapters above the text floor; **31** present but below the floor.
-- chapters above the floor in **both** languages: **67**.
-- chapters needing expansion in at least one language: **31**.
-- six kernel chapters meet the EN floor but still need PT-BR expansion: `idt-exceptions`, `interrupts-smp`, `pic-apic-ioapic`, `process-lifecycle`, `user-copy`, `user-mode-entry`.
+- EN: **81** chapters above the text floor; **29** present but below the floor.
+- PT-BR: **74** chapters above the text floor; **36** present but below the floor.
+- chapters above the floor in **both** languages: **74**.
+- chapters needing expansion in at least one language: **36**.
+- four kernel chapters meet the EN floor but still need PT-BR expansion: `interrupts-smp`, `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
 The word floor is only a length guardrail. A chapter is not technically complete merely because it crosses the floor.
 
 ## Chapters currently above the depth floor in both languages
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `cmos-switching-power`, `logic-levels-noise-margins`, `number-systems-binary-arithmetic`, `proof-invariants-induction`, `discrete-math-sets-relations-functions`, `electromagnetic-induction-transformers`, `mos-capacitor`, `noise-grounding-signal-integrity`, `power-delivery-regulation`, `transmission-lines-differential-signals`, `elf-linking`, `emulator-theory`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `ohm-kirchhoff-circuits`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `rc-rlc-transients`, `registers-counters`, `recursion-recurrences-amortization`, `reset-firmware`, `sorting-searching`, `string-parsing-algorithms`, `sram-dram`, `systems-algorithms`, `trees-heaps-tries`, `transistor-cmos`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
-
-## Authored chapters that still require expansion
-
-`agent-workflow`, `architecture-history`, `block-storage`, `chrisc-clvm`, `chrisfs`, `chrisvm-chriscpu`, `compiler-pipeline`, `desktop-applications`, `heap-ownership`, `idt-exceptions`, `installation-real-hardware`, `interrupts-smp`, `native-toolchain`, `network-stack`, `panic-logging`, `physical-memory`, `pic-apic-ioapic`, `process-lifecycle`, `processes-syscalls`, `self-hosting-bootstrap`, `shaders-csir`, `software-3d`, `specifications-policy`, `timers`, `tlb-shootdown`, `user-copy`, `user-mode-entry`, `validation-evidence`, `virtio-gpu-virgl`, `virtual-memory`, `virtualization-chrishv`.
-
-## Missing chapters by volume
-
-| Volume | Missing |
-|---|---:|
-| 01-foundations | 0 |
-| 02-computer-architecture | 5 |
-| 03-boot | 0 |
-| 04-kernel | 0 |
-| 05-memory | 9 |
-| 06-storage | 12 |
-| 07-language-systems | 17 |
-| 08-graphics | 17 |
-| 09-emulation | 16 |
-| 10-networking | 6 |
-| 11-desktop | 7 |
-| 12-self-hosting | 4 |
-| 13-real-hardware | 5 |
-| 14-validation | 6 |
-| 15-specifications | 7 |
-| 16-history | 3 |
-| 98-maintenance | 2 |
-| **Total** | **116** |
-
-For the exact ordered list, run:
-
-```bash
-python scripts/next_work.py --lang en --limit 214
-python scripts/next_work.py --lang pt-br --limit 214
-```
+`
 
 ## Reader / UX / deployment state
 
@@ -85,14 +51,20 @@ Implemented and merged:
 - direct language-specific search index loading without a Web Worker dependency;
 - search ranking across title, page title, path and body text;
 - search-result deduplication;
-- cache-busting of `site.css` and `site.js` by deployment SHA;
+- cache-busting of `, ` and `, ` and ChrisOS `, ` before generated build and publication gates.
+
+Last known successful reader/deploy baseline: `, ` by deployment SHA;
 - search JSON loaded with deployment version and no stale-cache reuse;
 - adaptive bounded page/section search excerpts preserve all searchable titles/anchors while keeping the direct client-side reader payload below its mobile size budget as the corpus grows;
 - post-build reader smoke tests;
 - GitHub Pages build and deploy pipeline.
-- CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
-
-Last known successful reader/deploy baseline: `e0a9852e6cb6fd30f17898c65c86e1442261acd2`.
+- CI explicitly runs `, ` in both languages.
+4. Select at most two tightly related chapters; use one when source reconciliation is substantial.
+5. Read prerequisites and current source before writing.
+6. Author/expand EN and PT-BR to equivalent technical depth.
+7. Add diagrams/tables/equations where they materially improve understanding.
+8. Update frontmatter source dependencies and revision evidence.
+9. Run unit tests, `, `, reader JavaScript checks and `, `.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
@@ -112,13 +84,15 @@ Work in curriculum order and preserve prerequisites.
 7. Complete emulation/virtualization.
 8. Complete self-hosting, hardware, validation and specifications.
 9. Finish history and maintenance pages.
-10. Run a final bilingual equivalence and technical-completeness pass over all 214 IDs.
+10. Run a final bilingual equivalence and technical-completeness pass over all 221 IDs.
 
 Do not create a shallow placeholder merely to reduce the missing count.
 
 ## Required model for every substantive chapter
 
-Apply the full chapter contract from `AGENTS.md`: prerequisites, theory, mathematical/physical basis where relevant, architecture, ChrisOS design, source files and symbols, initialization, state/data structures, algorithms and complexity, memory/ownership, control/data flow, ABI/format, concurrency, failure/recovery, privilege/security, performance/trade-offs, validation evidence, current limitations, roadmap separated from current behavior, and revision provenance.
+Apply the full chapter contract from `, `.
+2. Pull current `, `.
+3. Run `, `: prerequisites, theory, mathematical/physical basis where relevant, architecture, ChrisOS design, source files and symbols, initialization, state/data structures, algorithms and complexity, memory/ownership, control/data flow, ABI/format, concurrency, failure/recovery, privilege/security, performance/trade-offs, validation evidence, current limitations, roadmap separated from current behavior, and revision provenance.
 
 English and PT-BR must remain technically equivalent. PT-BR may not be a shortened translation.
 
@@ -126,15 +100,10 @@ English and PT-BR must remain technically equivalent. PT-BR may not be a shorten
 
 A content-producing agent should:
 
-1. Read this file and `AGENTS.md`.
-2. Pull current `chrisos_site/main` and ChrisOS `main`.
-3. Run `scripts/next_work.py` in both languages.
-4. Select at most two tightly related chapters; use one when source reconciliation is substantial.
-5. Read prerequisites and current source before writing.
-6. Author/expand EN and PT-BR to equivalent technical depth.
-7. Add diagrams/tables/equations where they materially improve understanding.
-8. Update frontmatter source dependencies and revision evidence.
-9. Run unit tests, `scripts/build_all.py`, reader JavaScript checks and `mkdocs build --strict`.
+1. Read this file and `, `ac-signals-frequency-impedance`, `acpi-platform`, `agent-workflow`, `algorithmic-complexity`, `architecture-history`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `atom-semiconductor`, `atomics-memory-model`, `bash
+python scripts/next_work.py --lang en --limit 221
+python scripts/next_work.py --lang pt-br --limit 221
+`, `bitmaps-rings-free-lists`, `block-storage`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `chrisc-clvm`, `chrisfs`, `chrisvm-chriscpu`, `clock-timing`, `cmos-switching-power`, `coherence`, `combinational-logic`, `compiler-pipeline`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `desktop-applications`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `heap-ownership`, `higher-half-kernel`, `idt-exceptions`, `installation-real-hardware`, `interrupts-smp`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `microarchitecture-pipeline`, `mos-capacitor`, `native-toolchain`, `network-stack`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `panic-logging`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `process-lifecycle`, `processes-syscalls`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `self-hosting-bootstrap`, `shaders-csir`, `software-3d`, `sorting-searching`, `specifications-policy`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `tlb-shootdown`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `user-copy`, `user-mode-entry`, `validation-evidence`, `vectors-complex-numbers-systems`, `virtio-gpu-virgl`, `virtual-memory`, `virtualization-chrishv`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
 10. Commit only a validated atomic batch.
 11. Recompute coverage after the commit.
 12. Update this memory snapshot only when the validated counts or major implementation state changed.
@@ -143,7 +112,7 @@ A content-producing agent should:
 
 The temporary completion campaign ends only when all conditions hold:
 
-- 214/214 planned IDs authored in EN and PT-BR;
+- 221/221 planned IDs authored in EN and PT-BR;
 - zero missing chapters;
 - zero chapters below the configured depth floor in either language;
 - prerequisite DAG valid;
