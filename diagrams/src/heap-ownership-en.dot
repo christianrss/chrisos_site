@@ -1,0 +1,16 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  pmm [label="PMM free physical pages"];
+  reserve [label="Keep PMM_KEEP reserve"];
+  arena [label="Contiguous heap arena\n>= 16 pages"];
+  first [label="First-fit free block"];
+  split [label="Split if remainder >= 32 bytes"];
+  user [label="16-byte aligned allocation"];
+  free [label="kfree"];
+  coal [label="Forward coalesce only"];
+  pmm -> reserve -> arena -> first -> split -> user -> free -> coal;
+  coal -> first [label="reuse"];
+}
