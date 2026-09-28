@@ -170,6 +170,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_number_systems_examples.py --source .source
 
+      - name: Verify discrete mathematics, proof and invariant examples
+        working-directory: docs-repo
+        run: python scripts/check_discrete_proof_examples.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
