@@ -50,7 +50,7 @@ related:
 Bitmaps, circular buffers e free lists são estruturas compactas usadas em baixo nível quando allocation, bounded queues e reusable resources precisam ser representados sem grande overhead por objeto. A simplicidade aparente esconde invariantes centrais: o significado de cada bit, como scans terminam, como head/tail distinguem empty de full, se overwrite é permitido e se uma estrutura chamada informalmente de freelist é realmente uma lista ligada. Este capítulo desenvolve essas estruturas e as reconcilia com o source atual do ChrisOS. O physical memory manager usa um bit por página de 4 KiB sobre uma faixa rastreada de 32 GiB, com bit 1 significando used e bit 0 free; o subalocador DMA32 usa convenção oposta, em que bits setados significam free. ChrisFS usa allocation bitmap on-disk com alloc_hint. A fila de jobs do kernel é ring contado de 1024 entradas protegido por spinlock. O kernel log é overwrite ring de 8192 bytes que mantém os bytes mais recentes. O reuso de VA do JIT é uma tabela de 128 slots com used flag e reuso por tamanho exato; apesar de poder ser descrita operacionalmente como freelist, não é uma linked free list.
 </div>
 
-## Por que estruturas compactas importam
+## Estruturas compactas em sistemas de baixo nível
 
 Kernel e runtimes frequentemente precisam responder:
 
