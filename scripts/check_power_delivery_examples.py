@@ -77,7 +77,8 @@ def check_source_contract(source_root: Path) -> None:
 
     for anchor in (
         "void acpi_probe(void)",
-        "RSD PTR ",
+        "p[0] == 'R'",
+        "p[15] >= 2",
         "XSDT",
         "APIC",
         "MCFG",
