@@ -3,6 +3,7 @@ id: root-language-index
 lang: en
 type: generated-root
 status: generated
+description: Official bilingual documentation portal for ChrisOS, an experimental x86-64 operating system and systems research project.
 ---
 
 # ChrisOS Research Project
