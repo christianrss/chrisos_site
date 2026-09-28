@@ -13,8 +13,6 @@ sources:
   - kernel/metal/smp.c
   - kernel/metal/acpi.c
   - kernel/metal/start.c
-  - docs/chrisvm-boot-protocol.md
-  - docs/REAL_HARDWARE_PLAN.md
 symbols:
   - bootinfo_init
   - bootinfo_get
