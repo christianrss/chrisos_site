@@ -79,11 +79,11 @@ def check_source_contract(source_root: Path) -> None:
         "void acpi_probe(void)",
         "p[0] == 'R'",
         "p[15] >= 2",
-        "XSDT",
-        "APIC",
-        "MCFG",
-        "FACP",
-        "serial_puts",
+        "serial_puts(\"acpi xsdt\\n\")",
+        "sig[0] == 'A'",
+        "sig[0] == 'M'",
+        "sig[0] == 'F'",
+        "serial_puts(\"acpi \")",
     ):
         if anchor not in acpi_c:
             raise AssertionError(f"acpi.c missing reviewed anchor {anchor!r}")
