@@ -1,0 +1,16 @@
+digraph pt {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=record, style="filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  va [label="{Endereco virtual|47..39 PML4=9b|38..30 PDPT=9b|29..21 PD=9b|20..12 PT=9b|11..0 offset=12b}"];
+  pml4 [label="{PML4|512 entradas|entrada cobre 512 GiB}"];
+  pdpt [label="{PDPT|512 entradas|entrada cobre 1 GiB}"];
+  pd [label="{PD|512 entradas|entrada cobre 2 MiB}"];
+  pt [label="{PT|512 entradas|entrada cobre 4 KiB}"];
+  phys [label="{Frame fisico|base 4 KiB + offset}", shape=box3d, fillcolor="#ffffff"];
+
+  va -> pml4 -> pdpt -> pd -> pt -> phys;
+  pdpt -> phys [style=dashed, label="PS: leaf de 1 GiB", constraint=false];
+  pd -> phys [style=dashed, label="PS: leaf de 2 MiB", constraint=false];
+}
