@@ -1,0 +1,14 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  irq [label="Exclusão local de IRQ\nirq_save / CLI"];
+  outer [label="Lock do subsistema\nheap / PMM / MM / fila"];
+  inner [label="Lock interno de nível inferior\nquando o contrato permite"];
+  crit [label="Seção crítica curta"];
+  rel [label="Libera na ordem inversa"];
+  irq -> outer -> inner -> crit -> rel;
+  note [shape=note,label="Exemplo:\nheap_lock -> pmm_lock\nPMM nunca adquire heap_lock"];
+  outer -> note [style=dashed];
+}
