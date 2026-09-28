@@ -13,7 +13,6 @@ sources:
   - kernel/gfx/shader/sh_tgsi.c
   - kernel/gfx/shader/sh_exec.c
   - kernel/gfx/shader/sh_api.c
-  - docs/SHADER_ARCHITECTURE.md
 symbols: []
 depends_on:
   - compiler-pipeline
