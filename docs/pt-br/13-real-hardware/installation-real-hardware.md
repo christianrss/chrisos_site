@@ -8,10 +8,6 @@ reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
   - kernel/fs/install.c
   - kernel/fs/part.c
-  - docs/INSTALLATION.md
-  - docs/HARDWARE_BRINGUP.md
-  - docs/HARDWARE_COMPATIBILITY.md
-  - docs/REAL_HARDWARE_PLAN.md
 symbols: []
 depends_on:
   - block-storage
