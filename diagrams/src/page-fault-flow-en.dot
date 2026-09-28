@@ -1,0 +1,19 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  cpu [label="CPU raises #PF\nvector 14"];
+  stub [label="IDT stub\npreserves error code"];
+  dispatch [label="irq_dispatch\nreads CR2"];
+  demand [label="proc_fault_demand\nregion eligible?"];
+  commit [label="proc_commit\nPMM + zero + map"];
+  resume [label="IRETQ\nretry instruction"];
+  userfault [label="panic_user_fault\nrecord + destroy process"];
+  kernelpanic [label="panic_exception\nhalt kernel"];
+  cpu -> stub -> dispatch -> demand;
+  demand -> commit [label="yes"];
+  commit -> resume [label="success"];
+  demand -> userfault [label="no + CPL3"];
+  demand -> kernelpanic [label="no + kernel"];
+}
