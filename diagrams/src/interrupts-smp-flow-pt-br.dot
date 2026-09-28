@@ -1,0 +1,16 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  hw [label="IRQ de dispositivo\nrota PIC"];
+  bsp [label="IDT / stub no BSP"];
+  disp [label="irq_dispatch"];
+  handler [label="Handler da IRQ\nPIT / PS2 / ATA / AC97 / etc."];
+  eoi [label="EOI\nPIC (+ LAPIC quando ativo)"];
+  ipi [label="CPU envia IPI 0xF0"];
+  ap [label="IDT / stub no AP alvo"];
+  poll [label="mm_tlb_poll\nINVLPG + ack"];
+  hw -> bsp -> disp -> handler -> eoi;
+  ipi -> ap -> disp -> poll -> eoi;
+}

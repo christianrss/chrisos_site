@@ -1,0 +1,19 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  bsp [label="BSP: smp_init"];
+  mp [label="Limine MP descriptors\nCPU index + LAPIC ID"];
+  stack [label="Allocate 4-page AP stack"];
+  handoff [label="Publish extra_argument\nand ap_entry"];
+  cr3 [label="AP: load kernel CR3"];
+  switch [label="Switch RSP to AP stack"];
+  local [label="idt_load + SSE init\nTLB online + online_count"];
+  worker [label="job_worker_forever\nIF initially clear"];
+  release [label="BSP: STI +\nsmp_release_ap_irqs"];
+  irq [label="AP enables LAPIC + STI"];
+  bsp -> mp -> stack -> handoff -> cr3 -> switch -> local -> worker;
+  release -> worker [label="global release flag"];
+  worker -> irq [label="next loop"];
+}
