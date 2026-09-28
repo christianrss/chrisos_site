@@ -38,7 +38,7 @@ extra_css:
 extra_javascript:
   - assets/site.js
 
-copyright: "ChrisOS Research Project — technical documentation"
+copyright: "ChrisOS © 2026 Christian Rafael de Souza Silva — Creator & Lead Developer"
 
 hooks:
   - scripts/site_hooks.py
