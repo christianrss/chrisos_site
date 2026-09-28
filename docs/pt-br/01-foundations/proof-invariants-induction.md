@@ -333,7 +333,7 @@ Ao terminar todos os dígitos, v representa o token completo.
 
 Essa é uma obrigação de prova real refletida diretamente pelas verificações do source.
 
-## Por que verificar antes da multiplicação
+## Verificação de overflow antes da multiplicação
 
 Um padrão inseguro seria:
 
