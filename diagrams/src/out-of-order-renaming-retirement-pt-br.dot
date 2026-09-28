@@ -1,0 +1,26 @@
+digraph ooo {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.32", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  decode [label="Decode\noperandos arquiteturais"];
+  rename [label="Rename\nRAT + free list", fillcolor="#f7f7f7"];
+  rob [label="ROB\npropriedade em ordem de programa", shape=box3d, fillcolor="#ffffff"];
+  iq [label="Issue queue\ntags ready + idade"];
+  exec [label="Unidades de execucao\ncompletion fora de ordem"];
+  preg [label="Physical registers\nvalores + ready bits"];
+  retire [label="Retirement\nem ordem de programa", fillcolor="#dddddd"];
+  arch [label="Estado arquitetural comprometido", shape=box3d, fillcolor="#ffffff"];
+  recovery [label="Recovery de branch/fault\nrestaurar checkpoint + liberar", fillcolor="#dddddd"];
+
+  decode -> rename;
+  rename -> rob;
+  rename -> iq;
+  iq -> exec;
+  exec -> preg [label="write result"];
+  preg -> iq [style=dashed, label="wakeup", constraint=false];
+  exec -> rob [label="complete / fault"];
+  rob -> retire -> arch;
+  rob -> recovery [label="mispredict / exception"];
+  recovery -> rename [style=dashed, label="restaurar estado especulativo", constraint=false];
+}

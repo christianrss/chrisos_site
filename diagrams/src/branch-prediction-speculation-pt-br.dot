@@ -1,0 +1,20 @@
+digraph branch_prediction {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  fetch [label="RIP de fetch"];
+  predict [label="Predictor\ndirecao + BTB/RAS", shape=diamond, fillcolor="#f7f7f7"];
+  spec [label="Fetch/decode especulativo\nsequence + checkpoint"];
+  resolve [label="Execucao do branch\ndirecao + alvo reais"];
+  good [label="Prediction correta\nmanter trabalho mais novo", fillcolor="#dddddd"];
+  bad [label="Recovery de misprediction\nflush do trabalho mais novo\nrestaurar checkpoint", fillcolor="#dddddd"];
+  redirect [label="Proximo RIP correto"];
+
+  fetch -> predict -> spec -> resolve;
+  resolve -> good [label="match"];
+  resolve -> bad [label="mismatch"];
+  good -> fetch [style=dashed, label="continuar", constraint=false];
+  bad -> redirect -> fetch;
+  resolve -> predict [style=dotted, label="treinar no ponto definido", constraint=false];
+}
