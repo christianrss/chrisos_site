@@ -1,6 +1,10 @@
 """MkDocs hook: curriculum-driven navigation, language pairs and source provenance."""
 from pathlib import Path
+from urllib.parse import urljoin
+import html
+import json
 import os
+import re
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 from curriculum import load_catalog
@@ -132,11 +136,78 @@ def on_page_context(context, page, config, nav):
             'next': entry(CURRICULUM_ORDER[idx + 1]) if idx + 1 < len(CURRICULUM_ORDER) else None,
         }
     context['curriculum_context'] = curriculum
+
+    site_url = config.get('site_url') or ''
+    canonical_url = urljoin(site_url, page.url)
+    translation_entry = context.get('translation') or {}
+    alternate_url = urljoin(site_url, translation_entry['url']) if translation_entry.get('url') else None
+
+    explicit_description = str(page.meta.get('description') or '').strip()
+    if explicit_description:
+        description = explicit_description
+    else:
+        rendered = page.content or ''
+        rendered = re.sub(r'<(script|style)\\b[^>]*>.*?</\\1>', ' ', rendered, flags=re.I | re.S)
+        rendered = re.sub(r'<[^>]+>', ' ', rendered)
+        rendered = html.unescape(rendered)
+        rendered = ' '.join(rendered.split())
+        title = (page.title or '').strip()
+        if title and rendered.lower().startswith(title.lower()):
+            rendered = rendered[len(title):].lstrip(' .:-—')
+        description = rendered[:320].strip()
+        if len(description) > 160:
+            description = description[:157].rsplit(' ', 1)[0] + '…'
+        if not description:
+            description = config.get('site_description', '')
+
+    schema_type = 'TechArticle'
+    if page.meta.get('type') in {'landing', 'generated-root', 'index', 'catalog'}:
+        schema_type = 'CollectionPage'
+
+    in_language = 'pt-BR' if lang == 'pt-br' else 'en'
+    context['seo'] = {
+        'canonical_url': canonical_url,
+        'alternate_url': alternate_url,
+        'alternate_lang': 'en' if lang == 'pt-br' else 'pt-BR',
+        'x_default_url': urljoin(site_url, 'en/'),
+        'description': description,
+        'image_url': urljoin(site_url, 'assets/images/ChrisOS_Monolito.png'),
+        'in_language': in_language,
+        'schema_json': json.dumps({
+            '@context': 'https://schema.org',
+            '@type': schema_type,
+            'headline': page.title,
+            'description': description,
+            'url': canonical_url,
+            'inLanguage': in_language,
+            'author': {
+                '@type': 'Person',
+                'name': 'Christian Rafael de Souza Silva',
+                'url': 'https://github.com/christianrss',
+            },
+            'publisher': {
+                '@type': 'Person',
+                'name': 'Christian Rafael de Souza Silva',
+                'url': 'https://github.com/christianrss',
+            },
+            'isPartOf': {
+                '@type': 'WebSite',
+                'name': 'ChrisOS — Operating System & Systems Research',
+                'url': site_url,
+            },
+            'about': {
+                '@type': 'SoftwareSourceCode',
+                'name': 'ChrisOS',
+                'codeRepository': 'https://github.com/christianrss/ChrisOS',
+                'programmingLanguage': ['C', 'Assembly', 'ChrisC'],
+                'runtimePlatform': 'x86-64',
+            },
+        }, ensure_ascii=False, separators=(',', ':')),
+    }
     return context
 
 
 from mkdocs.plugins import event_priority
-import json
 
 
 @event_priority(-100)
@@ -147,6 +218,70 @@ def on_post_build(config):
     data = json.loads(target.read_text())
     data['docs'] = [d for d in data['docs'] if '/99-source-atlas/generated/' not in d['location']]
     target.write_text(json.dumps(data, separators=(',', ':'), ensure_ascii=False))
+    site_dir = Path(config['site_dir'])
+    site_url = (config.get('site_url') or '').rstrip('/') + '/'
+
+    robots = (
+        "User-agent: *\\n"
+        "Allow: /\\n\\n"
+        f"Sitemap: {urljoin(site_url, 'sitemap.xml')}\\n"
+    )
+    (site_dir / 'robots.txt').write_text(robots, encoding='utf-8')
+
+    llms_lines = [
+        "# ChrisOS",
+        "",
+        "> ChrisOS is an experimental x86-64 operating-system and systems-research ecosystem covering kernel engineering, compilers, ChrisC/CLVM, filesystems, graphics, networking, emulation and virtualization.",
+        "",
+        "Canonical documentation: " + site_url,
+        "Source repository: https://github.com/christianrss/ChrisOS",
+        "Documentation repository: https://github.com/christianrss/chrisos_site",
+        "",
+        "## Primary documentation",
+        f"- [English documentation]({urljoin(site_url, 'en/')})",
+        f"- [Brazilian Portuguese documentation]({urljoin(site_url, 'pt-br/')})",
+        f"- [English learning path]({urljoin(site_url, 'en/learning-path/')})",
+        f"- [Percurso de aprendizado em português]({urljoin(site_url, 'pt-br/learning-path/')})",
+        f"- [XML sitemap]({urljoin(site_url, 'sitemap.xml')})",
+        "",
+        "## Scope",
+        "- Physical foundations, electronics, digital logic and computer architecture",
+        "- x86-64 boot, kernel, memory, interrupts, processes and concurrency",
+        "- ChrisC, CLVM, compiler/toolchain design and self-hosting",
+        "- Storage, ChrisFS, graphics, desktop, networking and drivers",
+        "- ChrisVM, ChrisCPU, emulation, virtualization and hardware bring-up",
+        "- Revision-bound validation, specifications and architecture history",
+        "",
+        "## Machine-readable corpus",
+        f"- [Expanded LLM corpus]({urljoin(site_url, 'llms-full.txt')})",
+        "",
+        "Prefer canonical documentation pages for citations. Implementation claims are revision-bound to the ChrisOS source revision recorded on each page.",
+        "",
+    ]
+    (site_dir / 'llms.txt').write_text('\\n'.join(llms_lines), encoding='utf-8')
+
+    full_lines = llms_lines + ["# Documentation corpus", ""]
+    docs_dir = Path(config['docs_dir'])
+    for source_path in sorted(iter_pages(docs_dir)):
+        rel = source_path.relative_to(docs_dir).as_posix()
+        if '/99-source-atlas/generated/' in rel:
+            continue
+        meta, body = read_page(source_path)
+        language = meta.get('lang', '')
+        if language not in {'en', 'pt-br'}:
+            continue
+        public_url = urljoin(site_url, _url_for(rel))
+        full_lines.extend([
+            "",
+            "---",
+            f"Source: {public_url}",
+            f"Language: {'pt-BR' if language == 'pt-br' else 'en'}",
+            f"Document-ID: {meta.get('id', '')}",
+            "",
+            body.strip(),
+        ])
+    (site_dir / 'llms-full.txt').write_text('\\n'.join(full_lines) + '\\n', encoding='utf-8')
+
     for lang in ('en', 'pt-br'):
         language_docs = [d for d in data['docs'] if d['location'].startswith(lang + '/')]
         page_titles = {
