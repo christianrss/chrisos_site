@@ -11,9 +11,6 @@ sources:
   - kernel/gfx/gfx3d_virgl.c
   - kernel/gfx/virgl_cmd.c
   - kernel/gfx/virgl_obj.c
-  - docs/VIRTIO_GPU.md
-  - docs/VIRGL.md
-  - docs/GFX3D.md
 symbols: []
 depends_on:
   - buses-mmio-dma
