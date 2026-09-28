@@ -6,9 +6,6 @@ volume: 12-self-hosting
 status: maintained
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
-  - docs/CURRENT_SELFHOST_AUDIT.md
-  - docs/KCC_STATUS.md
-  - docs/KERNEL_SELFHOST_PLAN.md
   - kernel/tools/chrisbuild.c
   - tools/seed_selfhost.c
 symbols: []
