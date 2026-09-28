@@ -2,7 +2,7 @@
 
 Snapshot date: 2026-09-28  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `6767d3570819e4e2e825beec824de73c01293d93`
+Baseline documentation commit: `abc60694efe526a92d7334d70b8e8d16b40cd373`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
