@@ -446,3 +446,27 @@ levels:
     - agent-workflow
     - source-policy
     - documentation-schema
+- id: 13-development
+  title:
+    en: 13 · Development environment and contribution
+    pt-br: 13 · Ambiente de desenvolvimento e contribuição
+  modules:
+  - title:
+      en: Workstation and toolchain
+      pt-br: Workstation e toolchain
+    chapters:
+    - developer-guide
+    - development-environment-linux
+    - development-environment-windows
+  - title:
+      en: Build, execution and validation
+      pt-br: Build, execução e validação
+    chapters:
+    - build-run-debug
+    - testing-validation
+    - development-troubleshooting
+  - title:
+      en: Contribution workflow
+      pt-br: Fluxo de contribuição
+    chapters:
+    - contribution-workflow
