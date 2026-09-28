@@ -1,0 +1,18 @@
+digraph hhdm {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  phys [label="Physical RAM address\n0x0000...P"];
+  offset [label="Limine HHDM offset\nbootinfo.hhdm_offset", fillcolor="#f7f7f7"];
+  virt [label="Kernel HHDM virtual address\nP + offset"];
+  pte [label="Bootloader-created page-table mapping\nvirtual -> same physical frame", shape=box3d, fillcolor="#ffffff"];
+  cpu [label="CPU load/store\nuses virtual address"];
+  mmio [label="MMIO physical address\nexample LAPIC 0xFEE00000", fillcolor="#dddddd"];
+  mmmap [label="Dedicated device mapping\nmap_mmio_page + cache-control flags", fillcolor="#dddddd"];
+
+  phys -> offset -> virt -> pte -> cpu;
+  mmio -> offset [style=dashed, label="arithmetic only"];
+  offset -> virt [label="addition"];
+  mmio -> mmmap [label="correct device path"];
+}
