@@ -10,8 +10,6 @@ sources:
   - compiler/chrisasm/chrisasm.c
   - compiler/chrisld/chriso.h
   - compiler/chrisld/chrisld.c
-  - docs/KCC_STATUS.md
-  - docs/CURRENT_SELFHOST_AUDIT.md
 symbols:
   - kcc_compile_source
 depends_on:
