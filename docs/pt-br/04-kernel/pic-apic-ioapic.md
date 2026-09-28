@@ -4,7 +4,7 @@ lang: pt-br
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/irq.c
   - kernel/metal/irq.h
@@ -71,6 +71,27 @@ Essa ordem evita que um dispositivo interrompa o kernel antes de existir caminho
 Ao liberar uma IRQ do slave, a função também libera a IRQ2 do master. Caso contrário, o slave poderia sinalizar sua saída e mesmo assim o master bloquearia toda a cascata.
 
 Valores fora de 0–15 são ignorados porque essa API representa especificamente IRQs do PIC, não vetores LAPIC ou outros mecanismos modernos.
+
+## Caminho completo de uma IRQ externa
+
+Uma IRQ de dispositivo atravessa várias camadas que precisam ser diagnosticadas separadamente. No estado atual do ChrisOS, o caminho legado típico é:
+
+```text
+dispositivo afirma a linha
+    -> PIC master/slave reconhece a IRQ
+    -> PIC fornece vetor 0x20..0x2F
+    -> CPU consulta a IDT
+    -> stub salva e normaliza o contexto
+    -> irq_dispatch converte vector em IRQ
+    -> handler do dispositivo trata a causa
+    -> EOI encerra o estado in-service
+```
+
+Esse encadeamento explica por que “a interrupção não chegou” é uma descrição insuficiente. Uma falha pode estar antes do controlador, na máscara do PIC, no vetor entregue, no gate da IDT, na tabela de callbacks, no reconhecimento do dispositivo ou no EOI. A investigação correta acompanha a cadeia de estado em ordem, em vez de assumir que todo defeito de IRQ pertence ao driver.
+
+A cascata do 8259 acrescenta uma dependência estrutural para IRQs 8–15. Mesmo que a linha correspondente do slave esteja desmascarada, a IRQ2 do master também precisa permitir a saída agregada do slave. O código de `pic_set_mask` preserva essa regra ao liberar a cascata quando uma linha do controlador secundário é habilitada.
+
+O vetor entregue à CPU e o número lógico de IRQ não são a mesma coisa. Depois do remapeamento, o dispatcher obtém `irq = vector - 32` apenas para a faixa 32–47. Vetores de exceção, IPI e software seguem políticas distintas e não devem ser passados por essa conversão.
 
 ## Tabela de handlers
 
@@ -175,6 +196,16 @@ Programação do PIC é estado global. `pic_set_mask` faz read-modify-write sem 
 O ICR do LAPIC também é um recurso de hardware que envolve writes coordenados. `apic_ipi` envia um comando e espera seu delivery status antes de retornar. Um futuro cenário com múltiplos emissores concorrentes na mesma CPU exigiria política explícita de serialização.
 
 A tabela de handlers também é simples e estática; registro é pensado para fase de inicialização, não como estrutura dinâmica lock-free alterada sob tráfego.
+
+## Entrega física, conclusão lógica e EOI
+
+Há três noções diferentes de “conclusão” no subsistema. A primeira é a conclusão do envio de um IPI pelo registrador ICR do LAPIC: `apic_ipi` espera o delivery-status deixar de indicar envio pendente. Isso informa que o controlador concluiu a operação de transmissão; não comprova que o CPU remoto executou o handler nem que uma operação distribuída terminou.
+
+A segunda é a conclusão lógica do protocolo que usa a interrupção. TLB shootdown, por exemplo, precisa de estado de reconhecimento próprio porque segurança de memória depende de saber se cada CPU deixou de usar traduções antigas. O ack desse protocolo é semanticamente mais forte que o término do write no ICR.
+
+A terceira é o EOI do controlador de interrupção. EOI informa ao PIC/LAPIC que o serviço da interrupção corrente terminou do ponto de vista do controlador. Ele não limpa automaticamente a causa no dispositivo. Um driver de dispositivo normalmente precisa primeiro consumir ou reconhecer a condição que originou a IRQ; caso contrário, a linha pode continuar afirmada e ser entregue novamente.
+
+No arranjo híbrido do ChrisOS, `irq_eoi` precisa respeitar tanto o encadeamento master/slave do PIC quanto a existência do LAPIC habilitado. Para IRQs do slave, o EOI percorre slave e master; para IRQs do master, somente o master. Quando o LAPIC está ativo, seu EOI também participa do encerramento local. Essa coexistência é um estado transitório de arquitetura, não evidência de que o IOAPIC já seja o roteador das interrupções externas.
 
 ## Modos de falha
 
