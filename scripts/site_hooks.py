@@ -160,9 +160,11 @@ def on_post_build(config):
             base_location = location.split('#', 1)[0]
             kind = 'section' if '#' in location else 'page'
             text = ' '.join(str(doc.get('text', '')).split())
-            # Page entries duplicate the full section corpus. Keep enough for a useful
-            # page-level abstract while section entries retain the searchable detail.
-            text_limit = 1200 if kind == 'page' else 6000
+            # Page records duplicate their section corpus. Keep only a compact
+            # page-level lead and a bounded section body so the direct client-side
+            # search index remains usable on mobile as the 214-chapter corpus grows.
+            # Section titles and anchor locations remain indexed independently.
+            text_limit = 400 if kind == 'page' else 2000
             reader_docs.append({
                 'location': location,
                 'title': doc.get('title', location),
