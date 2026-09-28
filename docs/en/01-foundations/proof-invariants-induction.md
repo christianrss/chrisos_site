@@ -796,6 +796,290 @@ Algorithmic proofs should state which operations count as unit cost.
 
 The next complexity chapters formalize those models.
 
+## Preconditions, postconditions and contracts
+
+A precondition describes what must be true before an operation is called.
+
+A postcondition describes what the operation guarantees when it returns under the stated outcome.
+
+For a bounded append operation, a contract can be written as:
+
+~~~text
+pre:
+    0 <= count <= capacity
+
+success post:
+    old_count < capacity
+    new_count = old_count + 1
+    old elements are preserved
+
+failure post:
+    old_count = capacity
+    count does not exceed capacity
+~~~
+
+This is stronger than saying “append checks capacity.” It identifies the state relation between entry and exit.
+
+Error returns should be included in the contract rather than treated as outside the proof.
+
+## Hoare-style reasoning
+
+A compact notation for sequential reasoning is the Hoare triple:
+
+~~~text
+{P} C {Q}
+~~~
+
+where P is a precondition, C a command and Q a postcondition.
+
+The triple means that if C begins in a state satisfying P and terminates, its resulting state satisfies Q.
+
+This is a partial-correctness statement unless termination is proved separately.
+
+For the width-masking operation:
+
+~~~text
+{true}
+r = x & M
+{r & ~M = 0}
+~~~
+
+the postcondition follows from bitwise algebra.
+
+For memory operations, the precondition must also describe valid storage. Arithmetic correctness alone cannot justify a dereference.
+
+## Partial and total correctness
+
+Partial correctness means:
+
+~~~text
+if the operation terminates,
+its result satisfies the postcondition
+~~~
+
+Total correctness additionally proves termination.
+
+A parser loop can be partially correct but still defective if some input causes it never to advance.
+
+Conversely, a terminating loop can still return an invalid result.
+
+These obligations should be reviewed separately.
+
+For loops over a finite token, total correctness commonly requires:
+
+- a bound on token length;
+- a cursor that advances on every successful iteration;
+- no branch that re-enters the same state without progress.
+
+## Frame conditions
+
+A proof should state not only what changes but also what must remain unchanged.
+
+A frame condition describes state outside the operation's modification set.
+
+For a function updating one array slot:
+
+~~~text
+slot i may change
+all slots j != i remain unchanged
+~~~
+
+Frame reasoning is central in kernel code because a function can satisfy its local result while accidentally corrupting unrelated state.
+
+The write_status helper in flags.c illustrates the idea: it intentionally clears and recomputes selected status bits while preserving other incoming flag bits, then forces bit 1. A full proof of that helper would therefore include both changed-bit and preserved-bit obligations.
+
+## Aliasing and ownership assumptions
+
+Frame conditions become harder when two expressions can name the same storage.
+
+If pointers p and q may alias, proving that writing through p leaves the object referenced by q unchanged is invalid unless the relationship is known.
+
+Ownership models reduce this uncertainty by specifying which component may mutate which storage.
+
+A proof over a function with an output pointer should state whether that pointer may overlap input storage or global state.
+
+The current chris_flags_bin helper receives scalar operands by value and an optional result pointer. The local arithmetic proof does not establish safety for an arbitrary invalid result pointer; pointer validity is a caller-side precondition.
+
+## Abstract and concrete invariants
+
+An abstract invariant states a semantic property.
+
+A concrete invariant states how the representation realizes it.
+
+For a symbol table:
+
+Abstract:
+
+~~~text
+active symbols form a bounded finite mapping
+~~~
+
+Concrete:
+
+~~~text
+0 <= nsym <= CHRISO_SYM_MAX
+active entries occupy sym[0:nsym]
+~~~
+
+A refinement argument connects the concrete state to the abstract model.
+
+This separation matters because the implementation can change from a fixed array to a dynamic table while the semantic contract remains similar.
+
+Documentation should avoid confusing one representation with the only possible meaning of the subsystem.
+
+## Induction over bounded arrays
+
+Many systems loops establish properties over array prefixes.
+
+Suppose:
+
+~~~text
+for i = 0 .. n-1:
+    output[i] = transform(input[i])
+~~~
+
+A useful invariant is:
+
+~~~text
+0 <= i <= n
+and
+for every j < i:
+    output[j] = transform(input[j])
+~~~
+
+Initialization holds at i = 0 because the quantified prefix is empty.
+
+Preservation follows because the loop writes exactly output[i] according to the transformation and then increments i.
+
+At termination i = n, the prefix property covers the entire array.
+
+This proof pattern applies to byte emission, table initialization, copy loops and descriptor construction.
+
+## Closure properties
+
+A set S is closed under operation f when applying f to valid members produces another member of S.
+
+Closure is a compact way to state invariant preservation.
+
+For an n-bit masked result domain:
+
+~~~text
+S = {x | x & ~M = 0}
+~~~
+
+the operation:
+
+~~~text
+f(x) = x & M
+~~~
+
+always produces an element of S.
+
+Allocator free lists, normalized addresses and bounded indices often have similar closure requirements: public operations should map valid states back into the valid-state set.
+
+If an operation can leave S, either its contract permits an exceptional state or the invariant is not actually preserved.
+
+## Monotonic properties
+
+Some state evolves monotonically.
+
+Examples include:
+
+- a parser cursor that only advances;
+- a high-water mark that never decreases;
+- a set of discovered facts that only grows;
+- a generation number that increases on replacement.
+
+Monotonicity can simplify proofs because old states cannot reappear without an explicit reset.
+
+It can also support termination: a bounded monotonically increasing index can advance only finitely many times.
+
+Monotonicity must be scoped carefully. A counter that wraps is not globally monotonic under ordinary integer order.
+
+## Counterexamples
+
+A universal claim is disproved by one valid counterexample.
+
+For a proposed invariant:
+
+~~~text
+every stored rectangle is minimal
+~~~
+
+the full-screen fallback in gfx_mark_dirty is an immediate counterexample: it deliberately stores a rectangle larger than the exact dirty union.
+
+The stronger claim is therefore false.
+
+The correct invariant is coverage, not minimality.
+
+Searching for counterexamples is a practical way to refine documentation before attempting a proof.
+
+Boundary values are especially effective:
+
+- zero;
+- maximum capacity;
+- one past maximum;
+- empty collection;
+- single element;
+- overlapping and non-overlapping regions;
+- minimum and maximum signed values.
+
+## Invariant discovery from code
+
+A disciplined review can derive candidate invariants without inventing them.
+
+1. Identify state variables and their storage bounds.
+2. List every writer.
+3. Record checks performed before each mutation.
+4. Identify relationships assumed by readers.
+5. Search failure paths for partially updated state.
+6. Test boundary transitions.
+7. State the weakest property supported by every observed writer.
+8. Add stronger claims only when all mutation paths justify them.
+
+This procedure separates evidence from expectation.
+
+A comment that says “bounded table” is a hint. The actual invariant comes from array size, count checks and all writes to the count.
+
+## Assertions as invariant sentinels
+
+Assertions can be placed at abstraction boundaries to detect invariant violations early.
+
+Useful assertion forms include:
+
+~~~text
+count <= capacity
+index < active_count
+rectangle bounds are ordered
+pointer alignment satisfies required power of two
+state enum belongs to legal set
+~~~
+
+In production kernels some assertions may become panic paths, error returns or debug-only checks.
+
+Removing a runtime assertion does not remove the underlying invariant. It removes one detection mechanism.
+
+The invariant still needs to be preserved by construction.
+
+## Proof granularity
+
+Large proofs become manageable when decomposed.
+
+For patch_fixups, separate obligations include:
+
+- fixup index iteration remains within g_nfix;
+- label lookup succeeds;
+- section identity matches;
+- patch range contains four bytes;
+- displacement calculation has intended semantics;
+- conversion to int32_t is valid for the supported case;
+- four emitted bytes represent the chosen displacement encoding.
+
+A single statement such as “fixups are safe” hides all of these.
+
+Documentation should name the individual obligations and distinguish which are directly checked, which are derived, and which remain limitations.
+
+
 ## Validation evidence
 
 The deterministic checker associated with this chapter validates representative obligations:
