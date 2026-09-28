@@ -91,7 +91,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline: `33f9e82e80c22778ddea60d91bccee5562a7c5ca`.
+Last known successful reader/deploy baseline: `027259ebbbc14528191dbbe6ddb84821a65cfd37`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
