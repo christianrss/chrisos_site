@@ -1,229 +1,815 @@
 ---
 id: interrupts-smp
 lang: pt-br
-type: concept
+type: technical-chapter
 volume: 04-kernel
-status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+status: expanded
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
+  - kernel/metal/start.c
   - kernel/metal/idt.c
   - kernel/metal/idt_stubs.asm
   - kernel/metal/irq.c
+  - kernel/metal/irq.h
+  - kernel/metal/pit.c
   - kernel/metal/apic.c
+  - kernel/metal/apic.h
   - kernel/metal/ioapic.c
   - kernel/metal/smp.c
   - kernel/metal/smp.h
   - kernel/metal/job.c
+  - kernel/metal/job.h
+  - kernel/metal/spin.c
+  - kernel/metal/spin.h
+  - kernel/metal/proc.c
+  - kernel/metal/syscall.c
   - kernel/metal/tlb_proto.c
   - kernel/metal/mm.c
+  - tools/test_job_saturate.c
 symbols:
+  - idt_init
+  - idt_load
   - irq_dispatch
+  - pic_init
+  - pic_set_mask
+  - irq_set_handler
+  - irq_eoi
+  - apic_enable_local
+  - apic_ipi
   - smp_init
   - smp_current_cpu
+  - smp_lapic_of
+  - smp_retire_cpu
   - ap_entry
   - ap_c_entry
-  - smp_lapic_of
   - job_worker_forever
+  - job_worker_once
+  - smp_release_ap_irqs
+  - smp_job_selftest
 depends_on:
   - x86-64-memory-privilege
   - kernel-model
   - idt-exceptions
 related:
   - pic-apic-ioapic
+  - timers
   - kernel-jobs-kthreads
+  - tlb
   - tlb-shootdown
+  - spinlocks
+  - process-lifecycle
 ---
 
 # Interrupções e multiprocessamento simétrico
 
 ## Escopo
 
-SMP transforma execução de kernel em vários fluxos que podem alterar estado compartilhado simultaneamente. O ChrisOS inicializa processadores adicionais via protocolo MP do Limine, mapeia stacks privadas, coloca APs em workers de jobs, registra LAPIC IDs e os integra ao protocolo de coerência de TLB.
+Interrupções e SMP estão diretamente ligados porque um kernel multiprocessado precisa responder a eventos assíncronos enquanto vários processadores executam código de kernel e acessam estado compartilhado ao mesmo tempo.
 
-Nem tudo, porém, é distribuído. Process switching user continua BSP-only, IRQ externa ainda usa PIC e interrupções de AP são liberadas tardiamente. “Suporta multicore” precisa ser descrito por esses limites concretos.
+O ChrisOS atual possui uma arquitetura deliberadamente híbrida:
 
-## Tipos de entrada assíncrona
+- IRQs externas de dispositivos continuam roteadas pelo PIC 8259 legado;
+- essas linhas permanecem orientadas ao BSP;
+- cada CPU pode habilitar por software seu LAPIC local;
+- LAPIC é usado para IPIs, incluindo o vetor 0xF0 do protocolo de TLB;
+- IOAPIC ainda não possui programação de redirection table e é apenas um estágio futuro;
+- APs executam jobs de kernel, mas process switching nativo e syscalls de usuário permanecem restritos ao BSP.
 
-Exception é síncrona à instrução atual. Hardware IRQ não é relacionada ao fluxo interrompido. IPI é evento enviado por outra CPU. NMI não é bloqueada por IF.
+Portanto existe execução multicore real no kernel, mas ainda não um sistema operacional com scheduler de user processes distribuído entre todos os CPUs.
 
-Todos podem desviar para código privilegiado, mas têm semânticas diferentes: page fault pode ser recuperável; timer marca tempo; TLB IPI exige coerência; NMI de fencing indica falha do caminho comum.
+![Fluxos de IRQ externa e IPI de TLB](../../assets/diagrams/interrupts-smp-flow-pt-br.svg)
 
-## BSP e AP
+## Classes de interrupção
 
-BSP executa boot principal. APs são processadores adicionais.
+Diferentes eventos arquiteturais entram em código privilegiado pelo mecanismo de vetores.
 
-`cpu_online_count` começa em 1. `smp_init` consome resposta MP do Limine.
+### Exceptions
 
-Constantes atuais:
-- `SMP_MAX_APS = 8`;
-- `SMP_CPU_CAP = 16`;
-- quatro páginas por stack AP;
-- base virtual `0xffffffff92000000`;
-- stride `0x10000`.
+Exceptions são síncronas à instrução executada.
 
-Esses limites são do código, independentes do número anunciado pelo firmware.
+Exemplos:
 
-## CR3 do kernel
+- divide error;
+- invalid opcode;
+- general protection;
+- page fault.
 
-`smp_init` lê CR3 para `kernel_cr3`.
+A causa normalmente está diretamente associada ao fluxo atual da CPU.
 
-`ap_entry` escreve esse CR3 antes de usar o ambiente do kernel. O AP precisa das mesmas traduções high-half, stacks e mappings de MMIO esperados pelo código.
+### Hardware IRQs
 
-## Resposta MP do Limine
+IRQs de dispositivos são assíncronas em relação à instrução interrompida.
 
-Cada descriptor possui LAPIC ID e campos para entry/argument.
+No ChrisOS atual o PIC remapeia:
 
-O BSP limpa handoff de APs, inicializa mapas e registra LAPIC do BSP. Para cada AP dentro do cap:
-- atribui índice lógico;
-- relaciona LAPIC e índice;
-- aloca stack;
-- escreve `extra_argument`;
-- publica `ap_entry`.
+~~~text
+IRQ 0..7  -> vetores 0x20..0x27
+IRQ 8..15 -> vetores 0x28..0x2f
+~~~
 
-Compiler barriers protegem a ordem de publicação dos campos de handoff.
+### Inter-processor interrupts
 
-## Stack de AP
+IPI é uma interrupção iniciada intencionalmente por outra CPU e entregue pelo LAPIC.
 
-`alloc_ap_stack` calcula VA a partir de base + index*stride, chama PMM para quatro páginas e mapeia writable.
+O caso concreto atualmente usado pelo ChrisOS é o vetor 0xF0 para progresso de TLB shootdown.
 
-Falha é fatal.
+### NMI
 
-O stride deixa separação maior que os 16 KiB mapeados. Depois essa geometria também serve para identificar CPU através de RSP.
+O vetor 2 usa nmi_entry dedicado.
 
-## Entrada e switch de stack
+NMI não é bloqueada pelo bit IF normal.
 
-`ap_entry` instala CR3, resolve o pointer MP para virtual quando necessário e extrai index/LAPIC.
+O ChrisOS possui suporte para um caminho NMI de parada relacionado ao TLB e também implementa apic_ipi_nmi. Entretanto, o fencing ativo do TLB nesta revisão **não chama apic_ipi_nmi**. O retirement atual depende de o worker do AP perceber que foi marcado como FENCED.
 
-Valida índice e stack. Então move RSP para stack do AP e chama `ap_c_entry`.
+Essa distinção é importante ao avaliar recovery de CPUs não responsivas.
 
-O comentário proíbe usar locals antigos depois do switch. Um bug anterior com frame pointer/spilled index fazia AP responder como CPU0 em TLB shootdown.
+## Construção da IDT
 
-Troca de stack é, portanto, fronteira ABI real.
+idt_init cria 256 gates em uma IDT estática alinhada.
 
-## Inicialização local
+Gates comuns usam:
 
-`ap_c_entry` carrega IDTR via `idt_load` e inicializa SSE.
+~~~text
+0x8e
+~~~
 
-Depois confirma identidade pelo stack layout, registra LAPIC se necessário, marca CPU online no TLB runtime e incrementa `cpu_online_count`.
+correspondendo ao interrupt gate presente e acessível a ring 0.
 
-O destino final é `job_worker_forever`, não scheduler user.
+O vetor 2 é substituído por nmi_entry.
 
-## Estado por CPU
+Posteriormente syscall_init altera o vetor 0x80 usando idt_set_user_gate, com:
 
-IDTR, CR3 e controle SSE são registradores por processador. Uma tabela IDT compartilhada em memória não “instala” IDTR automaticamente nos APs.
+~~~text
+0xee
+~~~
 
-Documentação precisa distinguir objeto compartilhado de registrador local.
+permitindo entrada a partir de ring 3.
 
-## Identidade da CPU
+Todos os gates atuais possuem:
 
-`smp_current_cpu` lê RSP.
+~~~text
+ist = 0
+~~~
 
-Abaixo da faixa de stacks AP, retorna BSP=0. Dentro da faixa calcula offset/stride e valida index.
+Logo, o código atual não utiliza Interrupt Stack Table para troca automática de stack em exceptions, IRQs ou NMI.
 
-É técnica específica. Se futuramente AP executar sobre outra stack fora dessa geometria, identidade precisará de mecanismo diferente ou preservado.
+A tabela IDT em memória é compartilhada, mas IDTR é estado arquitetural local de cada CPU. O BSP carrega IDTR em idt_init; cada AP executa idt_load dentro de ap_c_entry.
+
+## Normalização dos stubs
+
+idt_stubs.asm gera stubs para todos os 256 vetores.
+
+Algumas exceptions x86 empilham error code automaticamente; outras não.
+
+Para vetor sem hardware error code, o stub empilha:
+
+~~~text
+error sintético = 0
+número do vetor
+~~~
+
+Quando o CPU já empilhou um error code, o stub adiciona somente o número do vetor.
+
+Na revisão atual, os vetores classificados como contendo hardware error code incluem 8, 10, 11, 12, 13, 14, 17, 21, 29 e 30.
+
+Isso cria um prefixo comum para irq_frame em C.
+
+## Preservação de registradores e SIMD
+
+isr_common salva os registradores gerais antes de chamar irq_dispatch.
+
+O layout usado por C começa com:
+
+~~~text
+r15 ... rax
+vector
+error
+rip
+cs
+rflags
+~~~
+
+O stub também reserva espaço para FXSAVE, alinha a área de salvamento, executa fxsave antes de chamar C e fxrstor antes do retorno.
+
+Assim, uma interrupção não deve destruir silenciosamente o estado x87/MMX/SSE do código interrompido.
+
+CLD também é executado na entrada, garantindo direction flag limpa para os handlers C.
+
+No final os registradores são restaurados, os slots de vector/error são removidos e IRETQ retorna.
+
+A entrada de interrupção é, portanto, uma ABI entre assembly e C: layout da stack, alinhamento e estado preservado precisam permanecer coerentes.
+
+## Inicialização do PIC
+
+pic_init começa executando CLI e reprograma os dois controladores 8259.
+
+O master é remapeado para 0x20 e o slave para 0x28.
+
+A relação de cascata é configurada e todas as linhas começam mascaradas.
+
+A tabela de handlers também é zerada.
+
+Subsistemas individuais instalam seu handler e liberam as linhas necessárias.
+
+Exemplos atuais:
+
+- PIT em IRQ 0;
+- teclado em IRQ 1;
+- mouse PS/2 em IRQ 12;
+- ATA DMA em IRQ 14;
+- AC97 na IRQ legado detectada;
+- VirtIO-GPU quando usa o caminho de IRQ legado.
+
+O modelo de interrupção externa ainda é explicitamente baseado no PIC.
+
+## Dispatch de IRQ
+
+irq_dispatch trata primeiro os casos especiais que não pertencem ao intervalo PIC normal.
+
+A ordem atual inclui:
+
+1. syscall 0x80;
+2. page fault 14;
+3. demais exceptions arquiteturais abaixo de 32;
+4. IPI de TLB 0xF0;
+5. vetores altos genéricos;
+6. vetores PIC 32..47.
+
+Para vetor PIC:
+
+~~~text
+irq = vector - 32
+~~~
+
+O function pointer instalado é executado se não for nulo e depois irq_eoi é chamado.
+
+A tabela possui somente 16 slots correspondentes às linhas legado.
+
+Não existe ainda um framework geral de interrupt domains ou vector allocation dinâmica.
+
+## End-of-interrupt
+
+irq_eoi atualmente executa duas famílias de acknowledge.
+
+Se apic_ready() retorna verdadeiro, envia LAPIC EOI.
+
+Depois envia EOI ao PIC:
+
+- slave e master para IRQ >= 8;
+- apenas master para IRQ < 8.
+
+Como o sistema está em estado híbrido, o caminho reconhece LAPIC quando habilitado e continua concluindo o protocolo legado do PIC.
+
+IOAPIC ainda não substituiu o roteamento externo.
+
+## Proteção contra IRQ storm
+
+irq_dispatch mantém irq_hits para as linhas legadas.
+
+IRQ 0 é excluída propositalmente porque representa o timer de 60 Hz e mascará-la interromperia o ritmo do desktop.
+
+Para outra IRQ, quando o contador acumulado chega a 10.000, o kernel mascara a linha e registra mensagem irq storm.
+
+Esse mecanismo evita que uma linha permanentemente assertada mantenha o kernel em um loop de interrupções.
+
+Não é um detector de taxa por janela temporal: o limiar é acumulado e não há reativação automática da linha.
+
+## PIT e sinal de scheduling
+
+pit_init programa o canal 0 usando a frequência-base de 1.193.182 Hz.
+
+O boot atual solicita 60 Hz.
+
+O handler:
+
+1. incrementa ticks;
+2. chama proc_on_tick.
+
+proc_on_tick apenas marca o slice de processo como devido.
+
+Ele não executa arbitrariamente um context switch de user process em um AP.
+
+O timer participa do estado de scheduling sem criar um scheduler user SMP.
+
+## Papel do LAPIC
+
+apic_init obtém a virtual address do LAPIC mapeada por MM, mas mantém inicialmente o estado de software desabilitado.
+
+apic_enable_local escreve no Spurious Interrupt Vector Register:
+
+~~~text
+0x100 | 0xff
+~~~
+
+habilitando o LAPIC local e usando 0xFF como spurious vector.
+
+O comentário no código é explícito: isso não altera IMCR nem move as linhas do i8259 para IOAPIC.
+
+Hoje o LAPIC é importante para:
+
+- estado local de APIC;
+- EOI quando ativo;
+- IPIs fixed-delivery;
+- suporte disponível para NMI delivery.
+
+## Envio de IPI fixed-delivery
+
+apic_ipi recebe LAPIC ID de destino e vetor.
+
+Ele programa ICR high com o destino e ICR low com vetor e level-assert.
+
+Depois espera delivery status limpar, limitado a 100.000 spins.
+
+Retorna 0 em sucesso ou -1 se LAPIC não estiver disponível ou o status não completar.
+
+O caller de TLB atualmente ignora esse retorno e depende do protocolo superior de geração/ack para decidir segurança.
+
+## Estado do IOAPIC
+
+ioapic_init não programa redirection entries.
+
+Sua implementação apenas registra que o PIC ainda roteia IRQs e que IOAPIC completo pertence a uma etapa futura.
+
+Logo, não é correto descrever o ChrisOS atual como um sistema SMP com device IRQs roteadas por IOAPIC.
+
+LAPIC e SMP funcionam dentro do modelo híbrido sem essa afirmação.
+
+## Limites atuais de SMP
+
+smp.h define:
+
+~~~text
+AP_STACK_PAGES     = 4
+AP_STACK_VIRT_BASE = 0xffffffff92000000
+AP_STACK_STRIDE    = 0x10000
+SMP_MAX_APS        = 8
+SMP_CPU_CAP        = 16
+~~~
+
+Existe uma sutileza importante no nome SMP_MAX_APS.
+
+Os índices válidos são testados como:
+
+~~~text
+index > 0 && index < SMP_MAX_APS
+~~~
+
+e smp_init interrompe a criação quando next >= SMP_MAX_APS.
+
+Com SMP_MAX_APS igual a 8, os índices efetivamente usados para AP são 1..7.
+
+Portanto o código admite **até sete APs além do BSP**, e não oito APs além do BSP.
+
+SMP_CPU_CAP é maior porque arrays por CPU, inclusive o protocolo TLB, possuem 16 slots.
+
+Esses dois limites não representam a mesma coisa.
+
+## Sequência de boot do BSP
+
+kstart configura as dependências de interrupção e memória antes de iniciar SMP.
+
+Uma sequência simplificada é:
+
+~~~text
+GDT
+IDT
+syscall gate
+PIC
+PIT
+PS/2
+PMM
+MM
+heap
+SSE
+process subsystem
+graphics
+LAPIC init
+IOAPIC placeholder
+job queue
+SMP
+SMP job self-test
+~~~
+
+Depois o kernel executa CLI explicitamente antes das fases de ACPI, storage, filesystem, instalação e inicialização de linguagem.
+
+Somente depois:
+
+~~~text
+STI no BSP
+smp_release_ap_irqs()
+desktop
+~~~
+
+Essa liberação atrasada é intencional.
+
+O source registra que interrupções de AP liberadas cedo demais interferiram com cópia ATA durante instalação.
+
+## Handoff MP do Limine
+
+smp_init lê o CR3 corrente e salva em kernel_cr3.
+
+cpu_online_count é resetado para 1.
+
+Com bootflag nosmp, AP startup é ignorado; LAPIC do BSP ainda pode ser habilitado.
+
+No caminho SMP, o kernel lê a resposta MP do Limine.
+
+Primeiro limpa goto_address e extra_argument de descritores não-BSP.
+
+Depois cria os mappings de índice lógico para LAPIC ID e prepara cada AP aceito.
+
+Para cada AP:
+
+1. atribui o próximo software index;
+2. preserva LAPIC ID publicado pelo Limine;
+3. aloca a stack;
+4. grava index em extra_argument;
+5. executa compiler barrier;
+6. publica ap_entry em goto_address.
+
+ChrisOS usa, portanto, o handoff MP do Limine e não implementa diretamente a sequência INIT/SIPI de startup dos APs.
+
+![Sequência atual de inicialização dos APs](../../assets/diagrams/smp-bringup-pt-br.svg)
+
+## Stack dos APs
+
+Cada AP aceito recebe quatro frames físicas mapeadas em uma faixa virtual exclusiva.
+
+São 16 KiB efetivamente mapeados.
+
+O stride virtual é 64 KiB, deixando espaço não mapeado entre regiões.
+
+Falha no PMM ao construir a stack provoca panic.
+
+A stack não é somente armazenamento de chamadas: sua posição também é usada pelo mecanismo atual de identificação da CPU.
+
+## Entrada do AP e CR3
+
+ap_entry começa escrevendo kernel_cr3.
+
+Assim o AP passa a usar a raiz de tradução esperada pelo kernel inicializado.
+
+Depois obtém index/LAPIC do descriptor Limine, com fallback de lookup caso necessário.
+
+Índice inválido ou stack inexistente coloca o AP em HLT permanente.
+
+Em seguida RSP é movido para a stack privada e ap_c_entry é chamado.
+
+## Risco ABI durante troca de stack
+
+O assembly dentro de ap_entry recarrega o software index em EDI depois de trocar RSP.
+
+Um comentário de source registra bug anterior: estado local/frame pointer associado à stack antiga resultou em index corrompido, e APs acabavam respondendo operações TLB como CPU 0.
+
+Isso mostra que escrever RSP no meio de uma função compilada não é simples alteração de ponteiro.
+
+A implementação trata a troca como fronteira one-way e evita usar locals antigos depois dela.
+
+## Inicialização local do AP
+
+ap_c_entry executa:
+
+- idt_load;
+- inicialização SSE/FPU via sse_bsp_init;
+- reavaliação da identidade via stack;
+- fallback de metadata LAPIC quando necessário;
+- tlb_runtime_online(index);
+- incremento atômico de cpu_online_count;
+- entrada em job_worker_forever.
+
+O AP não entra em um scheduler de processo de usuário.
+
+## Identidade da CPU atual
+
+smp_current_cpu lê RSP.
+
+Se RSP estiver abaixo de AP_STACK_VIRT_BASE, retorna CPU 0.
+
+Caso contrário calcula:
+
+~~~text
+index = (rsp - AP_STACK_VIRT_BASE) / AP_STACK_STRIDE
+~~~
+
+e valida o resultado.
+
+Isso funciona hoje porque execução normal de AP, interrupt entry comum e NMI usam a stack interrompida: os gates atuais têm IST=0.
+
+O mecanismo é, portanto, acoplado à geometria das stacks.
+
+Se o projeto introduzir IST, scheduler stacks, stacks temporárias ou migração de stack, a identificação precisa migrar para mecanismo CPU-local explícito ou preservar metadata equivalente.
 
 ## Índice lógico versus LAPIC ID
 
-Arrays de software usam índice compacto. Hardware IPI precisa LAPIC ID.
+Software index não é o destino físico de APIC.
 
-`g_lapic_of_cpu` guarda relação, e `smp_lapic_of` expõe com flag known.
+g_lapic_of_cpu mantém a associação e smp_lapic_of devolve LAPIC ID com uma flag known.
 
-Comentário registra bug anterior em que leitura compartilhada do LAPIC levava NMI ao BSP. Preservar ID publicado no boot evita confundir identidade lógica e destination ID.
+A separação é necessária porque:
 
-## Espera pelos APs
+- arrays internos usam índices compactos;
+- ICR precisa do LAPIC destination ID.
 
-BSP calcula quantidade desejada e gira com `pause` até `cpu_online_count` alcançar valor ou 100 milhões de spins.
+Comentário no source registra falha anterior em que uma leitura de LAPIC compartilhada podia aparentar o ID do BSP e causar destino incorreto.
 
-Depois loga count e habilita LAPIC do BSP salvo `noapic`.
+A implementação atual prefere IDs publicados pelo Limine durante o boot.
 
-O wait é limitado. Código não transforma necessariamente partial online em panic nesse ponto.
+## Espera por CPUs online
 
-## IF nos APs
+Depois de publicar os APs, smp_init define:
 
-AP entra no worker com IF zero.
+~~~text
+want = next
+~~~
 
-`smp_release_ap_irqs` publica um flag. Cada AP então habilita LAPIC e executa `sti` uma vez.
+O BSP gira enquanto cpu_online_count < want, com PAUSE, limitado a 100.000.000 de iterações.
 
-Fonte registra problema real: IRQ de AP cedo demais interferia em ATA copy.
+Depois registra o contador e continua.
 
-Há dois marcos distintos: online para jobs e liberado para IRQ mascarável.
+Não existe panic automático apenas porque o limite expirou com menos CPUs que o desejado.
 
-## Jobs
+Portanto o fluxo admite, em princípio, bring-up parcial.
 
-AP consome ring global de jobs; BSP também pode consumir.
+O log é necessário para distinguir CPUs solicitadas das que realmente chegaram ao estado online.
 
-Kthreads são callbacks com stack privada sobre a mesma infraestrutura.
+## Habilitação de interrupções nos APs
 
-Isso fornece paralelismo de kernel sem scheduler user distribuído.
+Os workers entram inicialmente com IF zero.
 
-## User process continua no BSP
+job_worker_forever observa g_ap_irq_enable.
 
-`proc_switch` causa panic fora CPU0. `syscall_dispatch` rejeita off-BSP.
+Depois de o BSP chamar smp_release_ap_irqs, cada AP, numa iteração posterior:
 
-Logo, ChrisOS não agenda aplicações nativas arbitrariamente em todos os cores nesta revisão.
+1. chama apic_enable_local se APIC não estiver desabilitado;
+2. executa STI;
+3. marca localmente que já realizou essa transição.
 
-## Races
+Existem, portanto, dois estados distintos:
 
-Com APs, C loads/stores compartilhados podem intercalar.
+- AP online para jobs/polling;
+- AP com interrupções mascaráveis habilitadas.
 
-Spinlocks CAS e atomics existem, mas cada subsistema precisa declarar ownership, lock order, IRQ safety e lifetime.
+Eles não acontecem simultaneamente durante o boot.
 
-Lock não corrige use-after-free de recurso que outro CPU ainda referencia.
+## Fila de jobs
 
-## Reentrância por IRQ
+O principal workload dos APs vem do job subsystem.
 
-Mesmo em uma CPU, interrupt pode tentar lock já mantido pelo contexto interrompido. Isso deadlocka.
+JOB_QUEUE_CAP vale 1024.
 
-`irq_save`/`irq_restore` permitem local interrupt exclusion quando necessário. Desligar IRQ local não sincroniza outro CPU.
+A ring global armazena:
 
-## TLB coherence
+~~~text
+function pointer
+argument pointer
+~~~
 
-CPU pode manter tradução stale depois que outra altera page tables.
+A estrutura da fila é protegida por g_q_lock.
 
-`TlbWorld` representa CPUs ABSENT/ONLINE/FENCED, geração publicada, faixa, seen generation, heartbeat, halted/flushed e reuse_ok.
+g_inflight e g_completed são atualizados atomicamente.
 
-Reutilizar frame físico antes de todos invalidarem ou um CPU fenced parar cria memory corruption.
+Um AP em loop:
 
-Por isso TLB shootdown é protocolo de lifetime, não “só limpar cache”.
+1. verifica fencing TLB;
+2. processa TLB polling;
+3. habilita interrupções após release;
+4. retira um job sob lock;
+5. executa o callback fora do lock;
+6. atualiza contadores;
+7. executa PAUSE;
+8. repete.
 
-## IPI e NMI
+O BSP também pode executar job_worker_once enquanto espera a fila ficar idle.
 
-Notificação normal usa fixed IPI.
+É um motor de trabalho cooperativo de kernel, não um scheduler geral preemptivo.
 
-CPU silencioso pode ultrapassar quiet budget e virar FENCED. NMI força path que não depende de IF.
+## Self-test SMP de jobs
 
-`mm_tlb_nmi_stop` pode fazer AP invalidar/parar. BSP retorna porque halta-lo congelava desktop em uma versão anterior.
+smp_job_selftest roda quando existem pelo menos dois CPUs online.
 
-## Retirement
+Primeiro envia 16 jobs simples e exige resultado 16.
 
-`smp_retire_cpu` reduz online count, nunca abaixo de 1.
+Depois executa 32 ondas de 128 jobs e verifica a soma ao fim de cada onda.
 
-Comentário ressalta que TLB membership, não online count, determina ack necessário. Isso impede usar um contador de scheduler como prova falsa de segurança de reclamation.
+Se submit não consegue progredir dentro do limite ou a soma diverge, o kernel entra em panic.
 
-## Ordering
+Esse teste valida:
 
-Código usa builtins atômicos, compiler barriers e instruções x86.
+- fila compartilhada;
+- lock;
+- execução pelos workers;
+- accounting atômico.
 
-x86 tem modelo relativamente forte, mas compilador também reordena. “x86 não reordena” não é explicação suficiente.
+Não prova sozinho todas as propriedades de IRQ, cache coherence ou memory ordering.
+
+## User processes continuam BSP-only
+
+proc_switch exige:
+
+~~~text
+smp_current_cpu() == 0
+~~~
+
+e entra em panic caso seja chamado num AP.
+
+syscall_dispatch também rejeita entrada off-BSP.
+
+Portanto aplicações nativas não são atualmente distribuídas entre APs.
+
+O paralelismo existente concentra-se nos jobs de kernel e mecanismos construídos sobre esses workers.
+
+## Sincronização de memória compartilhada
+
+Depois que APs entram online, objetos comuns em C podem ser acessados simultaneamente.
+
+O ChrisOS fornece Spinlock simples:
+
+- CAS para acquire;
+- PAUSE durante contenção;
+- __sync_lock_release no unlock.
+
+Também existe atomic_add_u32.
+
+Essas primitivas não resolvem automaticamente lock ordering, reentrância ou lifetime.
+
+Cada subsistema ainda precisa de política explícita.
+
+## Exclusão local de IRQ versus exclusão SMP
+
+Um spinlock pode deadlockar se uma IRQ na mesma CPU interromper o código que segura o lock e o handler tentar adquirir o mesmo lock.
+
+spin.h fornece irq_save e irq_restore.
+
+irq_save salva RFLAGS e executa CLI.
+
+irq_restore executa STI apenas quando IF estava ativo anteriormente.
+
+PMM é um exemplo concreto:
+
+~~~text
+salva IF e desabilita IRQ local
+adquire pmm_lock
+opera no bitmap
+libera pmm_lock
+restaura IF
+~~~
+
+CLI impede reentrada por interrupção na CPU local.
+
+Ele não impede outra CPU de tocar o estado.
+
+O spinlock fornece a exclusão entre CPUs.
+
+## Integração com TLB
+
+SMP correctness não termina em locks comuns.
+
+Uma CPU pode manter tradução stale depois que outra remove mapping compartilhado.
+
+Por isso cada AP é registrado no TLB runtime e workers processam TLB polling. O vetor 0xF0 oferece aceleração via IPI.
+
+O protocolo completo está no capítulo TLB shootdown.
+
+Um fato importante: o fencing ativo é cooperativo.
+
+Quando um AP marcado FENCED volta ao topo de job_worker_forever:
+
+1. faz mm_tlb_poll_cpu;
+2. registra halted;
+3. executa CLI;
+4. entra em HLT permanente.
+
+Apesar de existir suporte NMI, o código de shootdown atual não envia NMI durante esse retirement.
+
+## Contador de CPUs versus membership exato
+
+smp_retire_cpu reduz cpu_online_count atomicamente, nunca abaixo de 1.
+
+O parâmetro cpu não é usado para atualizar bitmap SMP exato.
+
+Assim, cpu_online_count é contador agregado de estado.
+
+Ele não constitui prova suficiente para segurança de TLB reclamation.
+
+O protocolo TLB possui estados independentes ONLINE/FENCED/ABSENT por slot.
+
+Essa separação impede que uma simples redução do contador seja interpretada como desaparecimento garantido de stale translation.
+
+## Caminho NMI
+
+idt_init instala nmi_entry em vector 2.
+
+O stub usa a stack interrompida porque IST=0.
+
+Ele chama mm_tlb_nmi_stop.
+
+Essa função:
+
+1. processa TLB pending;
+2. marca halted;
+3. deixa CPU 0 retornar;
+4. para AP em CLI/HLT quando o retorno indica stop.
+
+apic.c possui apic_ipi_nmi capaz de gerar NMI por ICR.
+
+No entanto, não há chamada ativa a esse helper no caminho de TLB fencing atual.
+
+A infraestrutura existe, mas não deve ser descrita como mecanismo normal de escalation desta revisão.
+
+## Concorrência e memory ordering
+
+O source usa:
+
+- builtins __sync;
+- estado volatile;
+- compiler barriers;
+- PAUSE;
+- CLI/STI;
+- instruções específicas de x86.
+
+x86-64 oferece memory ordering relativamente forte, porém compiler ordering, atomicity e publication continuam relevantes.
+
+“x86 não reordena” não representa uma prova suficiente.
+
+O ChrisOS possui hoje sincronização orientada à implementação x86, não um modelo abstrato multiplataforma formal.
 
 ## Modos de falha
 
-Incluem resposta MP ausente, PMM sem stack, índice publicado errado, stack ABI incorreta, mapa CPU↔LAPIC errado, AP que não online, IRQ cedo, lock cycles, TLB stale e IPI/NMI ao destino errado.
+Falhas relevantes incluem:
 
-Vários já aparecem em comentários por terem causado bugs reais.
+- ausência da resposta MP do Limine;
+- CPUs além do limite de índices admitidos;
+- PMM sem memória para stack AP;
+- software index corrompido;
+- erro de ABI na troca de stack;
+- associação CPU/LAPIC incorreta;
+- AP que não incrementa online count;
+- interrupções de AP liberadas cedo;
+- IRQ legado permanentemente assertada;
+- reentrância de lock por interrupt;
+- ciclos de lock entre CPUs;
+- stale TLB depois de reclamation;
+- timeout de entrega IPI;
+- CPU fenced que nunca retorna ao worker.
 
-## Validação
+Comentários no source registram bugs anteriores particularmente em identity por stack, LAPIC destination e timing de release das interrupções.
 
-Precisa testar online count real, job self-test, identidade, shootdown sob churn, fencing forçado, destino de IPI, boot/install com release tardio, lock stress e manutenção da regra user BSP-only.
+## Evidência de validação
 
-Boot multicore sozinho não prova correção de TLB ou locks.
+A evidência atual inclui:
+
+- smp_job_selftest em boot multicore;
+- tools/test_job_saturate.c para fila cheia, drain e reutilização;
+- host tests do protocolo TLB;
+- logs de MM/TLB;
+- wait limitado e online count durante startup;
+- PIT real dirigindo o ritmo do desktop;
+- handlers PIC reais para dispositivos.
+
+Testes adicionais úteis:
+
+- verificar índices e LAPIC IDs em máquinas com IDs esparsos;
+- injetar falha de startup de AP;
+- forçar falha de IPI;
+- stress do mesmo lock em contexto normal e IRQ;
+- provocar storm de IRQ não-timer e confirmar masking;
+- validar ordem de release de IF durante install/storage;
+- saturar workers durante churn de TLB;
+- validar mecanismo de identidade antes de adicionar IST.
 
 ## Limitações atuais
 
-AP cap estático, identidade por faixa de stack, userspace BSP-only, IOAPIC pendente, worker polling e panic sem coordenador SMP global.
+Na revisão analisada:
 
-Esses limites definem exatamente o estágio SMP.
+- no máximo sete APs são admitidos além do BSP;
+- capacidade de arrays e quantidade admitida de APs são limites diferentes;
+- user processes e syscalls permanecem BSP-only;
+- hardware IRQs externas continuam roteadas pelo PIC;
+- redirection via IOAPIC não está implementado;
+- identificação de CPU depende da faixa de stack do AP;
+- APs executam polling de uma fila global, não scheduler SMP geral;
+- cpu_online_count não é um mapa exato de membership;
+- suporte NMI de stop existe, mas fencing ativo continua cooperativo;
+- panic não coordena parada global de todas as CPUs;
+- não existe lifecycle de CPU hotplug/rejoin.
 
-## Mapa de fonte
+Esses limites descrevem com precisão o estágio SMP atual.
 
-`smp.c`/`smp.h`: lifecycle/stack/identity. `job.c`: workload. `tlb_proto.c` + MM: coerência. `apic.c`: IPI/NMI. `idt*`/`irq.c`: entry. `ioapic.c`: status ainda não implementado. Source Atlas contém os arquivos completos.
+## Fronteira de revisão
+
+Este capítulo foi reconciliado com ChrisOS main na revisão e05a17fd76333114a3fb5c2452f38ca747d4ac56.
+
+O modelo atual comprovado pelo source é:
+
+1. IDT compartilhada em memória com IDTR carregado em cada AP;
+2. IRQs legado roteadas pelo PIC;
+3. LAPIC habilitado localmente e usado para IPIs;
+4. até sete índices AP além do BSP pelos checks atuais;
+5. stack privada por AP usada também para identidade;
+6. habilitação tardia de IF nos APs;
+7. fila global de jobs protegida por lock;
+8. execução nativa de usuário restrita ao BSP;
+9. membership/coerência de TLB independente de cpu_online_count;
+10. suporte NMI disponível, mas envio NMI não usado no fencing ativo.
+
+Mudanças futuras em IOAPIC, migração de processos, IST, identidade CPU-local ou scheduler exigem nova reconciliação source-level.
