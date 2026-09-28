@@ -1,7 +1,7 @@
 # ChrisOS Documentation — Operational State Memory
 
 Snapshot date: 2026-09-27  
-Baseline documentation commit: `18cb6ac79d5dc69b9f47267c8c81f64a4f892199`
+Baseline documentation commit: `7353ced31e6e47b8a4451459c63bdcb1ad8d9d2b`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -21,16 +21,16 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **214**.
 
 Authored chapters:
-- EN: **83 present**
-- PT-BR: **83 present**
-- structurally bilingual authored pairs: **83**
-- structural coverage: **38.8%**
-- missing chapters in both languages: **131**
+- EN: **85 present**
+- PT-BR: **85 present**
+- structurally bilingual authored pairs: **85**
+- structural coverage: **39.7%**
+- missing chapters in both languages: **129**
 
 Depth-floor state:
-- EN: **58** chapters above the text floor; **25** present but below the floor.
-- PT-BR: **52** chapters above the text floor; **31** present but below the floor.
-- chapters above the floor in **both** languages: **52**.
+- EN: **60** chapters above the text floor; **25** present but below the floor.
+- PT-BR: **54** chapters above the text floor; **31** present but below the floor.
+- chapters above the floor in **both** languages: **54**.
 - chapters needing expansion in at least one language: **31**.
 - six kernel chapters meet the EN floor but still need PT-BR expansion: `idt-exceptions`, `interrupts-smp`, `pic-apic-ioapic`, `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
@@ -38,7 +38,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 ## Chapters currently above the depth floor in both languages
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `atom-semiconductor`, `atomics-memory-model`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `noise-grounding-signal-integrity`, `power-delivery-regulation`, `transmission-lines-differential-signals`, `elf-linking`, `emulator-theory`, `gdt-tss`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `ohm-kirchhoff-circuits`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `rc-rlc-transients`, `registers-counters`, `reset-firmware`, `sram-dram`, `systems-algorithms`, `transistor-cmos`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
+`ac-signals-frequency-impedance`, `acpi-platform`, `algorithmic-complexity`, `arithmetic-circuits`, `atom-semiconductor`, `atomics-memory-model`, `boolean-algebra`, `boot-information`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `electric-charge-field-potential`, `cmos-switching-power`, `electromagnetic-induction-transformers`, `mos-capacitor`, `noise-grounding-signal-integrity`, `power-delivery-regulation`, `transmission-lines-differential-signals`, `elf-linking`, `emulator-theory`, `gdt-tss`, `higher-half-kernel`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-sequential`, `machine-code`, `ohm-kirchhoff-circuits`, `pci-pcie`, `pixels-framebuffer`, `pn-junction`, `power-on-kstart`, `privilege-rings`, `rc-rlc-transients`, `registers-counters`, `reset-firmware`, `sram-dram`, `systems-algorithms`, `transistor-cmos`, `uefi`, `vectors-complex-numbers-systems`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
 
 ## Authored chapters that still require expansion
 
@@ -48,7 +48,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 | Volume | Missing |
 |---|---:|
-| 01-foundations | 15 |
+| 01-foundations | 13 |
 | 02-computer-architecture | 5 |
 | 03-boot | 0 |
 | 04-kernel | 0 |
@@ -65,7 +65,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 15-specifications | 7 |
 | 16-history | 3 |
 | 98-maintenance | 2 |
-| **Total** | **131** |
+| **Total** | **129** |
 
 For the exact ordered list, run:
 
