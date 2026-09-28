@@ -154,6 +154,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_transmission_line_examples.py --source .source
 
+      - name: Verify noise grounding and signal integrity examples
+        working-directory: docs-repo
+        run: python scripts/check_signal_integrity_examples.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
