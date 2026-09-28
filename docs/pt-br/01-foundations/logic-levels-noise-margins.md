@@ -103,7 +103,7 @@ Ambas devem ser positivas para uma conexão direta convencional nas condições 
 
 Margem de ruído é, portanto, um orçamento no domínio da tensão, não uma prova completa de integridade de sinal.
 
-## Por que os níveis de saída dependem da carga
+## Dependência dos níveis de saída em relação à carga
 
 Uma saída não é uma fonte de tensão ideal. As redes de pull-up e pull-down têm impedância finita. Por isso, folhas de dados especificam V_OH e V_OL juntamente com condições de corrente de saída.
 
