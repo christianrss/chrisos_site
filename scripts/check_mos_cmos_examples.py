@@ -157,7 +157,7 @@ def check_documents(root: Path) -> None:
     cmos_required = (
         "P_dynamic = α C_L V_DD² f",
         "E_cycle = C_L V_DD²",
-        "0.69",
+        "t_50",
         "ChrisArchitectureState",
         "cpu_run",
         "gfx_rgb",
