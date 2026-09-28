@@ -1,0 +1,10 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=record, fontname="Arial"];
+  as [label="{Espaço virtual de usuário|0x00400000..0x004fffff janela ELF|0x02000000 região VM|0x04000000 heap (máx. +256 KiB)|0x06000000 framebuffer|0x07f00000 janela de stack|0x08000000 base de bibliotecas|... metade canônica inferior ...|metade canônica superior: entradas PML4 256..511 compartilhadas com kernel}"];
+  cr3 [shape=box, style="rounded", label="CR3 / PML4 por processo"];
+  kernel [shape=box, style="rounded", label="Hierarquia de tradução compartilhada do kernel"];
+  cr3 -> as;
+  cr3 -> kernel [label="referências do half superior"];
+}
