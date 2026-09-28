@@ -3,6 +3,7 @@ id: home
 lang: pt-br
 type: landing
 status: maintained
+description: Documentação técnica aprofundada do ChrisOS, um sistema operacional experimental x86-64 que cobre kernel, compiladores, sistemas de arquivos, gráficos, redes, emulação e virtualização.
 reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
 sources:
   - README.md
