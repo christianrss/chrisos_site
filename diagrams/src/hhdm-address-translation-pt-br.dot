@@ -1,0 +1,18 @@
+digraph hhdm {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  phys [label="Endereco fisico de RAM\n0x0000...P"];
+  offset [label="Offset HHDM do Limine\nbootinfo.hhdm_offset", fillcolor="#f7f7f7"];
+  virt [label="Endereco virtual HHDM do kernel\nP + offset"];
+  pte [label="Mapping criado pelo bootloader\nvirtual -> mesmo frame fisico", shape=box3d, fillcolor="#ffffff"];
+  cpu [label="Load/store da CPU\nusa endereco virtual"];
+  mmio [label="Endereco fisico MMIO\nexemplo LAPIC 0xFEE00000", fillcolor="#dddddd"];
+  mmmap [label="Mapping dedicado de device\nmap_mmio_page + flags de cache", fillcolor="#dddddd"];
+
+  phys -> offset -> virt -> pte -> cpu;
+  mmio -> offset [style=dashed, label="somente aritmetica"];
+  offset -> virt [label="soma"];
+  mmio -> mmmap [label="caminho correto"];
+}
