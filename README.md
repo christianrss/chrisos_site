@@ -1,6 +1,6 @@
 # ChrisOS Research Documentation
 
-This repository contains the publication system for the ChrisOS technical documentation.
+This repository contains the publication system for the ChrisOS technical documentation. ChrisOS is an experimental x86-64 operating-system and systems-research ecosystem spanning kernel engineering, memory management, compilers and the ChrisC/CLVM runtime, ChrisFS, graphics, networking, desktop subsystems, ChrisVM/ChrisCPU emulation and hardware virtualization.
 
 The site is designed as a long-lived research documentation corpus rather than a marketing site. It combines computing foundations, the architecture and implementation of ChrisOS from the `main` branch, a generated source atlas, specifications, diagrams, revision metadata, and low-context workflows for AI agents.
 

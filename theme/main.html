@@ -3,10 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="{{ page.meta.description if page and page.meta.description else config.site_description }}">
+  <meta name="description" content="{{ seo.description if page and seo else config.site_description }}">
   <meta name="author" content="Christian Rafael de Souza Silva">
+  <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
   <meta name="theme-color" content="#eceae1">
   <title>{% if page and page.title %}{{ page.title }} — {% endif %}{{ config.site_name }}</title>
+  {% if page and seo %}
+  <link rel="canonical" href="{{ seo.canonical_url }}">
+  {% if seo.alternate_url %}<link rel="alternate" hreflang="{{ seo.alternate_lang }}" href="{{ seo.alternate_url }}">{% endif %}
+  <link rel="alternate" hreflang="{{ seo.in_language }}" href="{{ seo.canonical_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ seo.x_default_url }}">
+  <link rel="sitemap" type="application/xml" href="{{ config.site_url }}sitemap.xml">
+  <meta property="og:site_name" content="ChrisOS">
+  <meta property="og:type" content="{{ 'article' if page.meta.type not in ['landing', 'generated-root', 'index', 'catalog'] else 'website' }}">
+  <meta property="og:title" content="{{ page.title }} — {{ config.site_name }}">
+  <meta property="og:description" content="{{ seo.description }}">
+  <meta property="og:url" content="{{ seo.canonical_url }}">
+  <meta property="og:image" content="{{ seo.image_url }}">
+  <meta property="og:locale" content="{{ 'pt_BR' if page.meta.lang == 'pt-br' else 'en_US' }}">
+  {% if seo.alternate_url %}<meta property="og:locale:alternate" content="{{ 'en_US' if page.meta.lang == 'pt-br' else 'pt_BR' }}">{% endif %}
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ page.title }} — {{ config.site_name }}">
+  <meta name="twitter:description" content="{{ seo.description }}">
+  <meta name="twitter:image" content="{{ seo.image_url }}">
+  <script type="application/ld+json">{{ seo.schema_json|safe }}</script>
+  {% endif %}
   <link rel="stylesheet" href="{{ 'assets/site.css'|url }}?v={{ config.extra.build_version }}">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E23CRBBR6E"></script>
   <script>
