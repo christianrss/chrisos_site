@@ -22,8 +22,6 @@ sources:
   - compiler/lang_pipeline.h
   - kernel/lang/clvm_sys.c
   - chrisvm/machine/machine.h
-  - docs/CURRENT_HARDWARE_AUDIT.md
-  - docs/REAL_HARDWARE_PLAN.md
 symbols:
   - pci_read
   - pci_write
