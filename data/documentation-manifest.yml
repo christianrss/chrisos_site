@@ -249,6 +249,15 @@ volumes:
       - {id: graphics-history, title: "Graphics architecture history", priority: expansion}
       - {id: toolchain-history, title: "Native toolchain history", priority: expansion}
       - {id: chrisvm-history, title: "ChrisVM history", priority: expansion}
+  17-developer-guide:
+    chapters:
+      - {id: developer-guide, title: "Developer guide", priority: foundation}
+      - {id: development-environment-linux, title: "Linux development environment", priority: foundation}
+      - {id: development-environment-windows, title: "Windows and WSL2 development environment", priority: foundation}
+      - {id: build-run-debug, title: "Build, run and debug", priority: foundation}
+      - {id: testing-validation, title: "Testing and validation workflow", priority: foundation}
+      - {id: contribution-workflow, title: "Contribution workflow", priority: foundation}
+      - {id: development-troubleshooting, title: "Development troubleshooting", priority: expansion}
   98-maintenance:
     chapters:
       - {id: agent-workflow, title: "Low-context agent workflow", priority: foundation}
