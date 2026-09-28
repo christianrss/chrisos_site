@@ -347,6 +347,36 @@ If subsystem A may acquire PMM while holding its own lock, and PMM never calls b
 
 The free-run callback is a special case because the PMM intentionally calls caller code while locked. That is why the callback's allowed operations must respect the recursion/lock-order contract.
 
+## Zero as failure sentinel
+
+The API uses physical address zero to mean allocation failure.
+
+That convention is safe only because initialization reserves the entire first 1 MiB, including frame zero. A legitimate allocation can therefore never collide with the sentinel.
+
+This is a small but important invariant connecting initialization policy to API design:
+
+```text
+frame 0 permanently unavailable
+    -> pmm_alloc can return 0 on failure
+    -> callers can test "if (phys == 0)"
+```
+
+If a future allocator ever made physical page zero allocatable, the public return-value contract would become ambiguous and would need to change.
+
+The same sentinel is used by contiguous and claim-at operations. Code must not interpret zero as “physical address zero was successfully allocated.”
+
+## Allocation linearization point
+
+Under the PMM lock, the conceptual linearization point of an allocation is the transition where `claim_run` sets the bitmap bits.
+
+Before that transition the selected frames are free; after it, no other correctly synchronized allocator call may return them.
+
+For `pmm_claim_at`, validation and mutation happen inside one critical section, so there is no unlocked gap between “observed free” and “claimed.”
+
+For free, the transition is the clearing of each bit while the same global lock is held.
+
+These lock-scoped state transitions are what provide uniqueness across CPUs; the bitmap representation alone does not provide concurrency safety.
+
 ## Single-page allocation complexity
 
 Let (P) be the number of usable pages scanned before success or exhaustion.
