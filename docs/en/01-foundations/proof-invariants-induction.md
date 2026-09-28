@@ -335,7 +335,7 @@ At termination after all digits, v equals the full token value.
 
 This is a real proof obligation represented directly by source checks.
 
-## Why checking before multiplication matters
+## Pre-multiplication overflow checks
 
 An unsafe pattern is:
 
