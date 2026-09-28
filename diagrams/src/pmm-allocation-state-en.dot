@@ -1,0 +1,25 @@
+digraph pmm {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.32", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  memmap [label="Limine memory map"];
+  init [label="Initialize bitmap = all used\nrelease only USABLE full pages", fillcolor="#f7f7f7"];
+  bitmap [label="1 MiB bitmap\n1 bit / 4 KiB frame", shape=box3d, fillcolor="#ffffff"];
+  cursor [label="pmm_cursor\nnext-fit-like hint"];
+  scan [label="scan_usable_for_run\nskip 0xFF bytes"];
+  claim [label="claim_run\nset bits + counters"];
+  free [label="pmm_free_contig\nclear bits + lower cursor"];
+  contig [label="pmm_foreach_free_run\nfirst fitting extent"];
+  dma [label="DMA32 16-page subpool\nsecondary bit mask", fillcolor="#dddddd"];
+
+  memmap -> init -> bitmap;
+  bitmap -> scan;
+  cursor -> scan;
+  scan -> claim;
+  claim -> bitmap;
+  free -> bitmap;
+  free -> cursor;
+  bitmap -> contig -> claim;
+  claim -> dma [label="reserve 16 pages"];
+}
