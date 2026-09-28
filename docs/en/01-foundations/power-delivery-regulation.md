@@ -64,7 +64,7 @@ Every stage contributes impedance and dynamic limits.
 
 Power delivery and software power management are related but distinct. Software can request states or change workload; it does not directly repeal the electrical dynamics of the PDN.
 
-## Why a supply rail moves
+## Supply-rail voltage deviation
 
 For a load current i(t) flowing through a nonzero supply impedance Z_PDN,
 
@@ -381,7 +381,7 @@ Below resonance the component looks primarily capacitive.
 
 Above resonance it looks primarily inductive.
 
-## Why placement matters
+## Placement and connection inductance
 
 A capacitor connected through long traces or vias has additional inductance.
 
@@ -762,7 +762,7 @@ This is discovery/logging behavior.
 
 It is not a complete ACPI interpreter or power-management implementation.
 
-## What the current ACPI code does not establish
+## Limits of the current ACPI implementation evidence
 
 The cited acpi_probe implementation does not show:
 
