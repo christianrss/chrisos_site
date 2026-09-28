@@ -1,0 +1,26 @@
+digraph dram {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.32", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  req [label="Requisicao de memoria fisica\nendereco + read/write + requester"];
+  ctrl [label="Memory controller\nfilas + address decoder + scheduler", fillcolor="#f7f7f7"];
+  ch [label="Channel\nrecursos compartilhados de command/data"];
+  rank [label="Rank"];
+  bank0 [label="Bank A\nrow aberta = R10"];
+  bank1 [label="Bank B\nrow aberta = R42"];
+  row [label="Row buffer / sense amps"];
+  data [label="Transferencia de dados em burst"];
+  backing [label="Bytes do backing memory\n(estado funcional dos dados)", shape=box3d, fillcolor="#ffffff"];
+
+  req -> ctrl;
+  ctrl -> ch;
+  ch -> rank;
+  rank -> bank0;
+  rank -> bank1;
+  bank0 -> row [label="ACT/PRE"];
+  bank1 -> row [label="ACT/PRE"];
+  row -> data [label="READ/WRITE"];
+  data -> backing [label="complete"];
+  ctrl -> req [style=dashed, label="completion/backpressure", constraint=false];
+}
