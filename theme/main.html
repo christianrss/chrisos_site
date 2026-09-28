@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="{{ page.meta.description if page and page.meta.description else config.site_description }}">
+  <meta name="author" content="Christian Rafael de Souza Silva">
   <meta name="theme-color" content="#eceae1">
   <title>{% if page and page.title %}{{ page.title }} — {% endif %}{{ config.site_name }}</title>
   <link rel="stylesheet" href="{{ 'assets/site.css'|url }}?v={{ config.extra.build_version }}">
@@ -314,8 +315,14 @@
 </nav>
 {% endif %}
 
-<footer>
-  <p>ChrisOS Research Project · Markdown · revision-bound documentation</p>
+<footer class="site-footer">
+  <div class="site-footer-signature">
+    <span class="site-footer-project">ChrisOS Research Project</span>
+    <span class="site-footer-byline">{{ 'Criado, projetado e documentado por' if page and page.meta.lang == 'pt-br' else 'Created, engineered and documented by' }}</span>
+    <a class="site-footer-author" href="https://github.com/christianrss" rel="author">Christian Rafael de Souza Silva</a>
+    <span class="site-footer-credentials">{{ 'Tecnólogo em Ciência de Dados · Especialista em Engenharia Eletrônica e Robótica' if page and page.meta.lang == 'pt-br' else 'Data Science Technologist · Specialist in Electronic Engineering & Robotics' }}</span>
+  </div>
+  <p class="site-footer-record">Markdown · revision-bound documentation</p>
 </footer>
 <script src="{{ 'assets/site.js'|url }}?v={{ config.extra.build_version }}"></script>
 </body>
