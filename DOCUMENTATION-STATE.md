@@ -22,16 +22,16 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **221**.
 
 Authored chapters:
-- EN: **117 present**
-- PT-BR: **117 present**
-- structurally bilingual authored pairs: **117**
-- structural coverage: **52.9%**
-- missing chapters in both languages: **104**
+- EN: **119 present**
+- PT-BR: **119 present**
+- structurally bilingual authored pairs: **119**
+- structural coverage: **53.8%**
+- missing chapters in both languages: **102**
 
 Depth-floor state:
-- EN: **94** chapters above the text floor; **23** present but below the floor.
-- PT-BR: **88** chapters above the text floor; **29** present but below the floor.
-- chapters above the floor in **both** languages: **88**.
+- EN: **96** chapters above the text floor; **23** present but below the floor.
+- PT-BR: **90** chapters above the text floor; **29** present but below the floor.
+- chapters above the floor in **both** languages: **90**.
 - chapters needing expansion in at least one language: **29**.
 - three kernel chapters meet the EN floor but still need PT-BR expansion: `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
@@ -39,7 +39,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 ## Chapters currently above the depth floor in both languages
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `address-spaces`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `cmos-switching-power`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `heap-ownership`, `hhdm`, `higher-half-kernel`, `idt-exceptions`, `interrupts-smp`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `microarchitecture-pipeline`, `mos-capacitor`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `page-faults`, `panic-logging`, `page-table-layout`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pmm-algorithms`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `sorting-searching`, `spinlocks`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `tlb`, `tlb-shootdown`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `vectors-complex-numbers-systems`, `virtual-memory`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
+`ac-signals-frequency-impedance`, `acpi-platform`, `address-spaces`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `capacitance-inductance`, `clock-timing`, `cmos-switching-power`, `coherence`, `combinational-logic`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `heap-ownership`, `hhdm`, `higher-half-kernel`, `idt-exceptions`, `interrupts-smp`, `jit-memory`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `microarchitecture-pipeline`, `mos-capacitor`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `page-faults`, `panic-logging`, `page-table-layout`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pmm-algorithms`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `resource-lifetime`, `reset-firmware`, `sorting-searching`, `spinlocks`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `tlb`, `tlb-shootdown`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `vectors-complex-numbers-systems`, `virtual-memory`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
 
 ## Authored chapters that still require expansion
 
@@ -53,7 +53,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 02-computer-architecture | 0 |
 | 03-boot | 0 |
 | 04-kernel | 0 |
-| 05-memory | 2 |
+| 05-memory | 0 |
 | 06-storage | 12 |
 | 07-language-systems | 17 |
 | 08-graphics | 17 |
@@ -67,7 +67,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 16-history | 3 |
 | 17-developer-guide | 0 |
 | 98-maintenance | 2 |
-| **Total** | **104** |
+| **Total** | **102** |
 
 For the exact ordered list, run:
 
