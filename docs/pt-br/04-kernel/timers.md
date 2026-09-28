@@ -45,6 +45,18 @@ O ChrisOS define `PIT_INPUT_HZ = 1193182` e usa divisão inteira.
 
 O divisor precisa caber em 16 bits. Se a frequência pedida for tão alta que o divisor inteiro vire zero, ou tão baixa que o divisor ultrapasse `0xffff`, `pit_init` falha. Frequência zero é rejeitada antes da divisão.
 
+## Faixa aceita de frequência e contrato da API
+
+Os checks da implementação definem um domínio inteiro concreto para a entrada. Como o divisor é calculado por `floor(1.193.182 / frequency_hz)`, ele precisa satisfazer:
+
+```text
+1 <= divisor <= 65.535
+```
+
+Para valores inteiros, 19 Hz é aceito, enquanto 18 Hz produz divisor maior que 16 bits. No extremo superior, pedido de até 1.193.182 Hz produz divisor 1; frequência maior faz a divisão truncar para zero e é rejeitada. Esses são limites de aceitação do software, não afirmação de que toda frequência no intervalo seja útil ou fisicamente precisa.
+
+A API retorna somente sucesso ou falha. Ela não devolve o divisor selecionado nem a frequência efetivamente obtida, então callers não conseguem recuperar o erro de quantização através da interface atual. O boot evita essa ambiguidade operacional escolhendo uma política fixa conhecida: 60 Hz.
+
 ## Sequência de programação
 
 `pit_init(frequency_hz)`:
