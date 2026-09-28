@@ -1,0 +1,22 @@
+digraph pipeline {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.5"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  fetch [label="IF\nFetch RIP + instruction bytes"];
+  ifid [label="IF/ID\nvalid + instruction metadata", shape=record, fillcolor="#f7f7f7"];
+  decode [label="ID\nDecode + source identification"];
+  idex [label="ID/EX\noperands + control + faults", shape=record, fillcolor="#f7f7f7"];
+  execute [label="EX\nALU / branch / address generation"];
+  exmem [label="EX/MEM\nresult + memory metadata", shape=record, fillcolor="#f7f7f7"];
+  memory [label="MEM\nLoad / store path"];
+  memwb [label="MEM/WB\nresult + destination", shape=record, fillcolor="#f7f7f7"];
+  retire [label="WB / retirement\nArchitectural state becomes visible", fillcolor="#dddddd"];
+
+  fetch -> ifid -> decode -> idex -> execute -> exmem -> memory -> memwb -> retire;
+  retire -> fetch [style=dashed, label="redirect / exception / next architectural flow", constraint=false];
+
+  arch [label="Committed architectural state\nRIP, GPRs, RFLAGS, control state", shape=box3d, fillcolor="#ffffff"];
+  retire -> arch [label="commit"];
+  arch -> decode [style=dotted, label="register operands", constraint=false];
+}
