@@ -88,7 +88,7 @@ def check_cmrr() -> None:
 def check_source_contract(source_root: Path) -> None:
     pci_c = (source_root / "kernel" / "metal" / "pci.c").read_text(encoding="utf-8")
     pci_h = (source_root / "kernel" / "metal" / "pci.h").read_text(encoding="utf-8")
-    audit = (source_root / "docs" / "CURRENT_HARDWARE_AUDIT.md").read_text(encoding="utf-8")
+    readme = (source_root / "README.md").read_text(encoding="utf-8")
 
     for anchor in (
         "uint32_t pci_read",
@@ -106,10 +106,8 @@ def check_source_contract(source_root: Path) -> None:
         if anchor not in pci_h:
             raise AssertionError(f"pci.h missing reviewed declaration {anchor!r}")
 
-    if "Nothing below is `PROVEN-HARDWARE`" not in audit:
-        raise AssertionError("hardware audit no longer carries the reviewed evidence boundary")
-    if "No physical machine was booted." not in audit:
-        raise AssertionError("hardware audit no longer states the reviewed physical-test boundary")
+    if "QEMU is the primary integration environment." not in readme or "Real-hardware support is not yet a general supported deployment target." not in readme:
+        raise AssertionError("README.md no longer carries the reviewed physical-test boundary")
 
 
 def check_documents(root: Path) -> None:
@@ -133,7 +131,6 @@ def check_documents(root: Path) -> None:
         "pci_write",
         "kernel/metal/pci.c",
         "kernel/metal/pci.h",
-        "docs/CURRENT_HARDWARE_AUDIT.md",
         "PCI Express Base Specification Revision 7.1",
         "IEEE 802.3-2022",
         "BIPM",
