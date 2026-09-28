@@ -1,0 +1,21 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  publish [label="Publica geração N\nfaixa + snapshots de heartbeat"];
+  ipi [label="IPI 0xF0 para peers online"];
+  poll [label="Peer faz poll / handler de IPI"];
+  inv [label="INVLPG na faixa"];
+  ack [label="seen = N"];
+  reuse [label="reuse_ok = true"];
+  quiet [label="Sem ack além do orçamento"];
+  fence [label="FENCED\nfora do conjunto online futuro"];
+  halt [label="flush observado + halted"];
+  quarantine [label="Frames ficam em quarentena"];
+  publish -> ipi -> poll -> inv -> ack -> reuse;
+  publish -> quiet -> fence;
+  fence -> halt -> reuse;
+  fence -> quarantine [label="até ser seguro"];
+  quarantine -> reuse [label="reap quando seguro"];
+}
