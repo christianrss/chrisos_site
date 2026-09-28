@@ -35,7 +35,7 @@ related:
 Graphs model arbitrary relationships rather than a single hierarchy. Their correctness and cost depend on the exact representation of vertices and edges, whether edges are directed or weighted, and which invariants are required by the subsystem. Union-find, also called disjoint-set union, solves a narrower problem: maintain a partition of elements under repeated merge and connectivity queries. This chapter develops graph models, adjacency representations, reachability, components, cycles, directed acyclic graphs and disjoint-set forests with path compression and union by rank or size. It also draws a strict boundary around current ChrisOS source. The shader semantic analyzer stores lexical scopes through a parent array, and ChrisFS walks a rooted directory hierarchy. Both are tree-shaped special cases, not general graph containers and not union-find. No reusable graph or disjoint-set implementation is established by the reviewed revision, so those algorithms are documented here as foundations rather than attributed to ChrisOS.
 </div>
 
-## Why graphs are different from trees
+## Graphs beyond tree constraints
 
 A tree imposes strong structure:
 
@@ -322,7 +322,7 @@ This makes the scope relation acyclic.
 
 The code is a concrete example of a parent-linked tree, not union-find.
 
-## Why shader scopes are not union-find
+## Shader scope hierarchy versus union-find
 
 Union-find parent pointers have different semantics.
 
@@ -548,7 +548,7 @@ should remain true.
 
 Non-root size entries may be stale if the implementation does not maintain them.
 
-## Why DSU is not a general graph representation
+## DSU versus general graph representation
 
 Union-find answers connectivity under set merges.
 
