@@ -86,11 +86,12 @@ Implemented and merged:
 - search-result deduplication;
 - cache-busting of `site.css` and `site.js` by deployment SHA;
 - search JSON loaded with deployment version and no stale-cache reuse;
+- bounded page/section search text prevents duplicated MkDocs records from exceeding the reader payload budget as the corpus grows;
 - post-build reader smoke tests;
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline: `fd5d6d05a54eac843fdcb20f07ae280439e895c5`.
+Last known successful reader/deploy baseline: `d49e1b20002ffc626bcb523f7041068cb1a7c737`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
