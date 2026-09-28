@@ -169,7 +169,7 @@ def on_page_context(context, page, config, nav):
         'canonical_url': canonical_url,
         'alternate_url': alternate_url,
         'alternate_lang': 'en' if lang == 'pt-br' else 'pt-BR',
-        'x_default_url': urljoin(site_url, 'en/'),
+        'x_default_url': (alternate_url if lang == 'pt-br' and alternate_url else canonical_url if lang == 'en' else urljoin(site_url, 'en/')),
         'description': description,
         'image_url': urljoin(site_url, 'assets/images/ChrisOS_Monolito.png'),
         'in_language': in_language,
