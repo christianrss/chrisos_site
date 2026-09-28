@@ -186,6 +186,10 @@ jobs:
         working-directory: docs-repo
         run: python scripts/check_graph_compact_structures.py --source .source
 
+      - name: Verify sorting, searching and graph algorithms
+        working-directory: docs-repo
+        run: python scripts/check_sort_graph_algorithms.py --source .source
+
       - name: Verify reader JavaScript syntax
         working-directory: docs-repo
         run: |
