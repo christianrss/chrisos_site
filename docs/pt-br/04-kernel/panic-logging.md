@@ -104,6 +104,14 @@ Kernel layout muda com pequenas alterações. Timing e offsets também.
 
 Um crash report sem revisão pode ser impossível de reproduzir. Ao imprimir Git/hash, o sistema conecta a falha ao binário e à documentação da mesma revisão.
 
+## Armazenamento da identidade de build e contrato de formatação
+
+A imagem do kernel contém uma string fixa iniciada por `CHRISOSHASH:` seguida de 64 caracteres zero. A ferramenta de stamping localiza esse marcador depois do link e substitui o campo zerado pelo SHA-256 da imagem vinculada enquanto o placeholder ainda está na forma conhecida. `build_kernel_sha256()` devolve um ponteiro diretamente para a parte do hash dentro dessa string estática, após o prefixo de 12 caracteres.
+
+Revisão Git, build ID e data chegam por macros definidas no build, enquanto a identidade do compilador usa `__VERSION__`. `build_info_format` concatena esses campos em um buffer fornecido pelo caller sem alocar heap. Se a capacidade não comportar todo o texto e o terminador, retorna -1 em vez de produzir saída parcial tratada como válida.
+
+Assim a identidade da compilação fica disponível tanto no log normal de boot quanto no panic sem depender de metadata de filesystem. Ainda é necessário separar identidade de verificação de integridade: imprimir um hash informa qual valor foi incorporado à imagem em execução; validação independente exige comparar esse valor com um artefato confiável ou com resultado de build reproduzível.
+
 ## Ring klog
 
 `klog.c` usa array estático de 8.192 bytes, posição, length, spinlock e ready flag.
