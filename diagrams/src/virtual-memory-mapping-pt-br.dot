@@ -1,0 +1,22 @@
+digraph vm {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  pmm [label="PMM\nownership do frame fisico"];
+  root [label="CR3\nraiz PML4 fisica", shape=box3d, fillcolor="#ffffff"];
+  walk [label="PML4 -> PDPT -> PD -> PT\npropagacao de permissoes"];
+  pte [label="PTE leaf\nframe fisico + flags"];
+  va [label="Endereco virtual"];
+  cpu [label="Traducao da CPU / TLB"];
+  tlb [label="Invalidacao / shootdown de TLB", fillcolor="#dddddd"];
+  free [label="Reuso do frame fisico", fillcolor="#dddddd"];
+
+  pmm -> pte [label="frame"];
+  root -> walk -> pte;
+  va -> cpu;
+  pte -> cpu [label="mapping"];
+  pte -> tlb [label="unmap/mudanca"];
+  tlb -> free [label="apos reuso seguro"];
+  free -> pmm [style=dashed, label="devolver frame"];
+}
