@@ -164,7 +164,7 @@ def on_post_build(config):
             # page-level lead and a bounded section body so the direct client-side
             # search index remains usable on mobile as the 214-chapter corpus grows.
             # Section titles and anchor locations remain indexed independently.
-            text_limit = 400 if kind == 'page' else 2000
+            text_limit = 240 if kind == 'page' else 800
             reader_docs.append({
                 'location': location,
                 'title': doc.get('title', location),
