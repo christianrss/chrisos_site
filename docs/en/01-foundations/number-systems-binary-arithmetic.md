@@ -363,3 +363,579 @@ Example:
 ~~~
 
 Truncation is safe only when loss of upper information is impossible or intended. Accidental narrowing of addresses, lengths or sizes is a correctness and security risk.
+
+
+## Bitwise operations versus arithmetic
+
+Bitwise operations act independently on bit positions:
+
+~~~text
+AND
+OR
+XOR
+NOT
+~~~
+
+Arithmetic operations interpret the vector as a numerical word and propagate carries or borrows across positions.
+
+For example:
+
+~~~text
+0011 + 0001 = 0100
+0011 XOR 0001 = 0010
+~~~
+
+XOR is one-bit addition without carry, but multi-bit integer addition is not equivalent to XOR.
+
+## Masks and fields
+
+A mask selects or modifies bit fields.
+
+To test bit k:
+
+~~~text
+value & (1 << k)
+~~~
+
+To set bit k:
+
+~~~text
+value | (1 << k)
+~~~
+
+To clear bit k:
+
+~~~text
+value & ~(1 << k)
+~~~
+
+To extract a field:
+
+~~~text
+field = (value >> shift) & mask
+~~~
+
+The operation is mechanical; semantic meaning comes from the field-layout contract.
+
+## Left shift
+
+For an unsigned n-bit word, left shift by k corresponds to multiplication by 2^k modulo the width when shifted-out bits are discarded:
+
+~~~text
+(x << k) mod 2^n
+=
+x · 2^k mod 2^n
+~~~
+
+Bits leaving the word are lost.
+
+A language or ISA can impose additional rules for shift counts; those rules must be read from the actual execution contract.
+
+## Logical right shift
+
+Logical right shift inserts zeros at the high end.
+
+For unsigned values:
+
+~~~text
+x >> k = floor(x / 2^k)
+~~~
+
+under the ordinary fixed-width interpretation.
+
+## Arithmetic right shift
+
+Arithmetic right shift of a negative two's-complement value replicates the sign bit under the usual x86 behavior.
+
+~~~text
+11110000 arithmetic >> 2
+=
+11111100
+~~~
+
+Logical and arithmetic right shifts are therefore different when the top bit is one.
+
+## Rotations
+
+A rotate moves shifted-out bits back into the opposite side.
+
+~~~text
+10000001 rotate-left 1
+=
+00000011
+~~~
+
+Rotation preserves bit population but is not ordinary multiplication or division.
+
+## Fractional positional notation
+
+Binary positional notation extends below the radix point.
+
+~~~text
+101.101₂
+=
+1·2² + 0·2¹ + 1·2⁰ + 1·2^-1 + 0·2^-2 + 1·2^-3
+=
+5.625
+~~~
+
+Not every decimal fraction has a finite binary representation. Decimal 0.1 repeats in binary, which is one source of representation error in floating-point computation.
+
+## Fixed-point representation
+
+A fixed-point word assigns an implicit scale.
+
+If integer pattern I represents:
+
+~~~text
+value = I / 2^F
+~~~
+
+then F bits act as fractional precision.
+
+Fixed-point arithmetic can reuse integer hardware, but the contract must define:
+
+- scale;
+- signedness;
+- rounding;
+- multiplication width;
+- overflow behavior.
+
+The current reviewed ChrisOS tree does not define one universal fixed-point ABI.
+
+## Floating-point boundary
+
+Floating-point represents sign, exponent and significand rather than a single fixed binary-point location.
+
+It requires separate treatment of:
+
+- normalized and subnormal numbers;
+- infinities;
+- NaNs;
+- rounding;
+- exceptions.
+
+ChrisArchitectureState contains XMM byte storage, but that alone does not establish complete floating-point execution semantics in ChrisCPU.
+
+## Endianness and significance are distinct
+
+The 32-bit integer:
+
+~~~text
+0x12345678
+~~~
+
+has fixed numerical bit weights.
+
+In little-endian memory its bytes appear at increasing addresses as:
+
+~~~text
+78 56 34 12
+~~~
+
+The numerical value remains 0x12345678 when loaded under the corresponding byte-order contract.
+
+Endianness changes byte storage order; it does not redefine positional significance inside the abstract integer.
+
+## ChrisArchitectureState and numerical width
+
+Current ChrisOS main defines many architectural fields as uint64_t in ChrisArchitectureState.
+
+The general-purpose register array is:
+
+~~~text
+uint64_t gpr[16]
+~~~
+
+and named fields such as rax, rcx and rip use 64-bit storage.
+
+This does not mean every x86 operation is 64-bit. Instruction semantics select operand width, while the container remains wide enough to store architectural state.
+
+Container width and active operand width are distinct contracts.
+
+## ChrisCPU operand masks
+
+The reviewed flags.c defines masks conceptually as:
+
+~~~text
+1 byte -> 0xFF
+2 bytes -> 0xFFFF
+4 bytes -> 0xFFFFFFFF
+otherwise -> 0xFFFFFFFFFFFFFFFF
+~~~
+
+chris_flags_bin masks both operands before arithmetic.
+
+For its expected operand-size values, the helper therefore models:
+
+~~~text
+8
+16
+32
+64
+~~~
+
+bit arithmetic.
+
+It is not an arbitrary-width integer library.
+
+## ChrisCPU widened addition
+
+For ADD and ADC, ChrisCPU uses an unsigned 128-bit host intermediate:
+
+~~~text
+wide = aa + bb + carry_in
+~~~
+
+It retains the low architectural-width bits and detects carry from the bits above the selected width.
+
+This is a software technique for preserving the mathematical intermediate result long enough to derive a narrower architectural result and carry.
+
+It does not mean an ordinary guest ADD architecturally produces a 128-bit destination.
+
+## ChrisCPU signed-overflow predicates
+
+For addition, current source computes a predicate equivalent to:
+
+~~~text
+((aa XOR r) AND (bb XOR r) AND sign_bit) != 0
+~~~
+
+For subtraction it uses:
+
+~~~text
+((aa XOR bb) AND (aa XOR r) AND sign_bit) != 0
+~~~
+
+These are Boolean expressions over finite-width two's-complement patterns.
+
+They separate signed overflow from unsigned carry or borrow.
+
+## Conditions and numerical interpretation
+
+chris_cc_true uses different status combinations for unsigned and signed order.
+
+Conceptually:
+
+- CF participates in unsigned comparisons;
+- SF and OF together participate in signed comparisons;
+- ZF represents equality.
+
+The same bits in a register can therefore be ordered differently depending on interpretation.
+
+Signedness is not permanently attached to the stored pattern.
+
+## ChrisASM numeric parsing
+
+The reviewed parse_u64 accepts decimal text by default and hexadecimal text with 0x or 0X prefix.
+
+It does not currently accept a 0b binary prefix in that function.
+
+Each digit is accumulated by:
+
+~~~text
+v = v·base + d
+~~~
+
+after overflow checking.
+
+This is a direct implementation of positional-numeral evaluation.
+
+## ChrisASM little-endian emission
+
+emit_u32 decomposes a value as:
+
+~~~text
+byte 0 = v & 0xFF
+byte 1 = (v >> 8) & 0xFF
+byte 2 = (v >> 16) & 0xFF
+byte 3 = (v >> 24) & 0xFF
+~~~
+
+emit_u64 applies the same principle to eight bytes.
+
+Thus:
+
+~~~text
+numerical interpretation
+!=
+byte-order encoding
+~~~
+
+A numerical value is first established, then serialized according to a byte-order contract.
+
+## Graphics packing as positional arithmetic
+
+gfx_rgb packs three byte-sized channels:
+
+~~~text
+(red << 16) | (green << 8) | blue
+~~~
+
+The fields occupy:
+
+~~~text
+bits 16..23  red
+bits  8..15  green
+bits  0..7   blue
+~~~
+
+Because they do not overlap, the same packed value can be expressed numerically as:
+
+~~~text
+red·2^16 + green·2^8 + blue
+~~~
+
+This is positional arithmetic applied to a software data layout.
+
+## Initialization and control-flow boundary
+
+Number systems have no runtime initialization.
+
+The relevant software control flows are ordinary consumers of numerical contracts:
+
+~~~text
+assembly source text
+    ↓
+parse_u64
+    ↓
+uint64_t value
+    ↓
+emit_u32 / emit_u64
+    ↓
+encoded bytes
+~~~
+
+and:
+
+~~~text
+decoded operands
+    ↓
+chris_flags_bin
+    ↓
+width-masked result + status flags
+    ↓
+instruction execution state
+~~~
+
+The mathematics is stateless; the software paths using it are not.
+
+## State and data structures
+
+Relevant reviewed structures include:
+
+- ChrisArchitectureState for architectural register/state storage;
+- assembler static byte buffers and length counters;
+- caller-owned result storage passed to chris_flags_bin;
+- packed uint32_t color values produced by gfx_rgb.
+
+The underlying integer interpretation remains a contract over bits.
+
+No separate runtime object called a number system exists.
+
+## Algorithms and complexity
+
+The main algorithms in this chapter have explicit costs:
+
+| Operation | Complexity |
+|---|---:|
+| parse k digits with Horner evaluation | O(k) |
+| format positive integer N in base b | O(log_b N) digit extractions |
+| fixed-width mask/shift on one machine word | O(1) at this abstraction |
+| sign/zero extension of one native-width word | O(1) |
+| arbitrary-precision arithmetic | outside this chapter |
+
+ChrisASM parse_u64 uses O(k) time and O(1) auxiliary state for a bounded token.
+
+## Memory ownership
+
+Numerical values do not own memory; storage does.
+
+In the reviewed code:
+
+- ChrisArchitectureState is part of emulator CPU state;
+- chris_flags_bin receives values and optionally writes through a caller-owned result pointer;
+- parse_u64 writes to a caller-provided uint64_t;
+- assembler emitters mutate assembler-owned static section buffers;
+- gfx_rgb returns a value and allocates nothing.
+
+The arithmetic rule and the ownership rule are separate.
+
+## ABI and format boundary
+
+Any stable ABI or persistent format must specify enough information to reconstruct the integer meaning:
+
+- bit width;
+- signedness;
+- byte order;
+- field position;
+- scaling if fixed-point;
+- reserved values;
+- overflow or wrap expectations where relevant.
+
+The phrase "integer field" is insufficient for a durable binary contract.
+
+The data-representation chapter applies these rules to pointers, structures, object formats, filesystems and device layouts.
+
+## Concurrency
+
+Pure arithmetic on local values has no shared-state race.
+
+A shared-memory update is a different problem.
+
+~~~text
+x = x + 1
+~~~
+
+is not automatically atomic because integer addition is mathematically well-defined.
+
+The implementation performs a read, computes a value and writes a value unless an architectural atomic primitive or synchronization mechanism provides a stronger contract.
+
+Therefore:
+
+~~~text
+arithmetic semantics
+!=
+memory atomicity
+~~~
+
+## Failure modes
+
+| Error | Consequence |
+|---|---|
+| wrong width | truncation or wrong mask |
+| wrong signedness | incorrect comparison/range |
+| unchecked unsigned wrap | size/address error |
+| incorrect sign extension | wrong negative value |
+| incorrect zero extension | changed signed interpretation |
+| bad shift count | language/ISA-specific fault or wrong result |
+| wrong byte order | corrupted encoded value |
+| parser overflow | invalid constant accepted or rejected incorrectly |
+| mixed fixed-point scales | numerically plausible but wrong result |
+
+The stored bits can look valid even when their interpretation is wrong.
+
+## Security implications
+
+Integer mistakes are a core systems-security boundary.
+
+Common dangerous patterns include:
+
+- allocation-size multiplication overflow;
+- bounds-check truncation;
+- signed/unsigned comparison mismatch;
+- pointer narrowing;
+- shift-derived mask errors;
+- length addition wraparound.
+
+Unsigned modular behavior can be deterministic and still be semantically unsafe.
+
+Code controlling memory sizes or addresses should prove the range before relying on a finite-width result.
+
+## Performance considerations
+
+For native fixed-width integers, individual arithmetic operations are treated as constant-time at the algorithmic level used here, although actual instruction latency and throughput depend on the microarchitecture.
+
+Base conversion is not constant in input length.
+
+A k-digit parse is O(k), while formatting a positive integer N in base b takes O(log_b N) digit extraction steps.
+
+Bit tricks should not replace clearer arithmetic merely because they appear lower level. Compiler output and measured performance are the relevant evidence for optimization.
+
+## Current Intel architectural context
+
+Intel's public Intel 64 and IA-32 Software Developer's Manual set was updated in September 2026 and the manual page lists version 093.
+
+Volume 1 describes the basic architecture and programming environment; Volume 2 defines instruction semantics.
+
+These manuals establish the architectural contracts for register widths, arithmetic, shifts and status flags on Intel 64/IA-32 processors.
+
+ChrisCPU must be validated against the particular architectural semantics it intends to emulate rather than against generic intuition about binary arithmetic.
+
+## Validation evidence for this chapter
+
+The chapter-specific deterministic checker validates:
+
+~~~text
+101101₂ = 45
+0x2D = 45
+
+max unsigned n-bit value = 2^n - 1
+
+(250 + 10) mod 256 = 4
+
+signed_8(0xFF) = -1
+signed_8(0x80) = -128
+
+sign_extend_8_to_16(0xFB) = 0xFFFB
+zero_extend_8_to_16(0xFB) = 0x00FB
+
+unsigned left-shift modulo width
+
+Horner parsing
+
+RGB packing:
+red·2^16 + green·2^8 + blue
+~~~
+
+The checker also verifies current source anchors in flags.c, chris_arch.h, chrisasm.c and graphics.c.
+
+It does not claim complete x86 arithmetic conformance.
+
+## Current limitations
+
+This chapter intentionally does not attempt to fully cover:
+
+- arbitrary-precision integer algorithms;
+- IEEE 754 floating-point semantics;
+- decimal floating-point;
+- cryptographic multiprecision arithmetic;
+- SIMD lane arithmetic;
+- saturating arithmetic;
+- the complete C integer-conversion model;
+- every x86 arithmetic instruction.
+
+Those belong to later or specialized treatments.
+
+## Roadmap boundary
+
+The curriculum transition is:
+
+~~~text
+logic levels
+    ↓
+Boolean algebra
+    ↓
+number systems and finite-width arithmetic
+    ↓
+data representation and layout
+    ↓
+combinational arithmetic circuits
+    ↓
+ISA-visible registers and machine code
+~~~
+
+The existing data-representation chapter depends on this chapter because width, signedness, masking and byte order require an explicit finite-bit numerical model.
+
+## Revision provenance
+
+Implementation-facing statements were reconciled against ChrisOS main revision da3df29cb397932c43d32373871fb9380e688ade.
+
+Reviewed sources:
+
+- chrisvm/cpu/emulator/flags.c;
+- chrisvm/chris_arch.h;
+- compiler/chrisasm/chrisasm.c;
+- kernel/gfx/graphics.c.
+
+Reviewed symbols:
+
+- chris_flags_bin;
+- chris_cc_true;
+- ChrisArchitectureState;
+- parse_u64;
+- emit_u32;
+- emit_u64;
+- gfx_rgb.
+
+The current Intel 64 and IA-32 Software Developer's Manual page was checked as the primary architectural reference; Intel lists the manual set as version 093 in September 2026. WG14 committee material was checked for contemporary C23 integer-representation context, but this chapter does not substitute committee discussion for a complete language-standard treatment.
