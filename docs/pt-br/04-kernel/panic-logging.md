@@ -48,6 +48,22 @@ Assim serial é raiz do diagnóstico. Bootinfo, self-tests, device status e pani
 
 Quanto menos dependências o caminho de emergência tiver, menor a chance de a própria observabilidade falhar recursivamente.
 
+## Inicialização da serial e estado de disponibilidade
+
+`serial_init` começa inicializando o klog, depois programa a COM1 e executa um teste de loopback. A rotina grava o byte `0xAE` com o modem-control register em modo de loopback e verifica se a leitura do data register retorna o mesmo valor. Em caso de falha, define `serial_available = false` e retorna false; no sucesso, restaura o controle normal, marca a serial como disponível e inicializa `g_serial_lock`.
+
+O boot trata falha da serial como fatal antes da maior parte da inicialização do kernel: `kstart` executa `cli` e entra diretamente em loop de `hlt`, sem chamar o formatador normal de `panic`. É um failure path distinto porque o transporte usado pelo panic é justamente o subsistema cuja inicialização falhou.
+
+Depois do sucesso, a ordem de locks por caractere é fixa:
+
+```text
+g_lock (klog) -> g_serial_lock (COM1)
+```
+
+O código serial atual não adquire esses locks na ordem inversa, evitando uma inversão AB/BA interna ao subsistema. Ainda assim, ambos são não reentrantes; entrar novamente no logging enquanto a mesma CPU já possui um deles continua inseguro.
+
+Uma falha no probe da COM1 não impede tecnicamente `serial_putc` de registrar bytes no klog, porque o byte é gravado no ring antes do teste de `serial_available`. No fluxo normal de boot esse fallback tem utilidade limitada, pois `kstart` para imediatamente quando `serial_init` retorna false, mas essa diferença é importante para descrever corretamente o contrato da API.
+
 ## `panic`
 
 `panic(message)` é `_Noreturn`.
