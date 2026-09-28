@@ -44,7 +44,7 @@ https://os.christiansoftware.org/
 
 ## Learning structure
 
-The sidebar is generated from `data/curriculum.yml`: language → level → module → chapter. All 183 planned chapter IDs have exactly one position. Existing URLs are preserved. `depends_on` generates prerequisite links and is checked for cycles; planned missing prerequisites remain visible as gaps. The learning-path catalogue shows missing chapters and chapters needing expansion.
+The sidebar is generated from `data/curriculum.yml`: language → level → module → chapter. All 221 planned chapter IDs have exactly one position. Existing URLs are preserved. `depends_on` generates prerequisite links and is checked for cycles; planned missing prerequisites remain visible as gaps. The learning-path catalogue shows missing chapters and chapters needing expansion.
 
 ```bash
 python scripts/next_work.py --lang en --limit 12
