@@ -10,7 +10,6 @@ sources:
   - kernel/gfx/tri.c
   - kernel/gfx/scene.c
   - kernel/gfx/gfx3d_ctx.c
-  - docs/GFX3D.md
 symbols: []
 depends_on:
   - pixels-framebuffer
