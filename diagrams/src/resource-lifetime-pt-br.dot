@@ -1,0 +1,18 @@
+digraph G {
+  rankdir=LR;
+  graph [bgcolor="transparent", pad="0.2"];
+  node [shape=box, style="rounded", fontname="Arial"];
+  edge [fontname="Arial"];
+  create [label="Criar / alocar"];
+  init [label="Inicializar"];
+  publish [label="Publicar / transferir uso"];
+  quiesce [label="Bloquear novos usuários\naguardar uso em voo"];
+  detach [label="Remover referências / handles"];
+  unmap [label="Desmapear / fechar / destruir"];
+  reclaim [label="Recuperar backing storage"];
+  reset [label="Limpar estado de ownership"];
+  create -> init -> publish -> quiesce -> detach -> unmap -> reclaim -> reset;
+  tlb [shape=note,label="Memória visível por TLB:\nreclaim somente após shootdown\nou quarantine"];
+  unmap -> tlb [style=dashed];
+  tlb -> reclaim [style=dashed];
+}
