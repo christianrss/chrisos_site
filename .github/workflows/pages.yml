@@ -204,6 +204,10 @@ jobs:
         working-directory: docs-repo
         run: mkdocs build --strict
 
+      - name: Verify SEO and discovery artifacts
+        working-directory: docs-repo
+        run: python scripts/check_discovery.py --site site
+
       - name: Smoke test generated reader
         working-directory: docs-repo
         run: python scripts/check_built_reader.py --site site
