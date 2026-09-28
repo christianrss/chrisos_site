@@ -22,6 +22,14 @@ sources:
 <b>Resumo.</b> ChrisOS é um ecossistema experimental de sistemas que contém kernel x86-64, ChrisC e CLVM, componentes nativos de compilador/assembler/linker, ChrisFS, subsistemas gráficos e de desktop, rede e a pilha de emulação ChrisVM/ChrisCPU. A documentação é organizada como corpus técnico ordenado por dependências, dos fundamentos físicos à pesquisa em sistemas operacionais.
 </div>
 
+<div class="author-signature" role="group" aria-label="Autoria do projeto">
+<span class="author-signature-kicker">Um sistema computacional de</span>
+<strong>Christian Rafael de Souza Silva</strong>
+<span class="author-signature-role">Criador e desenvolvedor principal do ChrisOS</span>
+<span class="author-credentials">Tecnólogo em Ciência de Dados · Especialista em Engenharia Eletrônica e Robótica</span>
+<span class="author-studies">Graduações em andamento: Matemática · Ciências Econômicas · Engenharia Elétrica · Engenharia Mecânica</span>
+</div>
+
 ## Organização canônica
 
 A documentação possui duas camadas organizacionais independentes:
