@@ -1,6 +1,7 @@
-site_name: ChrisOS Research Project
-site_description: Technical documentation of ChrisOS, computing systems, kernel engineering, compilers, graphics and emulation.
+site_name: ChrisOS — Operating System & Systems Research
+site_description: ChrisOS is an experimental x86-64 operating system and systems research project covering kernel engineering, compilers, filesystems, graphics, networking, emulation and virtualization.
 site_url: https://os.christiansoftware.org/
+site_author: Christian Rafael de Souza Silva
 repo_url: https://github.com/christianrss/ChrisOS
 edit_uri: https://github.com/christianrss/chrisos_site/edit/main/docs/
 
