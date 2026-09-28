@@ -350,6 +350,22 @@ The current MMIO path explicitly uses cache-control flags when mapping devices.
 
 The HHDM's attributes come from the bootloader's paging setup and are appropriate for the RAM/direct-map contract it establishes.
 
+## Address conversion does not transfer ownership
+
+Computing an HHDM pointer does not reserve or pin the underlying frame.
+
+A caller can calculate the alias of a frame that is currently free, reserved for another subsystem or about to be reclaimed. The arithmetic has no knowledge of PMM lifetime.
+
+Therefore a correct access requires two independent preconditions:
+
+```text
+mapping exists and has suitable attributes
+AND
+caller has a valid lifetime/ownership reason to access the frame
+```
+
+This separation is essential during teardown. Keeping an old HHDM pointer does not prevent the frame from being returned to PMM and reassigned.
+
 ## Security boundary
 
 The HHDM maps physical RAM into privileged kernel virtual space. User-mode pages must not gain access to the HHDM merely because process page tables share upper-half kernel mappings.
