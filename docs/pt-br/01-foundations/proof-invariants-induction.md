@@ -792,6 +792,290 @@ Provas algorítmicas precisam declarar quais operações contam como custo unit�
 
 Os capítulos de complexidade formalizam esses modelos.
 
+## Precondições, pós-condições e contratos
+
+Uma precondição descreve o que deve ser verdadeiro antes de uma operação ser chamada.
+
+Uma pós-condição descreve o que a operação garante ao retornar para um determinado resultado.
+
+Para uma operação de append limitada:
+
+~~~text
+pre:
+    0 <= count <= capacity
+
+pós-condição de sucesso:
+    old_count < capacity
+    new_count = old_count + 1
+    elementos antigos são preservados
+
+pós-condição de falha:
+    old_count = capacity
+    count não excede capacity
+~~~
+
+Isso é mais forte do que afirmar que “append verifica capacidade”. O contrato identifica a relação entre o estado de entrada e o de saída.
+
+Retornos de erro fazem parte do contrato e não devem ficar fora da prova.
+
+## Raciocínio no estilo Hoare
+
+Uma notação compacta para raciocínio sequencial é a tripla de Hoare:
+
+~~~text
+{P} C {Q}
+~~~
+
+em que P é precondição, C é comando e Q é pós-condição.
+
+A tripla afirma que, se C começa em estado que satisfaz P e termina, o estado resultante satisfaz Q.
+
+Isso é partial correctness enquanto a terminação não for demonstrada separadamente.
+
+Para mascaramento de largura:
+
+~~~text
+{true}
+r = x & M
+{r & ~M = 0}
+~~~
+
+a pós-condição decorre da álgebra bitwise.
+
+Para operações de memória, a precondição também precisa descrever armazenamento válido. Correção aritmética sozinha não justifica dereference.
+
+## Correção parcial e total
+
+Partial correctness significa:
+
+~~~text
+se a operação termina,
+o resultado satisfaz a pós-condição
+~~~
+
+Total correctness também demonstra terminação.
+
+Um parser loop pode ser parcialmente correto e ainda ser defeituoso se determinada entrada fizer o cursor deixar de avançar.
+
+Da mesma forma, loop que sempre termina pode retornar resultado inválido.
+
+As obrigações devem ser revisadas separadamente.
+
+Para loops sobre token finito, total correctness normalmente exige:
+
+- limite no tamanho do token;
+- cursor que avança em toda iteração de sucesso;
+- ausência de branch que retorne ao mesmo estado sem progresso.
+
+## Frame conditions
+
+Uma prova deve declarar não apenas o que muda, mas também o que precisa permanecer inalterado.
+
+Frame condition descreve estado fora do conjunto de modificações da operação.
+
+Para função que altera um único slot:
+
+~~~text
+slot i pode mudar
+todos os slots j != i permanecem inalterados
+~~~
+
+Frame reasoning é central em kernel code porque uma função pode produzir resultado local correto e ainda corromper estado não relacionado.
+
+O helper write_status em flags.c ilustra a ideia: ele limpa e recalcula bits específicos de status enquanto preserva outros bits de flags recebidos e força o bit 1. Uma prova completa incluiria obrigações sobre bits modificados e preservados.
+
+## Aliasing e hipóteses de ownership
+
+Frame conditions tornam-se mais difíceis quando duas expressões podem apontar para o mesmo armazenamento.
+
+Se pointers p e q podem alias, não é válido provar que write por p deixa o objeto de q intacto sem conhecer essa relação.
+
+Modelos de ownership reduzem a incerteza ao definir qual componente pode modificar determinado armazenamento.
+
+Uma prova de função com output pointer deve declarar se ele pode sobrepor input storage ou global state.
+
+O chris_flags_bin atual recebe operandos escalares por valor e um result pointer opcional. A prova aritmética local não demonstra segurança para result pointer arbitrariamente inválido; validade do pointer é precondição do caller.
+
+## Invariantes abstratos e concretos
+
+Um invariante abstrato descreve propriedade semântica.
+
+Um invariante concreto descreve como a representação implementa essa propriedade.
+
+Para uma tabela de símbolos:
+
+Abstrato:
+
+~~~text
+símbolos ativos formam mapeamento finito limitado
+~~~
+
+Concreto:
+
+~~~text
+0 <= nsym <= CHRISO_SYM_MAX
+entradas ativas ocupam sym[0:nsym]
+~~~
+
+Um argumento de refinement conecta estado concreto ao modelo abstrato.
+
+Essa separação é importante porque a implementação pode mudar de array fixo para tabela dinâmica sem que o contrato semântico tenha de mudar na mesma proporção.
+
+A documentação não deve confundir uma representação com o único significado possível do subsistema.
+
+## Indução sobre arrays limitados
+
+Muitos loops de sistemas estabelecem propriedades sobre prefixos de arrays.
+
+Considere:
+
+~~~text
+for i = 0 .. n-1:
+    output[i] = transform(input[i])
+~~~
+
+Um invariante útil é:
+
+~~~text
+0 <= i <= n
+e
+para todo j < i:
+    output[j] = transform(input[j])
+~~~
+
+A inicialização vale em i = 0 porque o prefixo quantificado está vazio.
+
+A preservação decorre do write em output[i] segundo a transformação seguido do incremento de i.
+
+Na terminação i = n, a propriedade cobre o array inteiro.
+
+Esse padrão se aplica a byte emission, inicialização de tabelas, loops de cópia e construção de descriptors.
+
+## Propriedades de fechamento
+
+Um conjunto S é fechado sob operação f quando aplicar f a membros válidos produz outro membro de S.
+
+Fechamento expressa preservação de invariante de forma compacta.
+
+Para o domínio de resultados mascarados de n bits:
+
+~~~text
+S = {x | x & ~M = 0}
+~~~
+
+a operação:
+
+~~~text
+f(x) = x & M
+~~~
+
+sempre produz elemento de S.
+
+Free lists, endereços normalizados e índices limitados frequentemente possuem requisitos semelhantes: operações públicas devem mapear estados válidos de volta ao conjunto de estados válidos.
+
+Se uma operação pode sair de S, ou o contrato admite um estado excepcional ou o invariante não é de fato preservado.
+
+## Propriedades monotônicas
+
+Alguns estados evoluem monotonicamente.
+
+Exemplos:
+
+- cursor de parser que apenas avança;
+- high-water mark que nunca diminui;
+- conjunto de fatos descobertos que apenas cresce;
+- generation number que aumenta a cada substituição.
+
+Monotonicidade simplifica provas porque estados antigos não reaparecem sem reset explícito.
+
+Também pode sustentar terminação: índice limitado e monotonicamente crescente só pode avançar um número finito de vezes.
+
+O escopo precisa ser explícito. Um contador que faz wrap não é globalmente monotônico sob a ordem inteira comum.
+
+## Contraexemplos
+
+Uma afirmação universal é refutada por um único contraexemplo válido.
+
+Para o candidato:
+
+~~~text
+todo retângulo armazenado é mínimo
+~~~
+
+o fallback de tela cheia em gfx_mark_dirty é um contraexemplo imediato: ele armazena propositalmente área maior que a união exata das regiões sujas.
+
+A afirmação mais forte é falsa.
+
+O invariante correto é cobertura, e não minimalidade.
+
+Buscar contraexemplos é forma prática de refinar documentação antes de tentar uma prova.
+
+Valores de fronteira são especialmente úteis:
+
+- zero;
+- capacidade máxima;
+- um além da capacidade;
+- coleção vazia;
+- elemento único;
+- regiões que se sobrepõem ou não;
+- mínimos e máximos signed.
+
+## Descoberta de invariantes a partir do código
+
+Uma revisão disciplinada pode derivar invariantes candidatos sem inventá-los.
+
+1. Identificar variáveis de estado e seus limites de armazenamento.
+2. Listar todos os writers.
+3. Registrar checks executados antes de cada mutação.
+4. Identificar relações assumidas pelos readers.
+5. Inspecionar failure paths para estado parcialmente atualizado.
+6. Testar transições de fronteira.
+7. Declarar a propriedade mais fraca sustentada por todos os writers observados.
+8. Adicionar afirmações mais fortes apenas quando todos os caminhos de mutação as justificam.
+
+Esse processo separa evidência de expectativa.
+
+Um comentário dizendo “tabela limitada” é apenas uma pista. O invariante vem do tamanho do array, checks do count e todos os writes sobre o count.
+
+## Assertions como sentinelas de invariantes
+
+Assertions podem ser colocadas em fronteiras de abstração para detectar violações cedo.
+
+Formas úteis incluem:
+
+~~~text
+count <= capacity
+index < active_count
+limites do retângulo estão ordenados
+alinhamento de pointer satisfaz potência de dois exigida
+state enum pertence ao conjunto legal
+~~~
+
+Em kernels de produção algumas assertions podem virar panic paths, retornos de erro ou checks apenas de debug.
+
+Remover uma assertion em runtime não remove o invariante subjacente. Remove apenas um mecanismo de detecção.
+
+O invariante continua precisando ser preservado pela construção do código.
+
+## Granularidade de prova
+
+Provas grandes ficam manejáveis quando decompostas.
+
+Para patch_fixups, obrigações separadas incluem:
+
+- iteração de fixup permanece dentro de g_nfix;
+- lookup de label tem sucesso;
+- identidade da seção coincide;
+- faixa de patch contém quatro bytes;
+- cálculo de displacement tem a semântica esperada;
+- conversão para int32_t é válida para o caso suportado;
+- quatro bytes emitidos representam o encoding escolhido.
+
+Uma frase como “fixups são seguros” esconde todas essas obrigações.
+
+A documentação deve nomear cada uma e distinguir o que é checado diretamente, o que é derivado e o que permanece limitação.
+
+
 ## Evidência de validação
 
 O checker determinístico associado a este capítulo valida obrigações representativas:
