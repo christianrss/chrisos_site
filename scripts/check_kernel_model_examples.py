@@ -211,37 +211,47 @@ def panic_checks(source: Path) -> None:
         raise AssertionError("panic unexpectedly gained a return path")
 
 
-def architecture_docs_checks(source: Path) -> None:
-    locking = source / "docs/LOCKING.md"
-    ownership = source / "docs/RESOURCE_OWNERSHIP.md"
-
+def architecture_contract_checks(source: Path) -> None:
     require(
-        locking,
+        source / "compiler/jit/jit_compile.c",
         [
-            "JIT compile lock",
-            "MM lock",
-            "Heap lock",
-            "PMM lock",
-            "User address spaces are BSP-only.",
-            "proc_switch",
-            "There is no socket lock yet.",
+            "static Spinlock g_jit_compile_lock;",
+            "One compilation at a time.",
         ],
     )
-
+    require(source / "kernel/metal/mm.c", ["static Spinlock mm_lock;"])
+    require(source / "kernel/metal/heap.c", ["static Spinlock heap_lock;"])
+    require(source / "kernel/metal/pmm.c", ["static Spinlock pmm_lock;"])
     require(
-        ownership,
+        source / "kernel/metal/proc.c",
         [
-            "Process PML4 and user-half page tables",
-            "proc_destroy",
-            "Native file descriptor",
-            "syscall_close_owner",
-            "Socket",
-            "sock_close_proc",
-            "Kthread stack",
-            "kthread_join",
+            "void proc_destroy(int pid)",
+            "mm_free_user_space(g_proc[pid].cr3);",
+            "syscall_close_owner(pid);",
+            "sock_close_proc(pid);",
         ],
     )
-
+    require(
+        source / "kernel/metal/syscall.c",
+        [
+            "void syscall_close_owner(int pid)",
+            "g_ufile[fd].owner == pid",
+        ],
+    )
+    require(
+        source / "kernel/net/sock.c",
+        [
+            "void sock_close_proc(int pid)",
+            "sock_close_matching(match_proc, pid);",
+        ],
+    )
+    require(
+        source / "kernel/metal/kthread.c",
+        [
+            "void kthread_join(int id)",
+            "static Spinlock g_slot_lock;",
+        ],
+    )
 
 def hwgate_checks(source: Path) -> None:
     path = source / "kernel/gfx/hwgate.c"
@@ -269,7 +279,7 @@ def source_checks(source: Path) -> dict[str, int]:
     clvm_checks(source)
     kthread_checks(source)
     panic_checks(source)
-    architecture_docs_checks(source)
+    architecture_contract_checks(source)
     hwgate_checks(source)
     return counts
 
