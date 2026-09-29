@@ -615,7 +615,7 @@ It can rename across directories inside the same filesystem.
 
 There is no separate cross-filesystem object here, so `CFS_EXDEV` exists in the error enum but this function operates within one `Cfs` instance.
 
-A significant current limitation is that rename does not wrap the add/remove sequence in the journal transaction helpers. Failure between the two directory operations can therefore leave a partial rename state.
+A significant current limitation is that rename does not wrap the add/remove sequence in the journal transaction helpers. Failure between the two directory operations can therefore leave a partial rename state. There is also no descendant/ancestor check: moving a directory into one of its own descendants can create a directory cycle.
 
 ## Permissions
 
@@ -896,6 +896,8 @@ It examines:
 - leaked bitmap allocations.
 
 It builds “seen” allocation state and compares that against the on-disk bitmap.
+
+The directory-graph portion is less complete than the block-ownership portion: it currently inspects only the 12 direct directory blocks, not the single-indirect directory range; duplicate-name tracking resets per directory block; and allocated inode reachability from root is not enforced.
 
 For larger v5 bitmaps it can allocate checker working maps dynamically instead of relying only on the legacy fixed-size arrays.
 

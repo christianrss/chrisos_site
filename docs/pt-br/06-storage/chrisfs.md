@@ -613,7 +613,7 @@ A API é majoritariamente pathname-based.
 
 Pode mover entre diretórios dentro do mesmo filesystem.
 
-Um limite importante é que o add/remove não é encapsulado uniformemente por `jnl_begin`/`jnl_commit`. Falha entre os dois passos pode deixar rename parcial.
+Um limite importante é que o add/remove não é encapsulado uniformemente por `jnl_begin`/`jnl_commit`. Falha entre os dois passos pode deixar rename parcial. Também não existe descendant/ancestor check: mover um diretório para dentro de um de seus próprios descendentes pode criar cycle no graph de diretórios.
 
 ## Permissões
 
@@ -896,6 +896,8 @@ Ele examina:
 - bitmap allocations vazadas.
 
 Ele constrói estado “seen” e compara com o bitmap on-disk.
+
+A parte de directory graph é menos completa que o ownership de blocks: atualmente examina apenas os 12 direct directory blocks, não a faixa single-indirect; duplicate-name tracking reinicia a cada block; e não há enforcement de reachability de todo inode alocado a partir do root.
 
 Para bitmaps v5 maiores, pode alocar mapas de trabalho dinamicamente em vez de depender somente dos arrays fixos legados.
 

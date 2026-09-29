@@ -1,0 +1,19 @@
+digraph chrisfs_directories {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  path [label="path\n<=512 bytes / <=32 componentes", fillcolor="#ffffff"];
+  parse [label="parse_path\nstart[] + len[]"];
+  walk [label="walk_full / walk_parent\nrooted no inode 0"];
+  lookup [label="dir_find\nscan linear\n6 dirents/block"];
+  inode [label="directory inode\n12 direct + 128 single-indirect blocks"];
+  entry [label="CfsDirent\n80 bytes\ninode + type + name_len + name"];
+  mutate [label="mkdir/create/rename/unlink/rmdir"];
+  fsck [label="namespace walk do fsck\natualmente apenas direct blocks", style="rounded,dashed"];
+
+  path -> parse -> walk -> lookup -> inode -> entry;
+  mutate -> walk;
+  mutate -> entry;
+  fsck -> entry [style=dashed];
+}
