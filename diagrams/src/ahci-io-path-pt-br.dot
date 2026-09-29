@@ -1,0 +1,23 @@
+digraph ahci {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+  pci [label="PCI classe 0106\nBAR5 / ABAR", fillcolor="#ffffff"];
+  port [label="Port implementado\nPxSSTS DET=3"];
+  ctl [label="Pagina de controle 4 KiB\nCLB @ 0x000\nFB @ 0x400\nCTBA @ 0x500\nPRDT @ 0x580", shape=box3d];
+  data [label="Pagina DMA de dados 4 KiB\n<= 8 setores"];
+  fis [label="Register FIS H2D\nREAD DMA EXT 0x25\nWRITE DMA EXT 0x35"];
+  ci [label="PxCI slot 0"];
+  disk [label="Device SATA", fillcolor="#dddddd"];
+  poll [label="poll PxCI\ndepois PxTFD / PxIS"];
+  copy [label="copia entre caller\ne pagina DMA interna"];
+  pci -> port;
+  port -> ctl;
+  ctl -> fis;
+  data -> ctl [label="endereco fisico na PRDT"];
+  fis -> ci;
+  ci -> disk;
+  disk -> poll;
+  poll -> copy [label="sucesso"];
+  copy -> data [dir=both];
+}
