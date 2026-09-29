@@ -1,0 +1,31 @@
+digraph storage {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.5"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  fs [label="ChrisFS / installer / particoes"];
+  bd [label="Contrato BlockDevice\nsetores de 512 bytes\nread / write / flush / capacidade", shape=box3d, fillcolor="#ffffff"];
+  reg [label="registro bdev\ntipo / flags / selecao de root"];
+  ata [label="ATA PIO + IDE DMA"];
+  ahci [label="AHCI / SATA DMA"];
+  nvme [label="NVMe queues + PRP DMA"];
+  vblk [label="VirtIO Block virtqueue"];
+  usb [label="USB MSC"];
+  part [label="Visao de particao\noffset LBA + comprimento limitado", fillcolor="#f7f7f7"];
+  media [label="Midia fisica ou virtual", fillcolor="#dddddd"];
+
+  fs -> part;
+  fs -> bd;
+  part -> bd;
+  bd -> reg;
+  reg -> ata;
+  reg -> ahci;
+  reg -> nvme;
+  reg -> vblk;
+  reg -> usb;
+  ata -> media;
+  ahci -> media;
+  nvme -> media;
+  vblk -> media;
+  usb -> media;
+}
