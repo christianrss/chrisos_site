@@ -1,0 +1,25 @@
+digraph ata {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+  bd [label="BlockDevice read/write/flush", fillcolor="#ffffff"];
+  cb [label="ATA callbacks\nchunk request"];
+  dma [label="Bus Master IDE DMA\n<=16 sectors", shape=box3d];
+  bounce [label="8 KiB bounce buffer\n+ one-entry PRDT\nphysical < 4 GiB"];
+  wait [label="IRQ14 or BM completion\nfinite timeout"];
+  abort [label="stop engine\nsoft reset\nwait not busy"];
+  pio [label="PIO fallback\n<=255 sectors\n256 x 16-bit words/sector"];
+  task [label="IDE task file\n28-bit LBA commands"];
+  disk [label="ATA disk / virtual IDE device", fillcolor="#dddddd"];
+  bd -> cb;
+  cb -> dma [label="try first"];
+  dma -> bounce;
+  bounce -> task;
+  task -> disk;
+  disk -> wait;
+  wait -> bd [label="success"];
+  wait -> abort [label="error/timeout"];
+  abort -> pio;
+  cb -> abort [label="DMA unavailable"];
+  pio -> task;
+}
