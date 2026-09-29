@@ -1,0 +1,23 @@
+digraph vblk {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  bd [label="BlockDevice read/write"];
+  cmd [label="Header do request\ntype + sector"];
+  data [label="Pagina DMA de 4 KiB\n<= 8 setores"];
+  status [label="Status byte\ninicial 0xFF"];
+  desc [label="Chain de 3 descriptors\nheader -> data -> status", shape=box3d, fillcolor="#ffffff"];
+  avail [label="Avail ring"];
+  notify [label="Capability PCI notify"];
+  dev [label="Device VirtIO Block"];
+  used [label="Used ring + status"];
+  wait [label="polling limitado"];
+
+  bd -> cmd;
+  bd -> data;
+  cmd -> desc;
+  data -> desc;
+  status -> desc;
+  desc -> avail -> notify -> dev -> used -> wait -> bd;
+}
