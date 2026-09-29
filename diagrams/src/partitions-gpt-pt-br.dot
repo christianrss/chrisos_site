@@ -1,0 +1,23 @@
+digraph gpt {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  disk [label="BlockDevice do disk inteiro", fillcolor="#ffffff"];
+  hdr [label="LBA 1\nEFI PART + CRC do header"];
+  entries [label="LBA 2..33\n128 entries x 128 bytes"];
+  match [label="GUID ChrisFS\nou GUID Linux-data compativel"];
+  view [label="PartView\nLBA relativo -> start + LBA no pai"];
+  cfs [label="validar superblock ChrisFS\ne entao assumir root", fillcolor="#dddddd"];
+
+  install [label="Instalador", fillcolor="#ffffff"];
+  mbr [label="LBA 0\nprotective MBR 0xEE"];
+  ph [label="GPT primaria\nheader + entries + CRCs"];
+  esp [label="ESP @ LBA 2048\nFAT16"];
+  cfsp [label="Particao ChrisFS\nalinhada apos ESP"];
+  backup [label="entries + header de backup\nno final do disk"];
+
+  disk -> hdr -> entries -> match -> view -> cfs;
+  install -> mbr -> ph -> esp -> cfsp;
+  ph -> backup;
+}
