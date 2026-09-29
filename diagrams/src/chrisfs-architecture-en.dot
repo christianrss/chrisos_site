@@ -1,0 +1,24 @@
+digraph chrisfs {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  api [label="ChrisFS pathname API\nread/write/mkdir/rename/fsck", fillcolor="#ffffff"];
+  lock [label="global reentrant FS lock\nshared scratch/cache/journal state"];
+  cache [label="64-line write-through cache\n+ 16-sector contiguous readahead"];
+  meta [label="metadata\nsuperblock + inode table + directories"];
+  alloc [label="allocation\nbitmap + alloc_hint\ndirect/indirect pointer trees"];
+  journal [label="partial metadata journal\nBEGIN / COMMIT / EMPTY\n30 records max"];
+  dev [label="BlockDevice\n512-byte sectors", fillcolor="#dddddd"];
+  fsck [label="fsck\nchecksums + ownership + cycles + leaks", style="rounded,dashed"];
+
+  api -> lock -> cache;
+  cache -> meta;
+  cache -> alloc;
+  cache -> journal;
+  meta -> dev;
+  alloc -> dev;
+  journal -> dev;
+  fsck -> dev [style=dashed];
+  fsck -> meta [style=dashed];
+}
