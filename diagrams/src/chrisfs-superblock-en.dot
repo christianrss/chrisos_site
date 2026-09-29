@@ -1,0 +1,23 @@
+digraph chrisfs_superblock {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  dev [label="BlockDevice / PartView\n512-byte sectors", fillcolor="#ffffff"];
+  lba0 [label="filesystem LBA 0\nChrisFS superblock"];
+  hdr [label="magic + version + geometry\nclean + generation + checksum"];
+  ver [label="version dispatch"];
+  legacy [label="v3/v4\nexact 512-MiB legacy geometry"];
+  v5 [label="v5\ndynamic validated geometry"];
+  geom [label="bitmap -> inode table -> journal -> data"];
+  mount [label="cfs_mount\nbacking sectors >= declared total\njournal replay + root inode check", fillcolor="#dddddd"];
+  fsck [label="cfs_fsck\nre-decode then cross-structure checks", style="rounded,dashed"];
+  format [label="cfs_format\ncfs_geom_for_count -> encode -> flush", fillcolor="#ffffff"];
+
+  dev -> lba0 -> hdr -> ver;
+  ver -> legacy -> geom;
+  ver -> v5 -> geom;
+  geom -> mount;
+  hdr -> fsck [style=dashed];
+  format -> lba0;
+}
