@@ -353,17 +353,18 @@ CFS_MAX_FILE_SIZE = 8,460,288 bytes
 
 which corresponds to direct + indirect + double-indirect addressing.
 
-However, `file_lba` implements triple-indirect traversal, and `cfs_write_at` checks against:
+However, `file_lba` implements triple-indirect traversal, while `cfs_write_at` and `cfs_read_at` check against:
 
 ~~~text
-CFS_MAX_FILE_BYTES = data_sectors × 512
+CFS_MAX_FILE_BYTES
+= CFS_DATA_SECTORS × 512
+= 536,444,416 bytes
+≈ 511.6 MiB
 ~~~
 
-rather than `CFS_MAX_FILE_SIZE`.
+Here `CFS_DATA_SECTORS` is the legacy compile-time geometry constant, not the mounted v5 `fs->super.data_sectors`. Incremental I/O can therefore exercise triple indirection, but a larger v5 filesystem does not raise this API ceiling.
 
-On a sufficiently large filesystem, incremental writes can therefore reach beyond the whole-file `cfs_write` limit and exercise triple-indirect addressing.
-
-This is current behavior, not a unified design guarantee. The API limits should eventually be normalized.
+This is current behavior, not a unified design guarantee. The API limits should eventually be derived from one mounted-volume contract.
 
 ## Whole-file write path
 
@@ -402,7 +403,7 @@ For every touched block it:
 
 After data changes, it updates the inode and commits the journal transaction.
 
-There is no sparse-hole representation. Extending to a distant offset causes block allocation as the addressing path is touched rather than representing holes as implicit zeros.
+There is no valid sparse-hole representation. A distant extension is especially problematic: `cfs_write_at` raises inode size to `offset + size` but allocates only the blocks actually touched by the write. Full blocks skipped between the old EOF and the new offset can remain unallocated, so later sequential reads may return `CFS_ECORRUPT` and fsck may report `size vs blocks`. Callers should currently avoid extending across unallocated block gaps.
 
 ## Truncate implementation
 

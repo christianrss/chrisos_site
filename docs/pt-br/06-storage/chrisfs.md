@@ -353,17 +353,18 @@ CFS_MAX_FILE_SIZE = 8.460.288 bytes
 
 correspondente a direct + indirect + double-indirect.
 
-Porém `file_lba` implementa triple-indirect e `cfs_write_at` verifica contra:
+Porém `file_lba` implementa triple-indirect, enquanto `cfs_write_at` e `cfs_read_at` verificam contra:
 
 ~~~text
-CFS_MAX_FILE_BYTES = data_sectors × 512
+CFS_MAX_FILE_BYTES
+= CFS_DATA_SECTORS × 512
+= 536.444.416 bytes
+≈ 511,6 MiB
 ~~~
 
-e não contra `CFS_MAX_FILE_SIZE`.
+Aqui `CFS_DATA_SECTORS` é a constante compile-time da geometria legada, e não `fs->super.data_sectors` do volume v5 montado. I/O incremental pode, portanto, exercer triple indirection, mas aumentar um filesystem v5 não eleva esse ceiling de API.
 
-Em um filesystem grande o suficiente, writes incrementais podem ultrapassar o limite da API whole-file e exercer triple-indirect.
-
-Isso é comportamento atual, não um contrato unificado. Os limites deveriam ser normalizados futuramente.
+Isso é comportamento atual, não um contrato unificado. Os limites deveriam ser derivados de um único contrato baseado no volume montado.
 
 ## Caminho de whole-file write
 
@@ -402,7 +403,7 @@ Para cada block tocado:
 
 Depois atualiza o inode e faz commit.
 
-Não existe representação de sparse hole. Extensão de arquivo não é modelada como regiões implícitas de zeros.
+Não existe representação válida de sparse hole. Extensão para offset distante é particularmente problemática: `cfs_write_at` aumenta o inode size para `offset + size`, mas aloca somente os blocks efetivamente tocados pela escrita. Full blocks pulados entre o EOF antigo e o novo offset podem continuar não alocados; leituras sequenciais posteriores podem retornar `CFS_ECORRUPT` e fsck pode reportar `size vs blocks`. Callers devem atualmente evitar extensão que atravesse gaps de blocks não alocados.
 
 ## Implementação de truncate
 

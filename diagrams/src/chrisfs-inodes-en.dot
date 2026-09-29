@@ -1,0 +1,23 @@
+digraph chrisfs_inodes {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  inode [label="CfsInode\n128 bytes\nsize + generation + ACL + mtime", fillcolor="#ffffff"];
+  direct [label="12 direct LBAs\n6 KiB"];
+  single [label="single indirect\n128 data pointers\n+64 KiB"];
+  dbl [label="double indirect\n128 x 128 data pointers\n+8 MiB"];
+  triple [label="triple indirect\n128^3 data pointers\n+1 GiB structural range"];
+  bitmap [label="shared data-region bitmap\ndata + pointer blocks"];
+  fsck [label="fsck ownership map\nrange + duplicate + bitmap checks", style="rounded,dashed"];
+
+  inode -> direct;
+  inode -> single;
+  inode -> dbl;
+  inode -> triple;
+  direct -> bitmap;
+  single -> bitmap;
+  dbl -> bitmap;
+  triple -> bitmap;
+  fsck -> bitmap [style=dashed];
+}
