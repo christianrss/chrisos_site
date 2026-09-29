@@ -1,0 +1,21 @@
+digraph ata {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  bd [label="BlockDevice read/write"];
+  dma [label="IDE bus-master DMA\n<= 16 sectors"];
+  prdt [label="PRDT + persistent DMA buffer\nphysical address < 4 GiB", shape=box3d, fillcolor="#ffffff"];
+  irq [label="IRQ14 / BM status"];
+  abort [label="Abort + soft reset"];
+  pio [label="PIO fallback\n<= 255 sectors"];
+  ports [label="Legacy I/O ports\n1F0/3F6 or 170/376"];
+  disk [label="ATA disk"];
+
+  bd -> dma;
+  dma -> prdt -> disk;
+  disk -> irq -> dma;
+  dma -> abort [label="timeout/error"];
+  abort -> pio;
+  pio -> ports -> disk;
+}

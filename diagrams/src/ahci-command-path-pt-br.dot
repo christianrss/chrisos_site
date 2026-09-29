@@ -1,0 +1,22 @@
+digraph ahci {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  pci [label="PCI classe 01:06\ncontrolador AHCI"];
+  bar [label="BAR5 -> janela MMIO"];
+  port [label="Port SATA implementado\nDET == 3"];
+  ctl [label="Pagina DMA de controle 4 KiB\nCLB/FIS/cmd table", shape=box3d, fillcolor="#ffffff"];
+  data [label="Pagina DMA de dados 4 KiB", shape=box3d, fillcolor="#ffffff"];
+  fis [label="Register FIS H2D\nREAD DMA EXT / WRITE DMA EXT"];
+  ci [label="PxCI slot 0\ncompletion por polling"];
+  bd [label="BlockDevice\nsetores de 512 bytes"];
+  disk [label="Device SATA"];
+
+  pci -> bar -> port;
+  port -> ctl;
+  port -> data;
+  ctl -> fis -> ci -> disk;
+  disk -> data;
+  data -> bd;
+}
