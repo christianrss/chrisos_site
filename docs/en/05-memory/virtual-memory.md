@@ -9,28 +9,25 @@ sources:
   - kernel/metal/mm.c
   - kernel/metal/mm.h
   - kernel/metal/pmm.c
+  - kernel/metal/pmm.h
   - kernel/metal/proc.c
   - kernel/metal/proc.h
-  - kernel/metal/irq.c
-  - kernel/metal/bootinfo.c
   - kernel/metal/tlb_proto.c
+  - kernel/metal/tlb_proto.h
 symbols:
   - mm_init
+  - mm_map_cr3
   - map_4k
   - map_4k_nosync
-  - mm_map_cr3
-  - mm_unmap_cr3
   - mm_translate
   - mm_virt_to_phys
-  - mm_clone_kernel_space
-  - mm_free_user_space
   - mm_switch
+  - mm_clone_kernel_space
+  - mm_unmap_cr3
+  - unmap_4k
+  - mm_free_user_space
   - mm_flush_tlb
-  - map_mmio_page
-  - proc_commit
-  - proc_fault_demand
-  - proc_release_user
-  - irq_dispatch
+  - mm_tlb_quarantine
 depends_on:
   - physical-memory
   - hhdm
@@ -44,345 +41,556 @@ related:
   - processes-syscalls
 ---
 
-# Virtual memory and address-space construction
+# Virtual memory and page-table management
 
 ## Scope
 
-Virtual memory is the mechanism that decouples the address produced by an instruction from the physical frame or device register ultimately accessed. On x86-64, the translation state selected by CR3 is part of the architectural execution context: the same virtual address can resolve to different physical memory in different address spaces, can be inaccessible in one context and valid in another, or can intentionally refer to the same shared kernel mapping.
+Virtual memory separates the addresses used by software from the physical locations that hold bytes. On x86-64, CR3 selects the current translation hierarchy; the CPU combines that hierarchy with page-table permissions and TLB state to translate a virtual address into a physical address or raise an exception.
 
-ChrisOS currently uses the four-level x86-64 paging model already established by the boot environment. The kernel does not discard the boot-time hierarchy and rebuild every kernel mapping from first principles during mm_init. Instead, it reads the active CR3, records its physical root as mm_cr3_phys, makes that hierarchy the kernel address-space authority, and incrementally extends it for MMIO, tests, and process-related mappings.
+ChrisOS uses virtual memory for several distinct purposes:
 
-The current implementation is therefore best understood as three cooperating mechanisms:
+- preserving a shared higher-half kernel mapping;
+- creating private user address spaces;
+- mapping process pages on demand;
+- mapping ordinary kernel aliases;
+- reserving a dedicated MMIO window;
+- translating virtual addresses for validation and debugging;
+- isolating user and supervisor access;
+- coordinating mapping teardown with TLB invalidation and delayed physical reuse.
 
-1. **PMM owns physical frames.**
-2. **MM owns translation structures and page-table mutations.**
-3. **The process layer records which leaf frames belong to each user process.**
-
-Those mechanisms intentionally do not collapse into one allocator.
-
-![ChrisOS mapping, translation and process ownership flow](../../assets/diagrams/virtual-memory-mapping-en.svg)
-
-## Architectural translation model
-
-For a conventional 4 KiB page in four-level x86-64 paging, a canonical virtual address is decomposed into four 9-bit table indices and a 12-bit byte offset:
+The current implementation already contains one of the most important systems-level separations in the project:
 
 ~~~text
-63                         48 47    39 38    30 29    21 20    12 11      0
-+----------------------------+--------+--------+--------+--------+----------+
-| canonical sign extension   | PML4   | PDPT   | PD     | PT     | offset   |
-+----------------------------+--------+--------+--------+--------+----------+
-                              9 bits   9 bits   9 bits   9 bits   12 bits
+PMM owns physical frames.
+MM owns virtual-to-physical translations.
+TLB protocol governs when stale translations are no longer usable.
 ~~~
 
-Each table contains 512 entries. At eight bytes per entry, one complete page table occupies exactly 4096 bytes, so a page-table page is itself one ordinary PMM frame.
+These three responsibilities must remain distinct for teardown to be correct.
 
-For virtual address V, the current helpers compute:
+![Relationship between PMM ownership, page tables, CR3, TLB invalidation and physical reuse](../../assets/diagrams/virtual-memory-mapping-en.svg)
+
+## Translation model
+
+A CPU instruction issues a virtual address.
+
+Conceptually:
 
 ~~~text
-pml4 = (V >> 39) & 0x1ff
-pdpt = (V >> 30) & 0x1ff
-pd   = (V >> 21) & 0x1ff
-pt   = (V >> 12) & 0x1ff
-off  = V & 0xfff
+virtual address
+   -> TLB lookup
+      -> hit: cached translation and permissions
+      -> miss: hardware page-table walk from CR3
+            -> present and permitted: physical address
+            -> missing or forbidden: page fault
 ~~~
 
-The processor begins at the physical page-table root in CR3. A normal 4 KiB walk follows PML4E -> PDPTE -> PDE -> PTE, then combines the page-aligned frame address in the PTE with the 12-bit offset.
+Software modifies the in-memory page tables, but the CPU may continue using a cached TLB entry after a PTE changes. Therefore changing page-table memory does not automatically make every CPU observe the new mapping.
 
-ChrisOS also understands huge-page leaves while translating existing mappings. translate_leaf recognizes a PS leaf at the PDPT level as a 1 GiB mapping and a PS leaf at the PD level as a 2 MiB mapping. The public mapping routines, however, create 4 KiB mappings only. Encountering a huge-page entry in a path that map_4k needs to descend through is treated as a fatal unsupported topology rather than being split automatically.
+That distinction is why unmapping and physical-frame reuse require additional synchronization.
 
-## Canonical halves and the ChrisOS split
+## Four-level x86-64 structure
 
-With the four-level 48-bit model, PML4 indices 0 through 255 correspond to the lower canonical half and indices 256 through 511 to the upper canonical half.
-
-ChrisOS uses that hardware property directly when constructing a process address space. mm_clone_kernel_space allocates a fresh zeroed PML4 and copies only entries 256..511 from the kernel PML4. The result is:
-
-| Region | PML4 entries | Current ownership model |
-|---|---:|---|
-| User half | 0..255 | Private hierarchy created for the process |
-| Kernel half | 256..511 | Shared top-level references copied from kernel |
-| PML4 frame | one per process | Allocated from PMM |
-| User leaf frames | process-specific | Recorded in Proc.pages |
-| Kernel leaf frames | shared/kernel-owned | Not freed by process teardown |
-
-This split is a structural isolation boundary. A new process does not inherit the kernel's lower-half user mappings, while it does inherit the kernel's upper-half translation tree.
-
-The copied entries are references to existing lower-level kernel tables, not deep copies. Consequently, process teardown must never recursively free the upper half. mm_free_user_space enforces exactly that rule by walking only PML4 indices below 256.
-
-## Page-table pages are physical objects
-
-Page-table entries contain physical addresses. Kernel code still needs a virtual address to read or modify the page-table page itself.
-
-table_from_phys solves that translation by masking the entry down to its physical frame address and passing it through bootinfo_phys_to_virt. That function applies the boot-provided higher-half direct-map relationship documented in the HHDM chapter.
-
-This creates an important implementation dependency:
+ChrisOS uses the conventional four-level layout:
 
 ~~~text
-page-table entry
-      |
-      | physical child-table address
-      v
-table_from_phys
-      |
-      | HHDM conversion
-      v
-kernel virtual pointer to the table page
+PML4 -> PDPT -> PD -> PT -> 4 KiB frame
 ~~~
 
-The page-table subsystem therefore depends on both PMM and HHDM: PMM supplies frames for newly created tables; HHDM makes those frames directly writable by the kernel.
-
-## Initialization: adopting the active hierarchy
-
-mm_init performs a deliberately small initialization sequence:
-
-1. initialize mm_lock;
-2. initialize the TLB runtime protocol;
-3. read CR3;
-4. mask CR3 to obtain the root page-table physical address;
-5. initialize the dedicated MMIO virtual window cursor;
-6. mark MM as ready;
-7. translate the boot framebuffer virtual address through the active tables;
-8. panic if that framebuffer mapping cannot be recovered.
-
-The key point is what is **not** done: mm_init does not synthesize the complete kernel page-table tree. It adopts the active hierarchy supplied by the boot path and validates a translation that the rest of the graphical boot depends on.
-
-This makes the bootloader paging contract part of the current kernel-memory contract. A future native loader could change where the initial hierarchy comes from without changing the later MM APIs, but that is not the current implementation.
-
-## Creating a kernel mapping
-
-map_4k and map_4k_nosync operate on the kernel root mm_cr3_phys.
-
-The internal map_4k_ex sequence is:
+For a normal 4 KiB page:
 
 ~~~text
-validate MM initialized
-validate 4 KiB alignment
-acquire mm_lock
-walk PML4 -> PDPT -> PD -> PT
-allocate and zero missing intermediate tables
-install leaf PTE = physical frame | flags | PRESENT
-release mm_lock
-optionally invalidate the local virtual address with INVLPG
+virtual bits 47..39 -> PML4 index
+virtual bits 38..30 -> PDPT index
+virtual bits 29..21 -> PD index
+virtual bits 20..12 -> PT index
+virtual bits 11..0  -> byte offset
 ~~~
 
-ensure_table allocates an intermediate table with pmm_alloc, clears all 512 entries, and links it with PRESENT | WRITE. Its allocation path is non-recoverable: failure calls panic through alloc_zero_table.
+Each table contains 512 64-bit entries because:
 
-This API is appropriate for kernel setup paths where inability to construct a required translation is currently treated as fatal.
+~~~text
+4096 bytes / 8 bytes per entry = 512
+~~~
 
-map_4k_nosync omits the final local INVLPG. It is useful only when the caller has a reason to defer synchronization; it does not make the mapping operation otherwise less synchronized, because page-table mutation still occurs under mm_lock.
+Each index is therefore 9 bits.
 
-## Creating a mapping in an arbitrary CR3
+ChrisOS helper functions compute each index by shifting and masking with 0x1ff.
 
-mm_map_cr3 is the recoverable mapping interface used by user-process construction.
+The exact entry geometry is covered separately in page-table-layout; this chapter focuses on mapping lifecycle and ownership.
 
-It differs from map_4k in four important ways:
+## CR3 and the kernel root
 
-- the caller supplies the destination CR3;
-- invalid state or alignment returns -1 rather than panicking;
-- missing intermediate tables use alloc_zero_table_try and can report allocation failure;
-- when MM_USER is requested, the routine propagates the USER bit through required parent entries.
+During mm_init, ChrisOS reads the current CR3 register:
 
-The last property is essential on x86-64. A user-mode access cannot reach a user leaf merely because the leaf PTE has U/S set. The effective path must permit user access at every traversed level. ensure_table_flags therefore upgrades an existing parent entry with MM_USER when a user mapping descends through it.
+~~~text
+mm_cr3_phys = CR3 & MM_ADDR_MASK
+~~~
 
-All intermediate tables are also linked writable. Leaf permissions remain the caller's responsibility.
+The kernel therefore adopts the page-table root already active when control reaches MM initialization rather than constructing a new top-level hierarchy first.
 
-### Partial construction on allocation failure
+mm_kernel_cr3 exposes that physical root.
 
-The current routine does not implement transactional rollback.
+mm_switch writes another physical root into CR3.
 
-Suppose a new PDPT page is allocated successfully and linked into the PML4, but allocation of a later PD or PT page fails. mm_map_cr3 returns -1, but the already-created intermediate table remains reachable from the address-space root.
+CR3 is a physical-address contract. Passing an HHDM virtual pointer instead of a page-table physical address would be incorrect.
 
-That is not an unreachable PMM leak: the table remains part of the hierarchy and can be reused by a later mapping, and mm_free_user_space can eventually reclaim the user-half table tree. It does mean that a failed mapping can still mutate the shape of an address space.
+## Initialization ordering
 
-Callers must therefore interpret the return value as "the requested leaf mapping was not installed," not "the address-space tree is bit-for-bit unchanged."
+The current boot path establishes this order:
 
-## Mapping flags and protection
+~~~text
+Limine creates boot mappings
+    -> bootinfo_init validates HHDM and memory map
+    -> pmm_init owns physical frames
+    -> mm_init adopts current CR3
+    -> heap and process systems initialize
+~~~
 
-mm.h exposes the currently used software names for architectural PTE bits:
+mm_init initializes the MM lock and TLB runtime state, captures CR3, initializes the MMIO allocation cursor and marks the MM layer ready.
 
-| Flag | Meaning in current use |
-|---|---|
-| MM_PRESENT | translation entry is present |
-| MM_WRITE | writes are allowed at that level |
-| MM_USER | user-mode access is allowed at that level |
-| MM_PWT | page-level write-through caching control |
-| MM_PCD | page-level cache-disable control |
-| MM_NX | instruction fetch is prohibited when NX is active |
+It then translates the Limine framebuffer virtual address with mm_virt_to_phys.
 
-The current mapping API ORs PRESENT into installed leaf entries even if the caller already supplied it.
+If no physical translation exists, boot panics.
 
-The page-table code does not yet expose a generalized policy object for W^X, copy-on-write, guard-page semantics, memory keys, PCIDs, or per-VMA permissions. Permission policy is still expressed by explicit flags at each call site.
+That check confirms that the page-table walk machinery can resolve an important pre-existing mapping.
 
-## Dedicated MMIO mappings
+## Page-table pages come from PMM
 
-Memory-mapped devices have different caching and execution requirements from ordinary RAM.
+When ChrisOS needs a new intermediate table, it allocates one 4 KiB physical frame from PMM.
 
-map_mmio_page reserves virtual addresses from a fixed 256-page window beginning at 0xffffffff90000000. Each mapping is created with:
+alloc_zero_table_try:
+
+1. calls pmm_alloc;
+2. converts the physical frame to an HHDM pointer;
+3. clears all 512 entries;
+4. returns the physical address.
+
+Zeroing is necessary because an unused table must begin with all entries non-present. Reusing arbitrary RAM without clearing it could interpret old data as valid mappings.
+
+The dependency direction is:
+
+~~~text
+MM -> PMM
+~~~
+
+PMM does not depend on MM for ordinary frame bookkeeping.
+
+## Mapping the active kernel address space
+
+map_4k maps one aligned 4 KiB physical frame into one aligned virtual page of the current kernel root.
+
+It validates alignment, acquires the MM lock, and walks PML4, PDPT, PD and PT.
+
+Missing intermediate tables are created through ensure_table.
+
+A new intermediate entry receives PRESENT and WRITE.
+
+At the leaf:
+
+~~~text
+PTE = physical_base | flags | PRESENT
+~~~
+
+After releasing the lock, map_4k executes invlpg for the mapped virtual address.
+
+map_4k_nosync performs the same PTE update but skips that local invalidation.
+
+The nosync form is therefore a specialized primitive whose caller must understand when immediate local invalidation is unnecessary or coordinated elsewhere.
+
+## Mapping an arbitrary CR3
+
+mm_map_cr3 installs a 4 KiB mapping into a supplied address-space root.
+
+It differs from the kernel-only path:
+
+- invalid state or alignment returns -1 instead of panicking;
+- missing page tables are allocated through a fallible helper;
+- user mappings propagate the USER bit through intermediate entries;
+- the function does not switch to the target CR3;
+- the function does not itself perform a remote TLB shootdown.
+
+The user-bit propagation is essential.
+
+If the leaf PTE is user-accessible but any parent entry lacks USER, ring 3 cannot traverse the hierarchy.
+
+Thus user accessibility is a property of the whole walk, not only the leaf.
+
+## Partial allocation on failure
+
+ensure_table_flags allocates intermediate tables incrementally.
+
+If allocation fails at a deeper level, mm_map_cr3 returns -1.
+
+Intermediate tables already inserted at higher levels can remain installed.
+
+That does not create a leaf mapping to the requested frame, but the operation is not transactional in the sense of rolling back every table page allocated before failure.
+
+Those table pages remain owned by the address-space hierarchy and are later reclaimed during address-space destruction.
+
+Therefore the stronger statement “mapping failure leaves no structural change” would be incorrect for the current code.
+
+## Mapping versus physical ownership
+
+A PTE can refer to a physical frame without implying that MM owns that frame.
+
+Examples:
+
+- process page frames are tracked by process ownership state;
+- page-table frames are owned by the MM hierarchy;
+- device physical addresses are not PMM allocations;
+- framebuffer memory is not an ordinary PMM frame;
+- one physical frame can have several virtual aliases.
+
+Therefore:
+
+~~~text
+remove PTE != free physical frame
+free physical frame != remove all PTEs
+~~~
+
+The caller must coordinate both layers.
+
+## Process address spaces
+
+mm_clone_kernel_space allocates a fresh PML4 and copies entries 256 through 511 from the kernel PML4.
+
+Those entries represent the upper half.
+
+The lower 256 PML4 slots remain initially empty.
+
+Conceptually:
+
+~~~text
+process CR3
+  lower half: private user mappings
+  upper half: shared kernel mappings
+~~~
+
+This keeps kernel code, HHDM and other privileged mappings reachable while a process CR3 is active.
+
+The copy is of PML4 entries, not a deep copy of all higher-half trees. The process roots therefore share the underlying higher-half structures referenced by those entries.
+
+## Privilege separation
+
+The kernel/user split is not enforced merely by using high and low virtual addresses.
+
+Page-table permission bits matter.
+
+User pages are mapped with USER, and intermediate entries are upgraded with USER when required.
+
+Kernel shared mappings remain supervisor-only.
+
+A ring-3 access therefore needs a chain of entries whose privilege flags permit user traversal and a leaf whose write and execute permissions permit the requested operation.
+
+This is part of the hardware isolation boundary.
+
+## Writable and executable state
+
+ChrisOS exposes mapping flags including:
+
+~~~text
+WRITE
+USER
+PWT
+PCD
+NX
+~~~
+
+NX uses bit 63.
+
+A data page can therefore be marked non-executable, assuming the platform and paging configuration support NX as expected.
+
+The current mapping API does not provide a high-level W^X policy object. It accepts raw flags from callers.
+
+Security therefore depends on callers choosing correct permissions.
+
+The dedicated jit-memory chapter is the appropriate place for executable-memory policy.
+
+## MMIO mapping window
+
+Device physical memory is mapped through map_mmio_page.
+
+ChrisOS reserves a virtual window beginning at:
+
+~~~text
+0xffffffff90000000
+~~~
+
+and allows 256 4 KiB slots, totaling 1 MiB.
+
+The mapping flags are:
 
 ~~~text
 PRESENT | WRITE | PWT | PCD | NX
 ~~~
 
-The current design therefore makes device mappings writable, uncached/write-through constrained, and non-executable. The window is monotonic: mmio_next advances one page for each mapping and there is no current MMIO virtual-address free list. Exhausting the 256-page window is fatal.
+This distinguishes MMIO from ordinary RAM and HHDM use.
 
-The physical address must be page aligned.
+mmio_next advances monotonically.
 
-## Translation without dereference
+There is currently no MMIO-window free and reuse allocator.
 
-ChrisOS provides two software page walkers.
+When the 256-page window is exhausted, the kernel panics.
 
-mm_virt_to_phys walks the kernel hierarchy rooted at mm_cr3_phys. It returns zero when a required entry is absent and handles 1 GiB, 2 MiB, and 4 KiB leaves.
+## Explicit virtual-to-physical translation
 
-mm_translate generalizes the operation to a caller-provided CR3 and returns both:
+ChrisOS contains two related helpers.
 
-- the translated physical address including the page offset;
-- the leaf entry flags.
+mm_translate walks a supplied CR3 hierarchy and returns both physical address and leaf flags.
 
-The walker runs under mm_lock so it does not observe a page-table mutation half-completed by another MM operation.
+It recognizes:
 
-This is a critical distinction from simply dereferencing an untrusted virtual address. Software translation lets validation code inspect whether an address is mapped and what leaf permissions exist before performing an access.
+- 4 KiB leaves;
+- 2 MiB large pages at PD level;
+- 1 GiB large pages at PDPT level.
 
-## Process ownership is separate from translation
+mm_virt_to_phys walks the current kernel root and returns physical address zero when no mapping exists.
 
-A successful PTE does not establish who owns the physical frame.
+The two APIs serve different callers: one is address-space explicit and exposes flags; the other is a current-kernel convenience path.
 
-Proc maintains an explicit fixed-capacity page list. Each ProcPage stores a virtual page and the corresponding physical frame. proc_commit follows this sequence:
+## Large-page awareness
 
-1. align the requested virtual address down to 4 KiB;
-2. return success if the page is already recorded as owned;
-3. reject the operation if the fixed Proc.pages capacity is exhausted;
-4. allocate one physical frame from PMM;
-5. zero all 4096 bytes through the HHDM;
-6. map it into the process through proc_map_user -> mm_map_cr3;
-7. on mapping failure, return the frame to PMM;
-8. on success, append the virtual/physical pair to Proc.pages;
-9. if the process is current, reload CR3 through mm_flush_tlb.
+The mapping path map_4k does not split an existing large page.
 
-This ordering makes ownership explicit. PMM allocation precedes mapping; process ownership is recorded only after mapping succeeds.
+If an intermediate entry has the page-size bit set, ensure_table panics because the 4 KiB mapping path cannot descend through that leaf.
 
-## Demand paging in the current process model
+By contrast, translation helpers understand 1 GiB and 2 MiB leaves.
 
-ChrisOS implements a bounded form of demand allocation.
+The current implementation can therefore observe large mappings inherited from the boot environment but does not generically edit a 4 KiB subpage inside them.
 
-proc_set_vm records a requested VM byte count and commits only the first page. Additional pages can be materialized later by a page fault.
+That difference must be preserved in documentation.
 
-For exception vector 14, irq_dispatch reads CR2 and first calls proc_fault_demand for the current process. proc_fault_demand aligns CR2 to a page and checks whether the fault lies inside one of the process regions it is willing to grow:
+## Unmapping a kernel page
 
-- the declared VM region;
-- the small stack growth window;
-- the heap below heap_brk;
-- the process framebuffer range.
+unmap_4k walks the kernel hierarchy.
 
-If the address is eligible, proc_commit allocates and maps the page. A successful commit returns to the faulting instruction. If demand handling declines the fault and the saved CS indicates user mode, the fault is converted into the user-fault path. Other unresolved page faults ultimately enter the kernel exception panic path.
+If an expected level is absent or is a large-page leaf, the function returns without modification.
 
-This is demand **allocation**, not a general-purpose virtual-memory manager. There is no current swap subsystem, file-backed mmap layer, copy-on-write fork, overcommit policy, VMA tree, or page-replacement algorithm.
+For a normal 4 KiB leaf, it writes zero into the PTE and then executes local invlpg.
 
-## Unmapping and frame lifetime
+It does not free the physical frame.
 
-mm_unmap_cr3 clears one 4 KiB leaf in a supplied address space. It does not free the physical frame.
+The caller is responsible for determining whether and when that frame can return to PMM.
 
-If the supplied CR3 is also the currently active CR3, the function issues a local INVLPG for the virtual address. If the address space is inactive on the current CPU, no local invalidation is necessary for that CPU.
+## Unmapping from a specific address space
 
-proc_release_user uses this separation deliberately:
+mm_unmap_cr3 clears one 4 KiB leaf in the specified hierarchy.
+
+After mutation, it reads the current CR3.
+
+Only if the modified CR3 is currently active on this CPU does it execute local invlpg.
+
+If another CPU or later execution context may have cached that translation, broader TLB synchronization is still necessary.
+
+A page-table update alone is therefore not a complete multi-CPU teardown protocol.
+
+## TLB coherence and physical reuse
+
+Suppose a PTE is cleared and its physical frame is immediately returned to PMM.
+
+Another CPU could still have the old virtual-to-physical translation cached.
+
+That CPU might write through the stale TLB entry into a frame already reassigned to a different owner.
+
+Safe teardown requires:
 
 ~~~text
-for each ProcPage:
-    clear PTE with mm_unmap_cr3
-    free owned frame with pmm_free
-clear process page list
+remove mapping
+    -> invalidate and acknowledge stale translations
+    -> prove reuse is safe
+    -> free or reap physical frame
 ~~~
 
-Current user processes run only on the BSP; proc_switch explicitly panics if asked to switch a process from an application processor. That restriction narrows the TLB-coherence problem for private user mappings.
+ChrisOS implements a TLB runtime and shootdown protocol plus a small physical-frame quarantine for cases where reuse is not yet safe.
 
-Kernel mappings are different because the kernel half is shared by address spaces and may execute on multiple CPUs. Kernel mapping teardown must use the separate TLB shootdown/quarantine protocol before physical frames are considered safely reusable. That protocol is documented separately.
+The detailed distributed protocol belongs in tlb-shootdown.
 
-## Destroying a process address space
+## Quarantine
 
-After leaf frames have been released from the process-owned list, mm_free_user_space destroys the remaining user-half page-table structure.
+mm_tlb_quarantine either:
 
-It walks PML4 entries 0..255 and recursively frees non-huge intermediate table pages. The recursion intentionally stops before treating leaf frame addresses as page-table pages. Finally it frees the process PML4 itself.
+- frees frames immediately when the runtime says reuse is safe; or
+- appends the range to a fixed quarantine array.
 
-Two invariants follow:
+The quarantine can hold 128 ranges.
 
-- shared upper-half kernel tables are not recursively freed;
-- user leaf frames must already have been handled by the process ownership layer.
+mm_tlb_reap returns quarantined ranges to PMM only when the TLB runtime reports reuse-safe state.
 
-Violating the second invariant would either leak user frames or risk confusing data frames with page-table frames.
+This is a memory-lifetime mechanism rather than a translation mechanism.
 
-## CR3 switching and TLB state
+It connects TLB synchronization back to PMM ownership.
 
-mm_switch writes the supplied physical root directly to CR3. proc_switch updates the global current-process index and then invokes mm_switch with the selected process CR3.
+## MM lock
 
-mm_flush_tlb reads CR3 and writes the same value back. In the current no-PCID model this is used as a broad local invalidation mechanism after certain process mapping changes.
+Page-table manipulation is serialized by mm_lock.
 
-Individual kernel mapping operations generally use INVLPG for one virtual page. Multi-CPU invalidation is a separate protocol because a PTE update in memory does not erase translations already cached in another CPU's TLB.
+mm_enter is not a plain spin loop. While waiting, it invokes mm_tlb_poll.
 
-## Concurrency and lock ordering
+That lets a CPU waiting for the MM lock still service pending TLB runtime work, reducing the risk that it blocks distributed invalidation progress only because it is waiting for page-table mutation.
 
-All core page-table traversal and mutation uses mm_lock.
+The loop then attempts an atomic CAS and executes pause between retries.
 
-mm_enter is not a plain spin loop: while waiting, it polls the TLB runtime before trying the lock again. This matters because a CPU waiting for MM state must still be capable of participating in an outstanding TLB protocol rather than becoming a non-responsive participant.
+This is a specialized integration between locking and TLB coordination.
 
-The remote shootdown implementation intentionally does not hold mm_lock while waiting for acknowledgements. Its own comment records the deadlock reason: an interrupt on the same CPU could need to map a page, spin forever on mm_lock, and prevent the acknowledgement wait from resuming.
+## Why shootdown does not hold mm_lock
 
-Thus the current synchronization design separates:
+The source explicitly warns against waiting for remote TLB acknowledgements while holding mm_lock.
 
-- **mm_lock** for page-table data-structure consistency;
-- **mm_tlb_busy** for serializing publication of shootdown operations;
-- the TLB runtime protocol for cross-CPU invalidation and safe frame reuse.
+An interrupt or remote path may require memory-management progress to acknowledge the protocol.
 
-## Complexity and memory cost
+Holding the page-table lock across the whole distributed wait could create a circular stall.
 
-A four-level 4 KiB page-table walk has constant architectural depth: at most four table lookups.
+ChrisOS therefore separates:
 
-For software operations:
+1. page-table mutation under mm_lock;
+2. distributed TLB synchronization under separate shootdown state.
 
-| Operation | Current asymptotic cost |
-|---|---|
-| map one 4 KiB page | O(1), fixed four-level walk |
-| translate one address | O(1), fixed-depth walk |
-| unmap one 4 KiB page | O(1), fixed-depth walk |
-| clone kernel top level | O(256) entry copies |
-| destroy user table hierarchy | O(number of present user intermediate entries) |
-| local INVLPG for one page | O(1) architecturally, hardware cost varies |
-| range invalidation | O(number of pages in the range) plus remote coordination |
+Lock scope is part of the correctness model.
 
-Memory overhead is sparse. A new mapping can require up to three new intermediate page-table pages plus an already-existing PML4, although neighboring mappings reuse tables. The worst-case sparse overhead is therefore much larger than a densely populated region, while dense sequential mappings amortize each table page across many leaves.
+## Address-space destruction
 
-## Validation evidence
+mm_free_user_space walks the lower 256 PML4 entries of a non-kernel address space.
 
-mm_selftest currently exercises two useful properties:
+For non-large-page trees it recursively frees intermediate page-table pages and clears the PML4 entries.
 
-- a newly allocated PMM frame can be mapped at MM_TEST_VIRT and observed coherently through both the new virtual alias and the HHDM alias;
-- the LAPIC physical page can be mapped through map_mmio_page and read through the resulting virtual address.
+Finally it frees the PML4 frame itself.
 
-mm_init also treats successful translation of the boot framebuffer as a required invariant.
+The upper half is intentionally not traversed or freed because it references shared kernel structures.
 
-These checks demonstrate selected mapping and translation paths. They are not exhaustive validation of every permission combination, huge-page interaction, OOM rollback state, or multiprocessor invalidation race.
+Leaf user-data frames are also not freed by this function.
+
+The source contract states that leaf frames remain owned by the process page list.
+
+This prevents double-free between process ownership and page-table teardown.
+
+## Process teardown division of labor
+
+The process layer tracks owned user pages.
+
+During teardown it can unmap each process page and return its physical frame.
+
+Separately, mm_free_user_space reclaims page-table structure pages.
+
+Thus:
+
+~~~text
+process page list -> owns leaf data frames
+MM hierarchy      -> owns intermediate page-table frames
+shared kernel     -> not freed with process
+~~~
+
+This ownership split is one of the central invariants in the current system.
+
+## CR3 switching and local flush
+
+Writing CR3 changes the active translation root.
+
+mm_flush_tlb reads and rewrites the current CR3 value to obtain the conventional local flush behavior associated with reloading the root.
+
+The exact architectural effects can depend on features such as PCID and global mappings, but the current code uses CR3 reload as a coarse local flush primitive.
+
+For one page, invlpg is the targeted primitive.
+
+## Self-test
+
+mm_selftest validates several integration properties.
+
+It:
+
+1. allocates a physical page from PMM;
+2. maps it at a fixed test virtual address;
+3. writes 0x00c0ffee through that mapping;
+4. checks the value through the HHDM alias;
+5. maps the LAPIC physical page through the MMIO window;
+6. reads LAPIC ID;
+7. compares and logs it with boot information.
+
+The first test proves that two virtual aliases resolve to the same physical frame.
+
+The LAPIC path validates that dedicated MMIO mapping can reach a real platform device.
+
+The test does not exhaustively verify user privilege, large-page editing, multi-CPU shootdown, or address-space destruction.
+
+## Failure policies
+
+The MM layer mixes panic and return-code policies.
+
+Examples:
+
+- map_4k before initialization: panic;
+- misaligned kernel map_4k: panic;
+- page-table allocation failure in kernel mapping: panic;
+- fallible mm_map_cr3: returns -1;
+- invalid or unmapped translation: return failure or zero;
+- exhausted MMIO virtual window: panic;
+- unsupported large page in the 4 KiB mapping path: panic.
+
+Callers must know which interface is recoverable.
+
+## Complexity
+
+A four-level walk is bounded by four table lookups for a 4 KiB mapping.
+
+Ignoring PMM allocation:
+
+~~~text
+map or translate or unmap hierarchy walk = O(levels) = O(1)
+~~~
+
+because the number of architectural levels is fixed.
+
+Allocating missing intermediate tables adds at most three PMM allocations for a new 4 KiB leaf under an existing PML4 root.
+
+Destroying an address space is different: recursive freeing can visit many populated table pages and is proportional to the page-table structure size.
+
+TLB shootdown cost depends on CPU count and responsiveness rather than page-table depth alone.
+
+## Security implications
+
+Virtual memory is the primary hardware isolation boundary between user processes and privileged kernel memory.
+
+Security failures include:
+
+- propagating USER into a mapping that should remain supervisor-only;
+- leaving writable or executable permissions broader than intended;
+- freeing a frame before stale mappings disappear;
+- mapping MMIO with normal-RAM assumptions;
+- accepting a user pointer without validating its translation and permissions.
+
+The MM implementation supplies mechanisms.
+
+Higher layers must still enforce policy.
 
 ## Current limitations
 
-The current implementation is intentionally smaller than a production virtual-memory subsystem.
+The current MM layer has important limits:
 
-It does not currently provide:
+- four-level paging assumptions in index helpers;
+- no generic five-level paging support;
+- no generic large-page creation or splitting API;
+- fixed 1 MiB MMIO virtual window;
+- no MMIO unmap and reuse allocator;
+- no copy-on-write;
+- no page-table reference counting;
+- no transactional rollback of intermediate tables after fallible mapping failure;
+- shared upper-half structures require careful synchronization;
+- mapping APIs expose low-level flags;
+- address-space teardown depends on higher-level leaf ownership;
+- distributed TLB correctness is delegated to a separate runtime protocol.
 
-- five-level paging;
-- page-table allocation rollback transactions;
-- transparent huge-page creation or splitting;
-- PCID-aware address-space switching;
-- copy-on-write;
-- file-backed mappings;
-- swap or page replacement;
-- NUMA-aware page placement;
-- generalized VMAs;
-- a reusable MMIO virtual-window allocator;
-- complete per-mapping lifetime metadata inside MM itself.
+These are implementation facts, not x86-64 requirements.
 
-The existing process layer also uses fixed-size page ownership arrays rather than a scalable virtual-memory-area structure.
+## Source map
 
-These are limitations of the present implementation, not claims about what the x86-64 architecture can support.
+kernel/metal/mm.c implements page-table walking, table allocation, kernel and process mappings, MMIO mappings, address-space cloning, unmapping, translation helpers and TLB-related quarantine.
 
-## Revision boundary
+kernel/metal/mm.h defines the public mapping flags and contracts.
 
-This chapter was reconciled against ChrisOS main revision e05a17fd76333114a3fb5c2452f38ca747d4ac56.
+kernel/metal/pmm.c supplies physical page-table frames.
 
-At that revision, current behavior is defined by the source paths and symbols in the frontmatter. Future plans should not be read backward into this description. If MM, process ownership, the TLB protocol, or the boot paging contract changes, this chapter must be re-reviewed against the new source revision.
+kernel/metal/proc.c owns process leaf pages and process CR3 lifecycles.
+
+kernel/metal/tlb_proto.c and tlb_proto.h provide the distributed stale-translation protocol used during reuse-sensitive teardown.
+
+These implementation claims were reconciled against ChrisOS revision e05a17fd76333114a3fb5c2452f38ca747d4ac56.
