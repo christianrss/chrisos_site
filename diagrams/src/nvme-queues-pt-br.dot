@@ -1,0 +1,21 @@
+digraph nvme {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+  pci [label="PCI classe 0108\nBAR0 MMIO", fillcolor="#ffffff"];
+  cap [label="CAP / DSTRD\nCC / CSTS"];
+  admin [label="Par de filas Admin\nQID 0, depth 2\nSQ 64 B / CQ 16 B", shape=box3d];
+  ident [label="Identify Controller\nNN >= 1"];
+  create [label="Create I/O CQ 1\nCreate I/O SQ 1"];
+  ns [label="Identify Namespace 1\nNSZE low 32 bits\nassume LBAF0=512 B"];
+  io [label="Par de filas I/O\nQID 1, depth 2"];
+  data [label="PRP1 -> pagina de dados 4 KiB\n<= 8 setores"];
+  cmd [label="Read 0x02 / Write 0x01\num command outstanding"];
+  poll [label="poll do phase tag na CQ\nring da CQ head doorbell"];
+  bdev [label="BlockDevice: nvme\nsetores de 512 B\nflush = 0", fillcolor="#dddddd"];
+  pci -> cap -> admin;
+  admin -> ident -> create -> ns -> io;
+  io -> cmd;
+  data -> cmd [dir=both];
+  cmd -> poll -> bdev;
+}
