@@ -1,0 +1,15 @@
+digraph usb_storage {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+  pci [label="PCI class 0C0300\nUHCI I/O BAR4", fillcolor="#ffffff"];
+  dma [label="DMA32 arena: 4 pages / 16 KiB\nframe list + QH/TDs + buffers"];
+  enum [label="2 root ports\nreset -> SET_ADDRESS\nconfiguration descriptor"];
+  bind [label="bulk IN + bulk OUT\ncurrent matcher does not require MSC class"];
+  bot [label="USB BOT\nCBW -> data -> CSW"];
+  scsi [label="SCSI\nREAD CAPACITY(10)\nREAD(10) / WRITE(10)"];
+  block [label="BlockDevice usb\n512-byte assumption\n<= 8 sectors/command\nflush = 0", fillcolor="#dddddd"];
+  xhci [label="Separate xHCI path\nHID keyboard/mouse only\nno MSC", style="rounded,dashed"];
+  pci -> dma -> enum -> bind -> bot -> scsi -> block;
+  xhci -> bind [style=dashed, label="not connected to storage"];
+}
