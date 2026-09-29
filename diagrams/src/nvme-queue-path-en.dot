@@ -1,0 +1,20 @@
+digraph nvme {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.55"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  bd [label="BlockDevice read/write"];
+  copy [label="4 KiB DMA data buffer\n<= 8 sectors"];
+  sq [label="I/O Submission Queue\n2 entries, 64 B each", shape=box3d, fillcolor="#ffffff"];
+  db [label="SQ doorbell"];
+  ctrl [label="NVMe controller"];
+  cq [label="I/O Completion Queue\n2 entries, phase bit", shape=box3d, fillcolor="#ffffff"];
+  cdb [label="CQ doorbell"];
+  wait [label="poll CQ\n<= 400k iterations"];
+  media [label="Namespace 1\n512-byte LBA"];
+
+  bd -> copy -> sq -> db -> ctrl -> media;
+  ctrl -> cq -> wait;
+  wait -> cdb -> ctrl [label="advance head"];
+  wait -> bd [label="status"];
+}
