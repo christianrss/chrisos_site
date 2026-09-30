@@ -309,7 +309,8 @@ def on_post_build(config):
         # Preserve every section title/location and shrink only body excerpts.
         page_text_limit = 160
         section_text_limit = 800
-        min_section_text_limit = 240
+        min_page_text_limit = 80
+        min_section_text_limit = 80
         target_bytes = 1_700_000
 
         while True:
@@ -327,11 +328,22 @@ def on_post_build(config):
             encoded = json.dumps(payload, separators=(',', ':'), ensure_ascii=False)
             if len(encoded.encode('utf-8')) <= target_bytes:
                 break
-            if section_text_limit <= min_section_text_limit:
-                break
-            section_text_limit = max(
-                min_section_text_limit,
-                int(section_text_limit * 0.85),
-            )
+            if section_text_limit > min_section_text_limit:
+                section_text_limit = max(
+                    min_section_text_limit,
+                    int(section_text_limit * 0.80),
+                )
+                continue
+            if page_text_limit > min_page_text_limit:
+                page_text_limit = max(
+                    min_page_text_limit,
+                    int(page_text_limit * 0.80),
+                )
+                continue
+            # At the minimum excerpt budget, keep all section/page records.
+            # The smoke test will still fail if record metadata alone eventually
+            # exceeds the payload contract, making that future scaling boundary
+            # explicit rather than silently dropping searchable sections.
+            break
 
         (target.parent / f'reader-{lang}.json').write_text(encoded)
