@@ -1,0 +1,20 @@
+digraph parsing {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  ct [label="Token[] do ChrisC", fillcolor="#ffffff"];
+  crd [label="recursive descent\nprimary -> postfix -> unary"];
+  cprec [label="precedencia em camadas\n* / % ... && ||"];
+  cast [label="assignment / ternary / comma"];
+  ast [label="arvore Node[] AST-like", fillcolor="#ffffff"];
+
+  ks [label="source preprocessado KCC", fillcolor="#ffffff"];
+  krd [label="recursive descent\nprimary/postfix/unary"];
+  kprec [label="precedence climbing\nparse_binary(out, prec)"];
+  ksem [label="type/lvalue resolution\n+ emissao x86-64 direta"];
+  asm [label="assembly textual", fillcolor="#ffffff"];
+
+  ct -> crd -> cprec -> cast -> ast;
+  ks -> krd -> kprec -> ksem -> asm;
+}
