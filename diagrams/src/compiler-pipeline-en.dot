@@ -1,0 +1,21 @@
+digraph compiler_pipeline {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  cc [label=".CC source", fillcolor="#ffffff"];
+  chrisc [label="ChrisC\npreprocess -> lex -> parse -> emit"];
+  clvm [label="CLVM bytecode"];
+  clv [label=".CLV image\nchecksum + entry"];
+  runtime [label="CLVM runtime\ninterpreter / JIT", fillcolor="#ffffff"];
+
+  csrc [label="C source", fillcolor="#ffffff"];
+  kcc [label="KCC\npreprocess + parse + x86-64 asm"];
+  asm [label="ChrisAsm\nmachine code + symbols + relocs"];
+  obj [label="ChrisO\nrelocatable object"];
+  ld [label="ChrisLd\nresolve + relocate"];
+  elf [label="ELF64 ET_EXEC", fillcolor="#ffffff"];
+
+  cc -> chrisc -> clvm -> clv -> runtime;
+  csrc -> kcc -> asm -> obj -> ld -> elf;
+}
