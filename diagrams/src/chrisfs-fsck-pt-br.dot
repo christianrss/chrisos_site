@@ -1,0 +1,16 @@
+digraph chrisfs_fsck {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  super [label="superblock\ndecode + geometria", fillcolor="#ffffff"];
+  journal [label="estado do journal\nmagic + BEGIN/COMMIT"];
+  bitmap [label="allocation bitmap\ncopia para g_bitmap"];
+  inodes [label="2048 inodes\nchecksum + type + size"];
+  blocks [label="ownership de blocks\ng_seen\nrange + duplicate + bitmap"];
+  dirs [label="graph de diretorios\ncycle + dirent checks"];
+  leaks [label="comparacao final\nallocated && !seen"];
+  result [label="0 limpo\n>0 erros estruturais\n<0 falha fatal do checker", fillcolor="#ffffff"];
+
+  super -> journal -> bitmap -> inodes -> blocks -> dirs -> leaks -> result;
+}
