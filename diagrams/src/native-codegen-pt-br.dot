@@ -1,0 +1,15 @@
+digraph native_codegen {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="source KCC", fillcolor="#ffffff"];
+  sem [label="Type + Val\nestado syntax-directed"];
+  asm [label="assembly x86-64\nRAX + frame spills"];
+  enc [label="ChrisAsm\nREX / opcode / ModRM"];
+  obj [label="ChrisO\nsections / symbols / relocs"];
+  link [label="ChrisLd\nresolve + relocate"];
+  elf [label="ELF64", fillcolor="#ffffff"];
+
+  src -> sem -> asm -> enc -> obj -> link -> elf;
+}
