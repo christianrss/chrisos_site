@@ -1,0 +1,26 @@
+digraph chrisfs_cache {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  caller [label="ChrisFS runtime", fillcolor="#ffffff"];
+  read [label="cache_read\n64-line linear lookup"];
+  hit [label="hit\nupdate age + copy"];
+  miss [label="miss\nLRU victim + bd_read"];
+  write [label="cache_write\noptional jnl_log"];
+  raw [label="cache_write_raw\nbd_write + refresh line"];
+  bitmap [label="bitmap_get/set\n4096 blocks/sector"];
+  alloc [label="block_alloc\nfirst-fit from alloc_hint"];
+  readahead [label="read-ahead\n<=16 contiguous sectors\nbypasses cache"];
+  dev [label="BlockDevice", fillcolor="#ffffff"];
+
+  caller -> read;
+  read -> hit;
+  read -> miss -> dev;
+  caller -> write -> raw -> dev;
+  bitmap -> read;
+  bitmap -> write;
+  alloc -> bitmap;
+  caller -> alloc;
+  caller -> readahead -> dev;
+}
