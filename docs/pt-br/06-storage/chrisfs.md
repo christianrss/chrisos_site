@@ -899,6 +899,8 @@ Ele constrói estado “seen” e compara com o bitmap on-disk.
 
 A parte de directory graph é menos completa que o ownership de blocks: atualmente examina apenas os 12 direct directory blocks, não a faixa single-indirect; duplicate-name tracking reinicia a cada block; e não há enforcement de reachability de todo inode alocado a partir do root.
 
+A validação de file size também é assimétrica: direct pointers são cruzados estritamente com EOF, enquanto a ocupação obrigatória das árvores single/double/triple não é derivada de forma exata de inode size. Indirect blocks extras além de EOF podem, portanto, continuar aceitos como owned. O checker também não trata `super.clean == 0` como erro por si só.
+
 Para bitmaps v5 maiores, pode alocar mapas de trabalho dinamicamente em vez de depender somente dos arrays fixos legados.
 
 ## Limites do fsck
