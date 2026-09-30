@@ -899,6 +899,8 @@ It builds “seen” allocation state and compares that against the on-disk bitm
 
 The directory-graph portion is less complete than the block-ownership portion: it currently inspects only the 12 direct directory blocks, not the single-indirect directory range; duplicate-name tracking resets per directory block; and allocated inode reachability from root is not enforced.
 
+File-size validation is also asymmetric: direct pointers are checked against EOF strictly, while required occupancy of single/double/triple trees is not derived exactly from inode size. Extra indirect blocks beyond EOF can therefore remain accepted as owned blocks. The checker also does not treat `super.clean == 0` as an error by itself.
+
 For larger v5 bitmaps it can allocate checker working maps dynamically instead of relying only on the legacy fixed-size arrays.
 
 ## fsck limits
