@@ -1,0 +1,22 @@
+digraph lexical_analysis {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src1 [label="source expandido ChrisC", fillcolor="#ffffff"];
+  lex [label="lex()\nclasses ASCII\nkeywords/literals/operators"];
+  toks [label="Token[]\nkind + value + linha + coluna"];
+  parser1 [label="parser ChrisC", fillcolor="#ffffff"];
+
+  src2 [label="source preprocessado KCC", fillcolor="#ffffff"];
+  scan [label="scanner sob demanda\nskip/eat_kw/eat_op\ntake_ident/number/string"];
+  parser2 [label="parser + codegen KCC", fillcolor="#ffffff"];
+
+  asm [label="source ChrisAsm / CLASM", fillcolor="#ffffff"];
+  lines [label="scanners por linha\nidentifiers + operands"];
+  apar [label="parser assembler", fillcolor="#ffffff"];
+
+  src1 -> lex -> toks -> parser1;
+  src2 -> scan -> parser2;
+  asm -> lines -> apar;
+}
