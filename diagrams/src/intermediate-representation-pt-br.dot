@@ -1,0 +1,23 @@
+digraph intermediate_representation {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  csrc [label="source ChrisC", fillcolor="#ffffff"];
+  nodes [label="Node[]\nHIR AST-like"];
+  clvm [label="bytecode CLVM\nstack VM ISA"];
+  il [label="IlType / IlSig\nverifier abstrato"];
+  cla [label="CLA\nmetadata de method/type"];
+  run [label="interpreter / JIT", fillcolor="#ffffff"];
+
+  ksrc [label="source KCC", fillcolor="#ffffff"];
+  val [label="Type + Val\nestado transitorio"];
+  asm [label="assembly x86-64"];
+  chriso [label="ChrisO\nsections + relocs"];
+  elf [label="ELF linkado", fillcolor="#ffffff"];
+
+  csrc -> nodes -> clvm -> run;
+  clvm -> il [label="verificado como"];
+  clvm -> cla [label="empacotado em"];
+  ksrc -> val -> asm -> chriso -> elf;
+}
