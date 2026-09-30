@@ -1,0 +1,24 @@
+digraph calling_conventions {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.48"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  subgraph cluster_native {
+    label="KCC nativo";
+    src [label="expressions do caller"];
+    regs [label="RDI RSI RDX RCX R8 R9\n+ args na stack"];
+    frame [label="frame RBP\nreserva de 2048 bytes"];
+    ret [label="resultado em RAX\nRET de hardware"];
+    src -> regs -> frame -> ret;
+  }
+
+  subgraph cluster_clvm {
+    label="ChrisC / CLVM";
+    csrc [label="expressions do caller"];
+    scratch [label="icall_base / va_base\nscratch em guest memory"];
+    call [label="calls[64]\nreturn PCs"];
+    body [label="storage fixo de parameters"];
+    vret [label="operand stack\nreturn value"];
+    csrc -> scratch -> call -> body -> vret;
+  }
+}
