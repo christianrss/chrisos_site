@@ -1,0 +1,18 @@
+digraph semantics {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="source parseado", fillcolor="#ffffff"];
+  ctab [label="estado semantico ChrisC\nSymbol / StructDef / FuncDef"];
+  cast [label="metadata da AST\nwidth / float / sid / lvalue"];
+  clvm [label="lowering CLVM", fillcolor="#ffffff"];
+
+  ksrc [label="source KCC", fillcolor="#ffffff"];
+  kval [label="Type + Val\nnome / tipo / lvalue / layout"];
+  checks [label="checks semanticos\nfields / ptr / assign / volatile"];
+  asm [label="emissao x86-64", fillcolor="#ffffff"];
+
+  src -> ctab -> cast -> clvm;
+  ksrc -> kval -> checks -> asm;
+}
