@@ -1,0 +1,17 @@
+digraph chrisfs_journal {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  begin [label="BEGIN\nsuper.clean=0"];
+  log [label="jnl_log\nmeta + payload"];
+  home [label="home write\nimmediate"];
+  commit [label="COMMIT\nseq + nrec"];
+  empty [label="EMPTY\nlog reclaimed"];
+  clean [label="super.clean=1"];
+  replay [label="mount replay\nCOMMIT -> redo\nBEGIN -> drop", style="rounded,dashed"];
+
+  begin -> log -> home -> commit -> empty -> clean;
+  commit -> replay [style=dashed];
+  begin -> replay [style=dashed];
+}
