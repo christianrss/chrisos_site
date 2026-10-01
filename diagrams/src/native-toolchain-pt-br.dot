@@ -1,0 +1,16 @@
+digraph native_toolchain {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+  c [label="C orientado ao kernel", fillcolor="#ffffff"];
+  kcc [label="KCC\npreprocess + parse + lowering"];
+  asm [label="assembly x86-64"];
+  ca [label="ChrisAsm\nencoder + relocations"];
+  obj [label="ChrisO\nTEXT/RODATA/DATA/BSS\nsymbols + relocs"];
+  ld [label="ChrisLd\nresolve + layout + relocate"];
+  elf [label="ELF64\nPT_LOAD RX + RW"];
+  build [label="chrisbuild_mk_kernel\nmerge atual somente de text"];
+  c -> kcc -> asm -> ca -> obj -> ld -> elf;
+  build -> kcc [style=dashed];
+  build -> ld [style=dashed];
+}
