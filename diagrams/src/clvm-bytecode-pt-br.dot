@@ -1,0 +1,17 @@
+digraph clvm_bytecode {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.35", ranksep="0.48"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  producer [label="ChrisC / CLASM\nprodutor de bytecode", fillcolor="#ffffff"];
+  header [label="header CLV\nmagic version flags\nsize checksum entry\nmem_hint(v2)"];
+  code [label="bytecode payload\ninstructions 1/2/3/5/9 bytes"];
+  parse [label="clvm_parse\nenvelope + checksum"];
+  interp [label="clvm_step\nsemantica de opcodes"];
+  jit [label="JIT insn_len\nPC -> native mapping"];
+  vm [label="ClvmVm\nstack + calls + memory", fillcolor="#ffffff"];
+
+  producer -> header -> code;
+  code -> parse -> interp -> vm;
+  parse -> jit -> vm;
+}
