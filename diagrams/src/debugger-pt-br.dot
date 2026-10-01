@@ -1,0 +1,24 @@
+digraph debugger {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.28", ranksep="0.42"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="source ChrisC", fillcolor="#ffffff"];
+  cc [label="compiler ChrisC\nChrisResult map/files/exports"];
+  map [label=".MAP textual\npath usado no runtime"];
+  cdbg [label=".CDBG binario\nmetadata estruturado"];
+  slot [label="debugger em LangSlot\nbreakpoints / step / watch"];
+  sess [label="DbgSession\nowner / BP file-aware / typed watches"];
+  vm [label="interpreter CLVM\nstepping com budget=1"];
+  sys [label="dbg_ctl 250\ndbg_text 251"];
+  editor [label="Editor ChrisOS\nUI de debug"];
+
+  src -> cc;
+  cc -> map -> slot -> vm;
+  cc -> cdbg -> sess;
+  editor -> sys -> slot;
+  slot -> sys -> editor;
+  sess [fillcolor="#f5f5f5"];
+  cdbg -> sess [label="implementado + testado"];
+  sess -> slot [style=dashed,label="ainda nao integrado"];
+}
