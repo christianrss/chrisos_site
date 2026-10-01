@@ -1,0 +1,20 @@
+digraph chrisc_clvm {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.32", ranksep="0.42"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="source ChrisC", fillcolor="#ffffff"];
+  cc [label="compiler ChrisC\nNode[] -> CLVM"];
+  clv [label="imagem CLV\nheader + checksum + code"];
+  load [label="clvm_parse\nvalidacao"];
+  slot [label="LangSlot\nprocess + memory + gfx + debug"];
+  exec [label="interpreter / JIT\nestado ClvmVm"];
+  sys [label="clvm_sys_dispatch\nguest offsets validados"];
+  kern [label="servicos do kernel\nrecursos por slot", fillcolor="#ffffff"];
+
+  child [label="ClvmVm child\nguest RAM compartilhada\nstacks/TLS privados"];
+
+  src -> cc -> clv -> load -> slot -> exec -> sys -> kern;
+  exec -> child [label="thread create"];
+  child -> sys;
+}
