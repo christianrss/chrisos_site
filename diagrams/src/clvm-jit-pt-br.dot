@@ -1,0 +1,23 @@
+digraph clvm_jit {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  clv [label="bytecode CLV", fillcolor="#ffffff"];
+  scan [label="image_can_jit\nstructural scan"];
+  emit [label="emit_insn\n58 opcodes nativos"];
+  helper [label="emit_helper\njit_rt_exec_at_pc"];
+  map [label="g_nat[bytecode PC]\n+ patch records"];
+  table [label="native dispatch table\n4 bytes por bytecode byte"];
+  seal [label="jit_seal\nexecutable alias"];
+  run [label="JitFn(vm,budget,now)", fillcolor="#ffffff"];
+  interp [label="emit_fallback\nwrapper clvm_step"];
+
+  clv -> scan;
+  scan -> emit [label="elegivel"];
+  scan -> interp [label="nao elegivel"];
+  emit -> helper [label="opcode nao nativo"];
+  helper -> emit [label="retoma por vm->pc"];
+  emit -> map -> table -> seal -> run;
+  interp -> seal;
+}
