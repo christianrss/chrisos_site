@@ -18,7 +18,7 @@ sources:
   - kernel/metal/proc.c
   - kernel/metal/proc.h
   - kernel/net/sock.c
-  - kernel/gfx/shader/sh_pub.c
+  - kernel/gfx/shader/sh_api.c
 symbols:
   - builtins
   - builtin
