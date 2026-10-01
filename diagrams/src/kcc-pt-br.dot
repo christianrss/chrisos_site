@@ -1,0 +1,18 @@
+digraph kcc {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="source C-like", fillcolor="#ffffff"];
+  pp [label="preprocessor KCC\nmacros / includes / #line"];
+  parse [label="parser recursive-descent\nType / Sym / Val"];
+  asm [label="assembly x86-64 direto\nbuffer fixo 256 KiB"];
+  ca [label="ChrisAsm"];
+  obj [label="ChrisO\nsections / symbols / relocations"];
+  host [label="CLI host / tests"];
+  kernel [label="shell / kcc_job / chrisbuild"];
+
+  src -> pp -> parse -> asm -> ca -> obj;
+  host -> src;
+  kernel -> src;
+}
