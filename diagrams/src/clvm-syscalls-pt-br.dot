@@ -1,0 +1,17 @@
+digraph clvm_syscalls {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="builtin ChrisC\nargs na ordem do source", fillcolor="#ffffff"];
+  stack [label="operand stack\na | b | ... | syscall_id"];
+  sys [label="CL_OP_SYS\npop do id"];
+  disp [label="clvm_sys_dispatch\npop args em ordem inversa"];
+  check [label="validacao de guest pointer\n+ capability/ownership"];
+  host [label="subsistema ChrisOS\nFS / net / gfx / driver / ..."];
+  ret [label="guest result opcional\npush do valor"];
+  fault [label="dispatcher != 0\nCLVM_FAULT_BAD_SYS"];
+
+  src -> stack -> sys -> disp -> check -> host -> ret;
+  disp -> fault [label="rejeicao estrutural"];
+}
