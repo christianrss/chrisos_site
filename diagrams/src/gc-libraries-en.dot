@@ -1,0 +1,24 @@
+digraph gc_libraries {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  src [label="ChrisC source\n#include / .LST", fillcolor="#ffffff"];
+  cc [label="ChrisC compiler\nABI + exports"];
+  clv [label="CLV application"];
+  cls [label="CLS runtime library\nexports / imports / types"];
+  cla [label="CLA managed assembly\nverified IL / refs"];
+  proc [label="process mapping\nPROC_LIB_VIRT"];
+  gc [label="GC\nroots + types + nursery\nmark/sweep"];
+  vm [label="CLVM runtime\nSYS: lib_load / gc_alloc / cla_load"];
+
+  src -> cc;
+  cc -> clv;
+  cc -> cls;
+  cls -> proc;
+  cls -> gc [label="type metadata"];
+  cla -> gc [label="managed types"];
+  vm -> cls [label="load/reload"];
+  vm -> cla [label="load"];
+  vm -> gc [label="alloc/collect"];
+}
