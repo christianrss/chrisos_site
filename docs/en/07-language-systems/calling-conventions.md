@@ -38,7 +38,6 @@ symbols:
   - CL_OP_CALLI
   - CL_OP_CALLT
   - CL_OP_RET
-  - IL_ARG
 depends_on:
   - intermediate-representation
   - native-codegen
