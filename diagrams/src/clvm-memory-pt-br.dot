@@ -1,0 +1,23 @@
+digraph clvm_memory {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.42"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  guest [label="guest offset\n0 <= addr < mem_size", fillcolor="#ffffff"];
+  check [label="bounds check CLVM\nmem_ok / vm_bytes"];
+  base [label="vm->memory + offset"];
+
+  proc [label="process-backed\nPROC_VM_VIRT 0x02000000\ndemand pages"];
+  heap [label="fallback kernel heap\nbacking por kmalloc"];
+
+  static [label="regiao baixa\nglobals + strings ChrisC\nicall/varargs scratch"];
+  alloc [label="heap_off\nbump allocator"];
+  end [label="mem_size", fillcolor="#ffffff"];
+
+  guest -> check -> base;
+  base -> proc;
+  base -> heap;
+  proc -> static;
+  heap -> static;
+  static -> alloc -> end;
+}
