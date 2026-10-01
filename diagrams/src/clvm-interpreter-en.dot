@@ -1,0 +1,25 @@
+digraph clvm_interpreter {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.40"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  state [label="READY / RUNNING", fillcolor="#ffffff"];
+  fetch [label="fetch opcode\nop_pc = pc; pc++"];
+  budget [label="executed++\nbudget / slice checks"];
+  decode [label="switch(op)\nfetch immediates"];
+  exec [label="stack / memory / call / SYS"];
+  end [label="budget exhausted\nstate = READY\nSTEP_SLICE"];
+  wait [label="WAITING\nSTEP_YIELD"];
+  halt [label="HALTED\nSTEP_HALT"];
+  fault [label="FAULTED\nfault + fault_pc\nSTEP_FAULT"];
+  sched [label="lang_tick\nprocess switch / debug / JIT"];
+
+  sched -> state -> fetch -> budget -> decode -> exec;
+  exec -> fetch [label="next instruction"];
+  exec -> wait;
+  exec -> halt;
+  exec -> fault;
+  budget -> end [label="budget"];
+  end -> sched;
+  wait -> sched;
+}
