@@ -2,7 +2,7 @@
 
 Snapshot date: 2026-10-01  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `e5dff9f94c54adff2694175dd775fe268e1f0f75`
+Baseline documentation commit: `1f56cb480d8048bbd3f9a7ec50810b6cd2d8c87e`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -22,16 +22,16 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **221**.
 
 Authored chapters:
-- EN: **151 present**
-- PT-BR: **151 present**
-- structurally bilingual authored pairs: **151**
-- structural coverage: **68.3%**
-- missing chapters in both languages: **70**
+- EN: **152 present**
+- PT-BR: **152 present**
+- structurally bilingual authored pairs: **152**
+- structural coverage: **68.8%**
+- missing chapters in both languages: **69**
 
 Depth-floor state:
-- EN: **133** chapters above the text floor; **18** present but below the floor.
-- PT-BR: **127** chapters above the text floor; **24** present but below the floor.
-- chapters above the floor in **both** languages: **127**.
+- EN: **134** chapters above the text floor; **18** present but below the floor.
+- PT-BR: **128** chapters above the text floor; **24** present but below the floor.
+- chapters above the floor in **both** languages: **128**.
 - chapters needing expansion in at least one language: **24**.
 - three kernel chapters meet the EN floor but still need PT-BR expansion: `process-lifecycle`, `user-copy`, `user-mode-entry`.
 
@@ -39,7 +39,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 
 ## Chapters currently above the depth floor in both languages
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `address-spaces`, `ahci`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `ata`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `block-storage`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `calling-conventions`, `capacitance-inductance`, `clock-timing`, `chrisfs`, `chrisfs-cache`, `chrisfs-directories`, `chrisfs-fsck`, `chrisfs-inodes`, `chrisfs-journal`, `chrisfs-superblock`, `chrisasm`, `chrisc-clvm`, `chriso`, `chrisld`, `clvm-bytecode`, `clvm-interpreter`, `clvm-memory`, `clvm-syscalls`, `color-formats`, `cmos-switching-power`, `coherence`, `combinational-logic`, `compiler-pipeline`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `debugger`, `desktop-compositor`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gc-libraries`, `gfx2d`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `heap-ownership`, `hhdm`, `higher-half-kernel`, `idt-exceptions`, `intermediate-representation`, `interrupts-smp`, `jit`, `jit-memory`, `kcc`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `lexical-analysis`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `native-toolchain`, `microarchitecture-pipeline`, `mos-capacitor`, `native-codegen`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `nvme`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `page-faults`, `parsing`, `page-table-layout`, `panic-logging`, `partitions-gpt`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pmm-algorithms`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `resource-lifetime`, `semantic-analysis`, `sorting-searching`, `spinlocks`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `tlb`, `tlb-shootdown`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `usb-storage`, `vectors-complex-numbers-systems`, `virtio-block`, `virtual-memory`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `x86-registers-flags`.
+`ac-signals-frequency-impedance`, `acpi-platform`, `address-spaces`, `ahci`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `ata`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `block-storage`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `calling-conventions`, `capacitance-inductance`, `clock-timing`, `chrisfs`, `chrisfs-cache`, `chrisfs-directories`, `chrisfs-fsck`, `chrisfs-inodes`, `chrisfs-journal`, `chrisfs-superblock`, `chrisasm`, `chrisc-clvm`, `chriso`, `chrisld`, `clvm-bytecode`, `clvm-interpreter`, `clvm-memory`, `clvm-syscalls`, `color-formats`, `cmos-switching-power`, `coherence`, `combinational-logic`, `compiler-pipeline`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `debugger`, `desktop-compositor`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gc-libraries`, `gfx2d`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `heap-ownership`, `hhdm`, `higher-half-kernel`, `idt-exceptions`, `intermediate-representation`, `interrupts-smp`, `jit`, `jit-memory`, `kcc`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `lexical-analysis`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `native-toolchain`, `microarchitecture-pipeline`, `mos-capacitor`, `native-codegen`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `nvme`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `page-faults`, `parsing`, `page-table-layout`, `panic-logging`, `partitions-gpt`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pmm-algorithms`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `resource-lifetime`, `semantic-analysis`, `sorting-searching`, `spinlocks`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `tlb`, `tlb-shootdown`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `usb-storage`, `vectors-complex-numbers-systems`, `virtio-block`, `virtual-memory`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `window-manager`, `x86-registers-flags`.
 
 ## Authored chapters that still require expansion
 
@@ -59,7 +59,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 08-graphics | 14 |
 | 09-emulation | 16 |
 | 10-networking | 6 |
-| 11-desktop | 7 |
+| 11-desktop | 6 |
 | 12-self-hosting | 4 |
 | 13-real-hardware | 5 |
 | 14-validation | 6 |
@@ -67,7 +67,7 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 16-history | 3 |
 | 17-developer-guide | 0 |
 | 98-maintenance | 2 |
-| **Total** | **70** |
+| **Total** | **69** |
 
 For the exact ordered list, run:
 
@@ -93,7 +93,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline: `e5dff9f94c54adff2694175dd775fe268e1f0f75`.
+Last known successful reader/deploy baseline: `1f56cb480d8048bbd3f9a7ec50810b6cd2d8c87e`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
