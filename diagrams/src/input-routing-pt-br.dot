@@ -1,0 +1,22 @@
+digraph input_routing {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.28", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+
+  hw [label="input PS/2 / USB", fillcolor="#ffffff"];
+  core [label="input.c\nkey state + mouse state\nglobal event ring"];
+  focus [label="focus da task / z hit-test"];
+  desktop [label="router do desktop"];
+  native [label="native task\ninput_next_event()"];
+  slot [label="filas LangSlot\nkey + text"];
+  clvm [label="app CLVM\nev_key / ev_text"];
+  capture [label="relative mouse capture\nowned pela task"];
+
+  hw -> core;
+  core -> focus;
+  focus -> desktop;
+  desktop -> slot -> clvm;
+  core -> native [label="consumidores diretos atuais"];
+  core -> capture;
+  focus -> capture [label="deveria revogar no focus loss"];
+}
