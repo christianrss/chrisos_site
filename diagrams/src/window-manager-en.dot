@@ -1,0 +1,15 @@
+digraph window_manager {
+  graph [rankdir=LR, bgcolor="#ffffff", pad="0.25", nodesep="0.30", ranksep="0.45"];
+  node [shape=box, style="rounded,filled", fillcolor="#eeeeee", fontname="monospace"];
+  edge [fontname="monospace"];
+  input [label="mouse / keyboard", fillcolor="#ffffff"];
+  desktop [label="desktop_frame\nfocus + event routing"];
+  tasks [label="Task[32]\nframe + z + focus + mode"];
+  runner [label="task_run_all\nback-to-front"];
+  app [label="TASK_APP\nLangSlot"];
+  chrome [label="app_window.c\nor LIB/WIN.CC"];
+  sys [label="CLVM surface syscalls"];
+  gfx [label="2D compositor / framebuffer", fillcolor="#ffffff"];
+  input -> desktop -> tasks -> runner -> app -> chrome -> gfx;
+  chrome -> sys -> tasks;
+}
