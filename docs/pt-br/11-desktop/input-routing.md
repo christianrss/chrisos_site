@@ -14,6 +14,14 @@ sources:
   - kernel/wm/task.h
   - kernel/wm/task.c
   - kernel/wm/desktop.c
+  - kernel/wm/ui.c
+  - kernel/tools/editor_window.c
+  - kernel/tools/explorer.c
+  - kernel/tools/taskmgr.c
+  - compiler/lang_pipeline.c
+  - compiler/lang_pipeline.h
+  - kernel/lang/clvm_sys.c
+  - compiler/chrisc/chrisc.c
   - tools/test_input.c
   - tools/test_keystate.c
 symbols:
@@ -25,252 +33,732 @@ symbols:
   - input_mouse_snapshot
   - input_key_down
   - input_capture_set
-  - input_mouse_delta_for
+  - input_capture_release_task
   - input_mouse_axis
+  - input_mouse_delta_for
   - ps2_init
   - ps2_mouse_poll
+  - task_focus_at
+  - task_focused_id
+  - task_is_focused
+  - lang_slot_push_key
+  - lang_slot_push_text
+  - lang_slot_take_key
+  - lang_slot_take_text
 depends_on:
   - window-manager
   - desktop-applications
   - interrupts-smp
+related:
+  - desktop-applications
+  - chriseditor
+  - chrisshell
+  - mine-chris
+  - clvm-syscalls
 ---
 
-# Roteamento de entrada: das interrupções de dispositivo à aplicação em foco
+# Roteamento de input, foco e capture
 
-Entrada é uma fronteira entre hardware assíncrono e lógica síncrona de aplicações. Um teclado pode interromper o processador em qualquer instrução, um mouse PS/2 chega como um pacote de três bytes e um tablet USB pode informar coordenadas absolutas. Aplicações, porém, precisam de conceitos estáveis como **texto**, **teclas especiais**, **posição do ponteiro**, **transições de botões** e, para jogos, movimento relativo pertencente a uma tarefa.
+## Escopo
 
-O ChrisOS implementa essa fronteira em camadas. Drivers normalizam relatórios de hardware para o subsistema compartilhado de entrada; esse subsistema mantém estado de teclado e ponteiro, além de uma fila limitada de eventos; desktop e tarefas consomem essas abstrações segundo regras de foco e captura. Este capítulo descreve a implementação na revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`. Ele não atribui ao sistema um servidor de eventos futuro nem um modelo POSIX que ainda não existe.
+O input do ChrisOS não é uma única fila entregue diretamente do hardware para as aplicações.
 
-## 1. O problema de roteamento
+O caminho implementado possui várias camadas:
 
-Um caminho de entrada útil precisa preservar tipos diferentes de informação:
+    hardware de teclado/mouse
+        -> decoding de IRQ ou USB report
+        -> global input state + global event queue
+        -> seleção de focus por window/task
+        -> desktop routing
+        -> native task consumers ou filas por CLVM
+        -> APIs da aplicação
 
-1. **estado** — se uma tecla ou botão está pressionado agora;
-2. **transições** — uma pressão que ocorreu desde a última observação do consumidor;
-3. **texto** — caracteres após interpretação de layout e modificadores;
-4. **comandos** — setas, Enter, Escape e teclas de função que não são texto comum;
-5. **movimento** — coordenadas absolutas no desktop e deltas relativos;
-6. **propriedade** — qual tarefa pode consumir movimento relativo capturado.
+Keyboard input possui duas representações paralelas:
 
-Esses conceitos não são representados por uma única variável. Consultar apenas o estado atual perde transições curtas. Manter somente eventos torna movimento contínuo inconveniente. Tratar texto como scan codes brutos força cada aplicação a implementar política de layout. Por isso, o ChrisOS mantém representações complementares.
+- **key state**, para polling de scan-code atualmente pressionado;
+- **event stream**, para key/text events discretos.
 
-O fluxo de alto nível é:
+Pointer input possui três representações:
 
-```text
-PS/2 IRQ 1 -------------------> input_keyboard_irq(scancode)
-teclado USB HID -------------> input_keyboard_irq(código Set-1 normalizado)
-                                  |-- tabela de estado das teclas
-                                  |-- estado de modificadores/layout
-                                  `-- fila limitada de InputEvent
+- screen position/buttons absolutos;
+- relative deltas acumulados;
+- left-press sequence para edge detection.
 
-PS/2 IRQ 12 / polling --------> input_mouse_irq_byte(byte)
-                                  `-- decodificador de 3 bytes --+
-ponteiro USB absoluto --------> input_pointer_absolute(...) ----+--> estado do mouse
-                                                                |    + deltas relativos
-                                                                `--> sequência de pressão
+Aplicações CLVM adicionam outra camada de queueing para `ev_key()` e `ev_text()`.
 
-aplicação / desktop ----------> input_next_event()
-                             --> input_mouse_snapshot()
-                             --> input_key_down()
-                             --> API de captura/deltas
-```
+Este capítulo documenta esses contratos e as limitações atuais do routing.
 
-A decisão arquitetural importante é que PS/2 e USB não expõem APIs independentes às aplicações. Ambos convergem em `kernel/gfx/input.c`.
+![Camadas do roteamento de input do ChrisOS](../../assets/diagrams/input-routing-pt-br.svg)
 
-## 2. Modelo público de dados
+## Tipos de input event
 
-`kernel/gfx/input.h` define duas classes de evento. `INPUT_EVENT_TEXT` transporta um caractere; `INPUT_EVENT_KEY` transporta um `InputKey` para ações que não são texto. A enumeração de teclas especiais inclui atualmente Backspace, Tab, Enter, Escape, movimento do cursor, Home, End, Delete e algumas teclas de função.
+A core event queue carrega somente:
 
-O estado do ponteiro é representado por `InputMouse`:
+    INPUT_EVENT_TEXT
+    INPUT_EVENT_KEY
 
-```c
-typedef struct {
-    int x;
-    int y;
-    bool left_down;
-    bool right_down;
-    bool middle_down;
-    uint32_t left_press_sequence;
-} InputMouse;
-```
+`InputEvent` contém:
 
-A sequência de pressão é relevante. Um booleano responde “o botão está pressionado agora?”, mas não prova que uma pressão completa ocorreu entre dois frames. Incrementar `left_press_sequence` na borda de subida fornece ao desktop um marcador monotônico de transição.
+    type
+    key
+    character
 
-O teclado também possui uma tabela de estado com 256 posições. O make code Set-1 comum `N` usa o índice `N`; um make code precedido por `E0` usa `128 + N`. Assim, por exemplo, uma seta estendida não colide com uma tecla do teclado numérico que tenha o mesmo código baixo.
+Special/navigation keys usam `InputKey`, incluindo:
 
-## 3. Inicialização e layout persistente
+- Backspace;
+- Tab;
+- Enter;
+- Escape;
+- arrows;
+- Home/End/Delete;
+- function keys selecionadas.
 
-`input_init(width, height)` reinicia índices da fila, estado das teclas, contagem de eventos perdidos, estado do ponteiro e modificadores. O ponteiro começa no centro de uma tela cujas dimensões são limitadas a no mínimo um pixel. A rotina também tenta carregar `SYS/KB.CFG`.
+Printable characters usam TEXT events, não KEY events.
 
-Dois layouts são modelados atualmente: US e ABNT2. `input_load_layout_file()` reconhece uma configuração textual pequena, enquanto `input_save_layout_file()` persiste `us` ou `abnt2`. É um mecanismo propositalmente simples para o estágio atual do kernel, e não uma infraestrutura geral de métodos de entrada Unicode.
+Isso permite que editor distinga semantic navigation keys de character input dependente do layout.
 
-As tabelas atuais são orientadas a bytes. Portanto, o roteamento atende às aplicações atuais do ChrisOS, mas ainda não constitui um sistema internacional completo de texto. Dead keys, composição Unicode, IMEs e pacotes arbitrários de layout permanecem fora do contrato implementado.
+## Global event queue
 
-## 4. Caminho do teclado
+A core queue tem:
 
-### 4.1 Entrada PS/2
+    INPUT_QUEUE_CAPACITY = 64
 
-`ps2_init()` configura o controlador compatível com i8042, testa a primeira porta, habilita opcionalmente a porta auxiliar do mouse, ativa o scanning dos dispositivos e registra handlers de IRQ. A IRQ 1 do teclado lê a porta `0x60` apenas quando há dado de saída e chama `input_keyboard_irq(value)`.
+É um ring com global head/tail.
 
-O handler é deliberadamente pequeno: aquisição do byte e interação com hardware permanecem na camada de dispositivo; a interpretação semântica pertence à camada compartilhada de entrada.
+IRQ-side producers adicionam por `queue_push`.
 
-### 4.2 Convergência USB
+Se next head coincidir com tail, o novo event é descartado e:
 
-O caminho xHCI/HID também emite transições normalizadas por `input_keyboard_irq()`. Para uma tecla estendida, emite primeiro `0xE0` e depois o código make ou break. Consequentemente, aplicações do desktop não precisam saber se a tecla veio de PS/2 ou USB.
+    g_lost_events++
 
-### 4.3 Make, break e códigos estendidos
+é incrementado.
 
-`input_keyboard_irq()` trata primeiro o prefixo `0xE0`. `input_keystate_note()` registra a transição seguinte na tabela de 256 posições. O bit alto diferencia liberação de pressão nos códigos Set-1.
+Queue não sobrescreve o evento mais antigo.
 
-O tratamento de modificadores mantém estado:
+`input_lost_events()` expõe o contador cumulativo.
 
-- Shift esquerdo e direito acompanham pressão/liberação;
-- Caps Lock alterna no pressionamento;
-- Alt estendido é usado como AltGr;
-- Escape libera a captura do mouse antes de o despacho normal continuar.
+Não existe per-task event queue nessa camada mais baixa.
 
-Teclas estendidas são traduzidas por `extended_key()`. Teclas comuns de controle são traduzidas por `plain_key()`. Uma tecla especial reconhecida gera `INPUT_EVENT_KEY`; entrada imprimível gera `INPUT_EVENT_TEXT` após aplicação de layout, Shift, Caps Lock e das regras ABNT2/AltGr atualmente implementadas.
+## Sincronização IRQ/main loop
 
-Essa separação é importante para editores e shells. Seta para a esquerda não deve ser um byte imprimível, enquanto digitar `a` não deveria obrigar cada aplicação a decodificar o scan code `0x1E`.
+Event queue e mouse state são compartilhados entre interrupt/device paths e desktop/main execution.
 
-## 5. Fila limitada de eventos do teclado
+A implementação usa volatile fields e compiler barriers, não um lock geral.
 
-A fila contém 64 posições e usa índices de cabeça e cauda. O produtor calcula a próxima posição da cabeça; se ela colidir com a cauda, o evento é descartado e `g_lost_events` é incrementado. Caso contrário, o evento é copiado e a cabeça avança.
+No event ring, producer grava payload antes de publicar novo head.
 
-Para capacidade `C = 64`, o anel deixa propositalmente uma posição livre para distinguir cheio de vazio. Logo, o máximo de eventos pendentes é:
+Consumer observa head/tail, copia event e avança tail.
 
-\[
-N_{max} = C - 1 = 63.
-\]
+É um design de uma global bounded queue.
 
-Inserção e remoção são operações **O(1)** e o armazenamento é **O(C)** com limite fixo. Não há alocação no caminho de interrupção.
+Não deve ser generalizado como fila MPMC lock-free: ele depende do producer/consumer pattern atual de interrupt/main loop.
 
-`input_next_event()` é a interface do consumidor. `input_clear_events()` descarta eventos pendentes avançando a cauda para a cabeça atual. `input_lost_events()` expõe evidência de overflow em vez de fingir entrega sem perdas.
+## Identidade de keyboard scan code
 
-A implementação usa índices `volatile` e barreiras de compilador. Trata-se de um desenho freestanding pequeno, não de uma fila lock-free multi-produtor com prova formal de ordenação atômica C11. Se produtores simultâneos em CPUs diferentes forem introduzidos, esse contrato deverá ser revisado com operações atômicas explícitas ou locking.
+ChrisOS preserva identidade Set-1 para polling.
 
-## 6. Caminho do ponteiro
+Ordinary make code N usa índice N.
 
-### 6.1 Pacotes PS/2
+E0-prefixed make code N usa:
 
-Um relatório padrão de mouse PS/2 é montado em três bytes. O primeiro deve conter o bit de sincronização (`0x08`); caso contrário, o decodificador espera um início válido. Flags de overflow fazem o pacote completo ser rejeitado.
+    128 + N
 
-O segundo e o terceiro bytes são deltas X e Y com sinal. PS/2 define Y positivo para cima, enquanto coordenadas de tela crescem para baixo. Assim, o ChrisOS aplica:
+Isso evita colisão entre keypad e navigation keys.
 
-\[
-\Delta x_{tela} = \Delta x_{ps2}, \qquad
-\Delta y_{tela} = -\Delta y_{ps2}.
-\]
+Por exemplo:
 
-O ponteiro é limitado às bordas do framebuffer. Bits de botão atualizam os estados esquerdo, direito e central, e uma borda de subida do botão esquerdo incrementa a sequência de pressão.
+    Up    = 200
+    Left  = 203
+    Right = 205
+    Down  = 208
 
-`ps2_mouse_poll()` fornece um caminho adicional para drenar bytes auxiliares. O próprio código registra a motivação: a IRQ 12 pode estar mascarada ou interagir com atividade da GPU, então o desktop pode consultar bytes AUX pendentes para manter o ponteiro responsivo. Interrupções são temporariamente desabilitadas enquanto o loop drena até 16 bytes, evitando que o handler de IRQ consuma o mesmo byte simultaneamente.
+`g_keys[256]` guarda estado down/up.
 
-### 6.2 Ponteiro USB absoluto
+`input_key_down(scancode)` consulta essa table.
 
-`input_pointer_absolute(x, y, xmax, ymax, buttons)` converte o intervalo de coordenadas do dispositivo para coordenadas de tela. Desconsiderando arredondamento inteiro:
+## Geração de keyboard events
 
-\[
-x_s = x \frac{W-1}{x_{max}}, \qquad
-y_s = y \frac{H-1}{y_{max}}.
-\]
+`input_keyboard_irq` primeiro atualiza key state, depois trata modifiers e event generation.
 
-Os valores são limitados ao intervalo anunciado pelo dispositivo antes da escala. Quando uma tarefa possui captura, o deslocamento entre posições absolutas sucessivas também é acumulado como delta relativo. Isso permite que um tablet absoluto participe de APIs usadas por aplicações interativas sem afirmar que o hardware fornece movimento relativo nativamente.
+Modifiers acompanhados:
 
-## 7. Snapshots coerentes durante atualizações por interrupção
+- left Shift;
+- right Shift;
+- Caps Lock;
+- AltGr.
 
-O estado do ponteiro pode mudar de forma assíncrona. Sem proteção, o código poderia copiar `x`, sofrer uma interrupção e depois copiar `y`, produzindo um snapshot misturado de dois relatórios.
+Release events atualizam state, mas normalmente não produzem application events.
 
-O ChrisOS usa um pequeno protocolo de leitura versionada. Escritores incrementam `g_mouse.version` antes e depois de alterar a estrutura, com barreiras de compilador ao redor dos campos. `input_mouse_snapshot()` repete a leitura se a primeira versão for ímpar ou se a versão mudar durante a cópia.
+Special key make vira KEY event.
 
-Conceitualmente:
+Printable make vira TEXT event após layout/modifier translation.
 
-```text
-escritor: version++ -> escreve campos -> version++
-leitor: lê v1 -> copia campos -> lê v2 -> aceita se v1 == v2 e par
-```
+Portanto:
 
-O mecanismo se aproxima de um sequence counter e evita um lock bloqueante para um snapshot pequeno. Ainda assim, deve ser interpretado dentro do modelo atual de execução do ChrisOS: barreiras de compilador isoladas não substituem operações atômicas adequadas em qualquer arquitetura SMP futura.
+    physical identity -> key state
+    semantic special key -> KEY event
+    printable result -> TEXT event
 
-## 8. Foco, roteamento e captura
+são outputs separados do mesmo keyboard path.
 
-Foco de janela e captura do ponteiro resolvem problemas diferentes.
+## Keyboard layouts
 
-**Foco** determina qual tarefa do desktop é o alvo ativo da interação comum. O gerenciador de janelas mantém empilhamento e foco. O desktop pode fazer hit testing, elevar e focar uma tarefa quando o usuário interage com sua janela.
+Layouts atuais:
 
-**Captura** é a propriedade explícita do movimento relativo. `input_capture_set(task_id)` registra um único proprietário e limpa deltas acumulados. `input_mouse_delta_for(task_id, ...)` entrega movimento somente ao proprietário. `input_capture_release_task(task_id)` libera a propriedade quando a tarefa termina. Escape também libera a captura no caminho do teclado.
+    INPUT_LAYOUT_US
+    INPUT_LAYOUT_ABNT2
 
-Isso é especialmente importante em uma aplicação 3D. O ponteiro do desktop é naturalmente absoluto e limitado pelas bordas da tela. Uma câmera em primeira pessoa precisa de um fluxo de movimento relativo que não seja limitado pelas bordas. A captura cria essa fronteira sem obrigar todas as aplicações do desktop a consumir deltas.
+Layout default é US, exceto quando `SYS/KB.CFG` seleciona outro valor válido.
 
-`input_mouse_axis()` fornece ainda uma amostra pareada para runtimes que consultam X e Y separadamente. A primeira consulta captura o movimento acumulado; a segunda recebe a mesma amostra, evitando combinar X de um frame com Y de outro.
+Configuration parser reconhece formas textuais de US/ABNT2.
 
-## 9. Concorrência, propriedade e modos de falha
+`input_save_layout_file` grava escolha no filesystem.
 
-O subsistema evita alocação dinâmica nos caminhos próximos ao hardware. Seus recursos limitados principais são o anel de 64 posições e os estados fixos de teclado/ponteiro.
+ABNT2 possui normal/shifted tables próprias e handling específico de AltGr.
 
-| Falha | Comportamento atual | Consequência observável |
-|---|---|---|
-| fila de teclado cheia | descarta o evento novo | `input_lost_events()` aumenta |
-| início inválido de pacote PS/2 | ignora até sincronizar | fluxo volta a alinhar |
-| overflow X/Y do PS/2 | rejeita pacote | uma amostra de movimento é perdida |
-| ponteiro fora do intervalo | aplica clamp | ponteiro permanece na tela |
-| chamador não possui captura | retorna zero/sem amostra | tarefa não rouba movimento relativo |
-| configuração de teclado ausente/inválida | mantém layout padrão | US continua utilizável |
-| IRQ do mouse PS/2 não confiável | drena AUX por polling | movimento pode continuar chegando |
+Ainda é compact explicit table, não framework geral de Unicode/IME.
 
-O desenho prefere dano limitado a bloqueio em contexto de interrupção. Uma fila cheia não aloca memória nem espera o consumidor. Um fluxo de mouse malformado não desloca o ponteiro usando bytes arbitrários.
+TEXT events contêm um único `char`.
 
-## 10. Fronteira de segurança e privilégio
+## Regra Caps/Shift
 
-Hoje o subsistema reside no kernel e o modelo de tarefas ainda está evoluindo. Captura é uma verificação de propriedade por identificador de tarefa, não uma fronteira de segurança madura equivalente à de um desktop multiusuário de produção.
+Para letras:
 
-Uma futura separação em modo usuário precisará responder outras questões: quem pode observar estado global de teclas, se tarefas em segundo plano podem ler eventos de texto, como entrada sintética é autorizada, o que ocorre quando o processo em foco falha e se a captura é revogada em toda mudança de foco. Esses são requisitos de roadmap, não propriedades da implementação atual.
+    shifted != caps_lock
 
-## 11. Evidência de validação
+determina uppercase.
 
-A árvore de código contém testes host-side do comportamento de entrada. `tools/test_input.c` inicializa o subsistema, injeta scan codes e verifica produção de eventos. `tools/test_keystate.c` verifica identidade de estado, inclusive a distinção entre setas estendidas e códigos do teclado numérico, além de transições de modificadores e teclas.
+Para símbolos, shifted table é usada quando Shift está ativo e mapping existe.
 
-Uma matriz de validação útil para esta camada é:
+É regra XOR esperada para letras latinas.
 
-1. injetar pares make/break e verificar `input_key_down()`;
-2. validar mapeamentos US e ABNT2 com Shift/Caps/AltGr;
-3. preencher o anel e verificar contabilização determinística de overflow;
-4. alimentar pacotes PS/2 válidos, dessincronizados e com overflow;
-5. verificar clamp em todas as bordas da tela;
-6. atualizar o ponteiro enquanto snapshots são lidos repetidamente;
-7. transferir/liberar captura e confirmar que não proprietários não recebem deltas;
-8. executar o mesmo caminho de aplicação com entrada originada de PS/2 e USB.
+## Escape e pointer capture
 
-A validação em hardware deve cobrir também teclados, mouses e tablets USB em máquinas reais, pois emuladores normalmente apresentam temporização mais limpa e controladores mais simples que firmware e hardware físicos.
+Um keyboard make de Escape tem side effect global:
 
-## 12. Limitações atuais
+    g_capture_task = -1
 
-Na revisão analisada, a implementação é deliberadamente compacta. Limitações importantes incluem:
+antes do KEY event normal.
 
-- eventos de texto carregam um único `char`, não um escalar Unicode ou sequência composta;
-- apenas US e um mapeamento ABNT2 limitado estão embutidos;
-- a fila é limitada e pode perder eventos sob pressão sustentada;
-- a sincronização da fila não é um desenho SMP multi-produtor geral;
-- PS/2 concentra-se no pacote padrão de mouse de três bytes;
-- captura usa propriedade por ID de tarefa, não um sistema completo de capabilities/segurança;
-- `keyboard_pop()` e `mouse_pop()` na interface de compatibilidade PS/2 são stubs; consumidores devem usar a API compartilhada descrita neste capítulo;
-- o roteamento de alto nível permanece acoplado à arquitetura atual de desktop/tarefas do kernel.
+Escape portanto funciona como emergency release do relative pointer capture independentemente de qual app CLVM capturou.
 
-Essas limitações fazem parte da arquitetura observada. A documentação não deve substituí-las por um desenho mais avançado que ainda não foi implementado.
+Isso é útil em game modes.
 
-## 13. Limites do roadmap
+Ao mesmo tempo, Escape continua sendo INPUT_KEY_ESCAPE.
 
-Trabalho futuro razoável inclui composição de texto Unicode, parsing HID mais amplo, layouts configuráveis, semântica atômica/SMP explícita, canais de eventos por tarefa, revogação mais forte de foco/captura, eventos de roda e uma ABI de entrada mais clara entre kernel e user space. Essas mudanças devem preservar a separação já útil: decodificação de hardware abaixo, estado/eventos normalizados no meio e política de desktop/aplicação acima.
+## Mouse snapshot
 
-## 14. O que deve ser retido
+`InputMouse` contém:
 
-A principal ideia é que roteamento de entrada não é simplesmente “ler uma tecla e enviá-la à janela”. O ChrisOS combina mecanismos porque cada um preserva informações diferentes:
+    x
+    y
+    left_down
+    right_down
+    middle_down
+    left_press_sequence
 
-- **tabela de estado de teclas** para estado contínuo;
-- **anel limitado de eventos** para texto e comandos discretos;
-- **snapshot versionado do ponteiro** para leituras coerentes diante de atualizações assíncronas;
-- **sequência de pressão** para detectar bordas;
-- **acumuladores relativos e propriedade de captura** para aplicações interativas;
-- código específico de PS/2/USB convergindo na mesma API compartilhada.
+O IRQ-facing state possui `version` monotonicamente alterado.
 
-Essa estrutura é a ponte entre hardware dirigido por interrupções e o modelo de janelas/aplicações descrito nos capítulos vizinhos do desktop.
+Writer incrementa version antes e depois de atualizar fields.
+
+`input_mouse_snapshot()` repete até observar:
+
+- version par;
+- mesmo version antes/depois da cópia.
+
+É um read pattern semelhante a seqlock.
+
+Evita snapshot formado por duas device updates distintas sem heavyweight lock.
+
+## Input relativo PS/2
+
+PS/2 decoder monta packets de três bytes.
+
+Packet inicial sem synchronization bit é ignorado.
+
+Packets com overflow flags são descartados.
+
+PS/2 Y positivo aponta para cima; screen Y do ChrisOS cresce para baixo.
+
+Logo:
+
+    screen_dx = packet_dx
+    screen_dy = -packet_dy
+
+Cursor position é clamped aos screen bounds.
+
+Button bits atualizam left/right/middle.
+
+Transição left-up -> left-down incrementa `left_press_sequence`.
+
+## Absolute pointer
+
+`input_pointer_absolute` recebe:
+
+    0..xmax
+    0..ymax
+
+e escala para screen coordinates.
+
+É usado para USB tablet-style device.
+
+Com capture ativo, successive absolute positions também contribuem para accumulated relative deltas.
+
+Assim aplicação capturada pode usar delta mesmo com device absoluto.
+
+## Press-edge detection
+
+Global UI pode chamar:
+
+    input_left_pressed()
+
+Ela compara latest `left_press_sequence` com global consumed sequence.
+
+`input_consume_left_press()` avança a sequência consumida.
+
+Isso é diferente de `left_down`: detecta edge desde último consume.
+
+Como consumed sequence é global, não é namespaced por task.
+
+## Focus model
+
+Window focus é mantido por:
+
+    g_focused_id
+
+`task_id_at(x,y)` escolhe task ativa/non-minimized sob o ponto com maior z.
+
+`task_focus_at(x,y)` dá foco.
+
+Para normal window, chama `task_raise`, que também estabelece top/focus.
+
+Wallpaper-sized task tem tratamento especial e pode ganhar foco sem ordinary raise.
+
+Clique em espaço vazio define focus -1.
+
+## Click-to-focus no desktop
+
+No desktop update:
+
+1. mouse state é amostrado;
+2. se existe novo left press, `task_focus_at(mouse.x, mouse.y)`;
+3. focused task é obtida;
+4. routing usa essa decisão de focus.
+
+Logo o próprio clique que muda foco já influencia keyboard/text routing da mesma iteração.
+
+## Problema de ownership da global keyboard queue
+
+A low-level keyboard event queue é global.
+
+`input_next_event()` remove permanentemente um event.
+
+Não existe peek por owner, cursor por task ou fan-out.
+
+Assim deveria haver exatamente um authoritative consumer que distribui events ao destino.
+
+O source atual não segue esse modelo de forma consistente.
+
+## Routing para CLVM
+
+`desktop.c` atua como central router para application tasks CLVM.
+
+Se a focused task:
+
+- existe;
+- é `TASK_APP`;
+- não está dragging;
+- não está resizing;
+
+seu language slot é escolhido.
+
+Desktop drena global input queue.
+
+Para cada event:
+
+    KEY  -> lang_slot_push_key(slot, key)
+    TEXT -> lang_slot_push_text(slot, character)
+
+Cada `LangSlot` possui key/text rings separados.
+
+## Filas per-CLVM
+
+Language slot contém:
+
+    ev_key_q[LANG_EVQ]
+    ev_text_q[LANG_EVQ]
+
+com read/count indexes independentes.
+
+`lang_slot_push_key/text` append enquanto houver capacidade.
+
+Quando cheia, new routed event é silently dropped.
+
+Diferentemente da core queue, per-slot queue não possui lost-event counter.
+
+`lang_slot_take_key/text` remove um entry e devolve zero quando vazia.
+
+## API CLVM de events
+
+Builtins ChrisC:
+
+    ev_key()   -> syscall 83
+    ev_text()  -> syscall 84
+
+Dispatcher chama diretamente:
+
+    lang_slot_take_key
+    lang_slot_take_text
+
+Apps normalmente drenam em loop.
+
+É poll-based do ponto de vista do app, embora eventos sejam produzidos de forma assíncrona.
+
+## Restrição de foco em events CLVM
+
+Somente focused `TASK_APP` recebe novos key/text events.
+
+Se focus muda, old events já presentes no LangSlot permanecem até consumo.
+
+Não há queue flush automático em focus loss no path inspecionado.
+
+Isso evita perder input já entregue, mas pode fazer app processar stale keystrokes quando volta a executar.
+
+## Supressão durante drag/resize
+
+Quando application window focada está dragging/resizing, desktop routing não escolhe seu LangSlot.
+
+Porém o desktop atual continua drenando global event queue.
+
+Key/text events durante drag/resize são portanto descartados em vez de deferred.
+
+Esse é current behavior.
+
+## Conflito com native tasks
+
+Várias native task implementations consomem `input_next_event()` diretamente.
+
+Exemplos:
+
+- native editor window;
+- explorer;
+- task manager.
+
+Fazem isso apenas quando focadas.
+
+Entretanto `desktop.c` drena global queue **antes** de `task_run_all()`.
+
+Quando focused task não é `TASK_APP`:
+
+    slot = -1
+
+mas desktop ainda faz:
+
+    while (input_next_event(&event)) {
+        if (slot < 0)
+            continue;
+    }
+
+Todos os events são removidos e descartados.
+
+Depois, quando native task executa `run` e chama `input_next_event()`, queue já está vazia.
+
+É bug concreto de routing.
+
+Central router precisa distribuir também para native tasks ou não drenar quando não possui destination.
+
+## Camadas de event loss
+
+Há dois pontos independentes de overflow.
+
+### Core queue
+
+Ring de 64 entries descarta new event e incrementa `g_lost_events`.
+
+### CLVM slot queue
+
+LANG_EVQ cheia descarta new event silenciosamente.
+
+Além disso, o desktop/native routing bug descarta events mesmo sem overflow.
+
+Logo ausência de low-level queue overflow não implica entrega completa.
+
+## Key-state polling
+
+CLVM expõe `key(scancode)` pelo syscall ID 10.
+
+Dispatcher verifica application focus antes de devolver `input_key_down`.
+
+Task CLVM sem foco recebe zero.
+
+É diferente de `ev_key`:
+
+- `key()` responde physical current state;
+- `ev_key()` devolve semantic queued event.
+
+Games usam state polling para movimento e queue para one-shot actions.
+
+## Mouse position/buttons
+
+Builtins CLVM:
+
+    mouse_x()
+    mouse_y()
+    mouse_btn()
+
+Dispatcher amostra global mouse state.
+
+Aplica task/window checks para evitar que app receba active button state de outra topmost task.
+
+Para game/content-sized windows também verifica se pointer está no body, não title/chrome.
+
+Coordinates continuam baseadas no screen pointer global, salvo transformação feita por app/library.
+
+## Pointer capture
+
+Relative-input API:
+
+    mouse_cap()
+    mouse_rel()
+    mouse_dx()
+    mouse_dy()
+
+Capture pertence a task ID:
+
+    g_capture_task
+
+Somente capture owner pode consumir accumulated relative deltas.
+
+Dispatcher só permite `mouse_cap()` se task estiver focada.
+
+Caller sem foco recebe -1.
+
+## Shared delta snapshot
+
+`mouse_dx()` e `mouse_dy()` precisam representar o mesmo movement sample apesar de serem calls separadas.
+
+`input_mouse_axis` snapshotta:
+
+    g_acc_dx
+    g_acc_dy
+
+na primeira axis call, limpa source accumulator e lembra quais axes já foram lidas.
+
+Quando ambas são consumidas, snapshot é invalidado.
+
+Sem isso, IRQ entre X/Y reads poderia combinar deltas de momentos diferentes.
+
+## Gap de lifecycle entre capture e focus
+
+Header afirma que unfocused owners perdem capture.
+
+Mas `input_capture_set` e focus functions não impõem isso diretamente.
+
+Mudança de focus não limpa imediatamente `g_capture_task`.
+
+Em vez disso, paths de `mouse_dx/mouse_dy` no dispatcher verificam focus; se owner deixou de estar focado, chamam:
+
+    input_capture_release_task(t->id)
+
+Capture também é liberado por:
+
+- Escape;
+- `mouse_rel()`;
+- teardown do CLVM slot.
+
+Portanto capture pode permanecer nominalmente pertencendo a task sem foco até um desses paths rodar.
+
+É lifecycle gap em relação ao contrato do header.
+
+A própria transição de foco deveria revogar capture do owner antigo.
+
+## Efeito do stale capture nos deltas
+
+Enquanto stale capture owner permanece configurado, PS/2 movement continua sendo acumulado em:
+
+    g_acc_dx
+    g_acc_dy
+
+porque packet handling relativo acumula independentemente de focus.
+
+Release posterior remove owner, mas não universalmente limpa accumulated deltas.
+
+`input_capture_set` zera accumulator ao mudar owner, reduzindo stale movement quando novo owner captura.
+
+Revogação imediata no focus loss tornaria o lifecycle mais previsível.
+
+## Absolute device e capture
+
+Em reports absolutos, deltas só são acumulados quando existe capture.
+
+Absolute current position sempre é atualizada.
+
+Isso evita construir relative movement history no desktop normal quando ninguém solicitou capture.
+
+## Capture é task-scoped
+
+Input subsystem armazena task ID, não language-slot ID.
+
+CLVM mapeia gfx/language context para task owner antes das capture operations.
+
+Esse é ownership level correto para focus semantics.
+
+Teardown traduz language slot para task e libera capture.
+
+## Focus checks na native UI
+
+UI helper layer chama `task_is_focused(owner)` para interactions como rows/buttons.
+
+Isso impede background windows de agir sobre global mouse click apenas porque pointer sobrepõe seu rectangle.
+
+Window manager cuida de z/focus, enquanto widgets reforçam policy localmente.
+
+## Concorrência e memory ordering
+
+Input data é alterado por interrupt/device paths e lido por normal kernel execution.
+
+Mouse snapshot version protocol oferece coherent multi-field read.
+
+Event ring usa compiler barriers e volatile indexes.
+
+Key state é volatile byte table.
+
+Não há CPU memory-order primitives explícitos ou locks nessas paths.
+
+No x86 atual, design depende bastante do ordering da plataforma e simple producer-consumer behavior.
+
+Em architectures com memory ordering mais fraco ou múltiplos producers concorrentes, contratos precisam de atomics/locks mais fortes.
+
+## Complexidade
+
+Maioria das operações é O(1):
+
+- key state update/lookup;
+- queue push/pop;
+- mouse snapshot sem contention;
+- CLVM queue push/pop;
+- capture checks.
+
+`task_id_at` varre no máximo:
+
+    TASK_MAX = 32
+
+logo focus selection é O(TASK_MAX), pequeno e bounded.
+
+Mouse seqlock pode retry durante update concorrente, mas expected cost é baixo.
+
+## Segurança e isolamento
+
+Input routing é security boundary porque keyboard events podem carregar dados sensíveis.
+
+Controles positivos:
+
+- CLVM key-state polling é focus-gated;
+- CLVM event routing escolhe apenas focused app slot;
+- capture acquisition exige focus;
+- relative deltas só chegam ao capture owner;
+- mouse button state é filtrado por topmost/window ownership;
+- slot teardown libera capture.
+
+Fraquezas atuais:
+
+- global event consumers não são ownership-safe;
+- event loss pode ser silencioso no LangSlot;
+- stale queues sobrevivem a focus transitions;
+- focus change não revoga capture imediatamente;
+- global keyboard queue não expressa per-task provenance.
+
+O conflito de drain de native tasks é tanto bug de usabilidade quanto problema de ownership arquitetural.
+
+## Evidência de validação
+
+`tools/test_keystate.c` verifica:
+
+- keypad identity;
+- E0 extended arrows sem collision;
+- make/break key state;
+- Shift lifetime;
+- Ctrl/Alt/AltGr distintos;
+- keyboard layout;
+- PS/2 relative delta sign;
+- capture ownership;
+- rejection de delta por outra task;
+- Escape release;
+- absolute-device delta sob capture.
+
+`tools/test_input.c` exercita keyboard event generation e queue consumption.
+
+Sources de Editor, Shell, Explorer, Task Manager, Paint e Mine Chris fornecem integration evidence das APIs.
+
+Test set atual não cobre diretamente o desktop/native-task drain bug.
+
+## Focused tests ausentes
+
+Testes de alto valor:
+
+- focar native editor task, enfileirar key event, rodar desktop update e provar entrega;
+- focar CLVM task e provar entrega somente ao LangSlot correspondente;
+- mudar focus com queued events e definir preserve/flush policy;
+- digitar durante drag/resize e definir deferred versus discarded;
+- overflow da core queue com lost counter;
+- overflow do LangSlot com loss reporting;
+- capture pointer, trocar focus sem novas input calls e verificar revogação imediata;
+- task destruction com capture ativo;
+- absolute-pointer update concorrente a snapshot.
+
+## Limitações atuais
+
+Na revisão documentada:
+
+- lowest event queue é global;
+- desktop routing drena queue mesmo quando não há CLVM owner;
+- focused native consumers podem perder todos events antes do run callback;
+- drag/resize de CLVM window drena e descarta key/text;
+- per-CLVM queue overflow é silencioso;
+- events já roteados permanecem após focus loss;
+- pointer capture não é revogado sincronicamente pelo focus change;
+- TEXT events são single-byte chars, não Unicode code points;
+- keyboard mapping é US/ABNT2 compacto, não general layout/IME framework;
+- synchronization low-level depende de volatile/compiler barriers e assumptions atuais;
+- global left-press consumed sequence não é per-task.
+
+## Fronteira de roadmap
+
+Uma arquitetura de routing mais forte deve ter um authoritative dispatcher:
+
+    hardware event
+      -> global ingress queue
+      -> focus/capture router
+      -> per-task queue
+      -> native ou CLVM adapter
+
+Então:
+
+- cada task recebe queue própria;
+- native e CLVM apps usam a mesma routed abstraction;
+- loss pode ser contado por destination;
+- focus transition define policy explícita de preserve/flush/synthetic events;
+- capture revoke ocorre na mesma transação de focus;
+- drag/resize desvia apenas mouse/chrome input e preserva keyboard;
+- Unicode text input fica separado de physical keys;
+- futuros USB/HID devices alimentam normalized event model único.
+
+As APIs atuais já oferecem boa parte dos low-level primitives, mas a regra central de ownership ainda não está implementada de forma consistente.
+
+## Mapa de source e revisão
+
+`kernel/gfx/input.c` e `input.h` implementam device normalization, global event queue, key state, layouts, mouse snapshots, deltas e capture.
+
+`kernel/wm/task.c` e `task.h` implementam hit testing, z selection e focus.
+
+`kernel/wm/desktop.c` faz current global event drain e CLVM routing.
+
+`compiler/lang_pipeline.c` possui as per-CLVM key/text queues.
+
+`kernel/lang/clvm_sys.c` expõe focus-gated key/mouse state, event dequeue e capture syscalls.
+
+Native tasks como `editor_window.c`, `explorer.c` e `taskmgr.c` consomem diretamente a global queue e tornam visível o conflito de routing atual.
+
+`tools/test_input.c` e `tools/test_keystate.c` fornecem host-side validation.
+
+Todas as afirmações de comportamento atual deste capítulo foram reconciliadas com ChrisOS revision e05a17fd76333114a3fb5c2452f38ca747d4ac56.
