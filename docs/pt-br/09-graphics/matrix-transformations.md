@@ -295,6 +295,26 @@ Valores <=0 ou acima de um milhão produzem `0xFFFFFFFF`.
 
 Esse formato pertence ao z-buffer software e não equivale diretamente ao depth normalizado de GPU.
 
+## Comportamento numérico e restrições de ABI
+
+A camada usa `float` de precisão simples. Composições repetidas podem acumular erro de arredondamento, especialmente quando uma transformação existente é multiplicada continuamente em vez de reconstruída a partir de estado canônico do objeto.
+
+A câmera atual normalmente reconstrói a base a partir de posição/yaw/pitch, evitando acumular uma orientation matrix frame após frame. Código de aplicação que multiplique repetidamente a própria model matrix, porém, deve esperar drift normal de ponto flutuante.
+
+A LUT de graus adiciona outra quantização, independente do erro IEEE-754. O caller pode armazenar yaw fracionário, mas `gfx_sinf/gfx_cosf` o avaliam no grau inteiro obtido por truncamento. Logo, o ângulo armazenado e a base efetivamente renderizada podem diferir em resolução sub-grau.
+
+Existe também uma fronteira de layout no ABI de shaders. A matriz row-major da CPU não deve ser enviada como `m[16]` bruto para um contrato que espera palavras column-major. `mat4f_to_glsl` é o ponto canônico de conversão no fonte revisado.
+
+## Ownership de model, view e projection
+
+As três categorias têm owners distintos na API nova.
+
+Model pertence ao objeto/contexto e é configurada por `gfx3d_model`. Posição/orientação da câmera são convertidas em view por `gfx3d_camera`. A mesma chamada cria projection a partir de aspect ratio do target e dos valores FOV/near/far fornecidos.
+
+Quando um programa está ativo, essas matrizes podem ser enviadas a uniforms nomeados como `model`, `view` e `projection`.
+
+Essa separação evita que mover a câmera reescreva geometria local dos objetos e evita que transformar um objeto altere o espaço da câmera.
+
 ## Consumidores
 
 A camada é usada por:
@@ -319,6 +339,18 @@ Isso transforma a matemática em um contrato transversal da pilha gráfica.
 `tools/test_gfx3d_abi.c` compara CPU e shader para identity, translation, rotações X/Y/Z, scale, camera, yaw, pitch, perspective e ortho.
 
 Em conjunto, os testes cobrem tanto a câmera legada quanto o ABI homogêneo novo.
+
+## Relação com clipping
+
+Transformação e clipping são etapas consecutivas, mas diferentes.
+
+O caminho voxel transforma primeiro world → camera com a view matrix. Somente depois compara Z com o near plane 0.08. Isso permite interpolar novas posições em um espaço linear apropriado antes da divisão perspectiva.
+
+O caminho homogêneo produz posições clip-space com quatro componentes. Nesse modelo, clipping canônico deve acontecer antes do divide por W.
+
+Misturar essas ordens pode produzir interseções incorretas: fazer clipping depois da projeção perde a relação linear original das arestas em 3D.
+
+Essa separação é a razão pela qual o capítulo seguinte trata clipping como contrato próprio.
 
 ## Resumo de complexidade
 

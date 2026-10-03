@@ -293,6 +293,26 @@ Depth at or below zero and values above one million map to `0xFFFFFFFF`.
 
 This representation is consumed by the software z-buffer path. It is not the same coordinate representation as GPU normalized device depth.
 
+## Numerical behavior and ABI constraints
+
+The matrix layer uses single-precision `float` throughout. Repeated composition can therefore accumulate rounding error, especially when many transforms are multiplied incrementally rather than rebuilt from canonical object state.
+
+The current camera path largely rebuilds its basis from position/yaw/pitch each time, which avoids accumulating an orientation matrix frame after frame. By contrast, application code that repeatedly multiplies an existing model transform should expect ordinary floating-point drift.
+
+The degree LUT introduces another form of quantization independent of IEEE-754 rounding. A caller may store a fractional yaw, but `gfx_sinf/gfx_cosf` evaluate it at the integer degree selected by truncation. Therefore the stored camera angle and the effective rendered basis are not necessarily numerically identical at sub-degree resolution.
+
+The shader ABI adds a storage-layout boundary. CPU code must not upload the raw row-major `m[16]` array directly where the shader contract expects column-major words. `mat4f_to_glsl` is the canonical conversion point in the reviewed code.
+
+## Model, view and projection ownership
+
+The three transform categories have different ownership in the newer API.
+
+Model state belongs to the drawable/context and is set through `gfx3d_model`. Camera position/orientation is converted into a view matrix by `gfx3d_camera`. The same call builds projection using the target aspect ratio and requested FOV/near/far values.
+
+When a program is active, those matrices can be uploaded to named uniforms such as `model`, `view` and `projection`.
+
+This separation matters because changing camera state should not rewrite object-local geometry, and changing one object's model matrix should not mutate the camera transform.
+
 ## Source consumers
 
 The matrix layer is used by several different subsystems:

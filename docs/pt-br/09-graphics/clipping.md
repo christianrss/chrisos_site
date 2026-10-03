@@ -377,6 +377,24 @@ Um teste de near plane deveria validar:
 
 O backend software de `gfx3d` também precisa de testes de clip-space canônico se parity com GPU for objetivo.
 
+## Invariante de ordem da pipeline
+
+Clipping precisa acontecer no espaço de coordenadas no qual a equação do plano foi definida.
+
+O near plane voxel é definido diretamente em Z de camera space. Assim, world vertices são primeiro transformados pela view, depois clipados e somente então divididos por Z na projeção.
+
+A pipeline homogênea é diferente. Testes do clip volume canônico operam normalmente nas quatro coordenadas clip-space antes da divisão por W. Fazer esses testes apenas após mapear para pixels perde informação e pode gerar bordas incorretas perto da câmera/near plane.
+
+Essa diferença de ordem explica por que `clip_near_tri` não pode simplesmente ser reutilizado sem alterações como clipping completo de shaders programáveis.
+
+## Relação com triangle rasterization
+
+Clipping decide quais primitivas e quais partes delas chegam ao rasterizador. O rasterizador então converte a geometria sobrevivente em fragments/pixels.
+
+No voxel path, um triângulo cortado pode virar dois triângulos antes de chamar `tri_fill_tex`. Isso aumenta a quantidade de primitivas, mas evita projeções inválidas.
+
+O bounding-box clipping dentro de `tri.c` acontece depois, já em screen space, e apenas reduz a região percorrida. Ele não corrige um triângulo que deveria ter sido cortado geometricamente antes da projeção.
+
 ## Limitações atuais
 
 Clipping poligonal de near plane existe apenas em partes do renderer software, principalmente voxel. Mesh legado descarta triângulos parcialmente visíveis. O backend software de shaders não possui uma etapa poligonal completa do clip volume canônico. O rasterizador limita bounding boxes/rectangles. Frustum da scene é aproximado.

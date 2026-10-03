@@ -379,6 +379,16 @@ A focused near-plane unit test should expose or factor the clipper so it can ver
 
 The software `gfx3d` path also needs canonical clip-space edge tests if parity with GPU clipping is a goal.
 
+## Pipeline-order invariant
+
+Clipping must occur in the coordinate space for which its plane equation is defined.
+
+The voxel near plane is defined directly in camera-space Z, so the renderer transforms world vertices into camera space first, clips there, and only then divides by Z during projection.
+
+The homogeneous pipeline is different. Conventional clip-volume tests operate on four-component clip coordinates before division by W. Performing those tests only after mapping to pixels loses information and can produce incorrect edges around the camera/near boundary.
+
+This ordering is one reason ChrisOS cannot simply reuse `clip_near_tri` unchanged as the complete clipping stage for arbitrary programmable shaders.
+
 ## Current limitations
 
 Near-plane polygon clipping exists only in selected software rendering code, most clearly the voxel path. Legacy mesh rendering drops partially visible triangles. The software shader backend lacks a complete canonical clip-volume polygon stage. Raster clipping is rectangle/bounds based rather than geometry generation. Coarse scene frustum logic is intentionally approximate.
