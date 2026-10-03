@@ -12,6 +12,24 @@ sources:
   - LIB/WIN.CC
   - LIB/UI.CC
   - LIB/APP.CC
+  - compiler/lang_pipeline.c
+  - compiler/lang_pipeline.h
+  - kernel/lang/clvm_sys.c
+  - kernel/fs/cfs.h
+  - tools/test_cfs_paths.c
+symbols:
+  - log_init
+  - log_trim
+  - log_line
+  - starts_word
+  - arg_after
+  - join_cwd
+  - hist_save
+  - hist_load
+  - cmd_ls
+  - cmd_cat
+  - run_line
+  - draw_log
 depends_on:
   - input-routing
   - window-manager
@@ -50,6 +68,16 @@ scrollable output log
 
 The shell is an application, not the kernel command interpreter. Commands are decoded in `APPS/SHELL/SHELL.CC` and translated into ChrisC/CLVM library or syscall interfaces.
 
+## Input delivery
+
+ChrisShell receives application-facing input through the same focused-slot mechanism used by the rest of the CLVM desktop. The shell main loop drains `ev_key()` first and then `ev_text()`.
+
+Key events implement control behavior: escape closes the surface, backspace edits the line, enter dispatches it, and up/down traverse command history. Printable text is appended only for byte values 32 through 126 and only while `g_n < 158`.
+
+The 160-byte line buffer therefore always reserves room for a terminating zero under normal interactive entry.
+
+As documented in the desktop chapter, the runtime key/text queues are finite. A shell that is not consuming events quickly enough can lose new events after the per-slot queue fills; ChrisShell does not maintain an additional unbounded keyboard queue of its own.
+
 ## Command-line state
 
 The current input line is stored in the fixed 160-byte `g_line` array and its logical length in `g_n`. This is a deliberately bounded interface. It does not implement an arbitrarily large command language or a POSIX-compatible parser.
@@ -64,11 +92,33 @@ This means the current grammar is intentionally simple: command plus remainder. 
 
 The design is small but useful for an OS development environment: recent compile, run and diagnostic commands can be recalled without requiring a persistent history database.
 
+## Parser mechanics
+
+`run_line` is a direct ordered dispatcher. It checks built-ins one by one with `starts_word`; the first matching branch performs the operation and returns.
+
+There is no token vector or syntax tree. `arg_after` merely skips a known command prefix and spaces.
+
+The `make` path illustrates how small this parser is: when an argument contains a space, the command buffer itself is modified by writing a zero at that position, and the two resulting substrings are passed as makefile/target. Because the interactive line is cleared immediately after dispatch, this in-place split is acceptable for the current lifecycle, but it is not a reusable shell-parser abstraction.
+
+Command matching is exact at the command boundary: a name must be followed by zero or a space. Thus `catx` is not accepted as `cat`.
+
 ## Working directory model
 
 The shell keeps its own current-directory string in `g_cwd`, currently sized at 96 bytes. `cwd_init()` starts at the root representation, while `set_cwd()` changes the stored path. `join_cwd()` combines relative command arguments with the current directory and accepts a leading `/` as an absolute path.
 
 In the reviewed implementation, `cd ..` returns to the root rather than implementing a general component-by-component parent traversal. The shell's path model is consequently simpler than a mature Unix shell.
+
+## Path capacity and ownership
+
+The shell UI uses smaller buffers than the filesystem layer. ChrisFS defines `CFS_PATH_MAX = 512`, while ChrisShell currently stores:
+
+- current directory in `g_cwd[96]`;
+- assembled temporary paths in `g_tmp[160]`;
+- the active command line in `g_line[160]`.
+
+`set_cwd` and `join_cwd` copy bytes until the input terminator without taking a destination capacity argument. The input line is bounded by interactive typing, but a valid ChrisFS path can be longer than the shell's path buffers.
+
+This is a hardening gap. The correct future contract should use bounded copies and reject or truncate only according to an explicit policy. The filesystem accepting a path does not imply that every application buffer can represent it safely.
 
 ## Filesystem commands
 
@@ -118,6 +168,14 @@ These commands turn the shell into a lightweight observability interface. They a
 
 The presence of this command does not by itself establish general-purpose hot code replacement. Its semantics are those provided by the current `lib_reload()` implementation.
 
+## Rendering cost of the log
+
+`draw_log` performs two linear passes over the current log for a frame. `log_lines` first counts newline bytes to derive scrollbar limits. The draw loop then scans from byte zero through `g_log_len`, even when only a small visible line range is needed.
+
+Consequently, shell log rendering is O(B) in retained log bytes per frame. The bounded 49,152-byte primary log keeps that cost finite, but the architecture does not maintain a line-offset index.
+
+A larger terminal would normally index line starts or maintain a ring of rendered rows. The current implementation chooses simpler state for a small development shell.
+
 ## Output log
 
 Shell output is not written into an unbounded terminal stream. `log_init()` attempts a 49152-byte allocation and falls back to 8192 bytes if necessary. `log_trim()` begins discarding old content when the log approaches capacity, normally dropping 4096 bytes before compacting the remainder.
@@ -125,6 +183,21 @@ Shell output is not written into an unbounded terminal stream. `log_init()` atte
 `log_line()` accepts printable ASCII plus newline and limits the amount copied from a single supplied message. The UI can therefore render a bounded scrollable history without continuously consuming heap memory.
 
 This is an application log model rather than a full terminal emulator. There is no evidence in the reviewed source for ANSI/VT escape-sequence emulation, pseudo-terminals or a TTY line discipline.
+
+## Algorithmic cost summary
+
+| Operation | Current mechanism | Cost |
+|---|---|---|
+| dispatch command | ordered built-in checks | O(C * command-prefix) |
+| save/load history | fixed 160-byte slot | O(160) |
+| `ls` | at most 512 `readdir` calls | O(D), D <= 512 |
+| `cat` | at most 64 reads of 180 bytes | O(min(file, 11520 bytes)) |
+| trim log | compact suffix after dropping old bytes | O(B) |
+| count log lines | scan retained log | O(B) |
+| draw log | scan retained log | O(B) |
+| append typed byte | indexed store | O(1) |
+
+The `cat` bound means one command displays at most 64 * 180 = 11,520 bytes before stopping, even if more file data remains.
 
 ## Error handling
 
@@ -137,6 +210,16 @@ The implementation is intentionally direct. It does not provide shell-level tran
 ChrisShell is a privileged-looking interface from a user's perspective because it can compile, remove files, launch applications and reload libraries. Architecturally, however, the actual authority is determined by the syscalls and runtime interfaces that ChrisOS exposes to the CLVM application.
 
 A future capability or permission model should therefore be enforced below the command parser. Hiding a command in the UI is not a security boundary.
+
+## Executable evidence and validation gaps
+
+There is no dedicated host test for `APPS/SHELL/SHELL.CC` in the inspected tool set.
+
+The lower ChrisFS layer does have `tools/test_cfs_paths.c`. That test exercises nested path creation/read, leading-slash handling, case-distinct names, directory listing, rename across directories, unlink/rmdir rules, rejection of `.`/`..` components and the 32-component depth limit. It is useful evidence for the filesystem operations ChrisShell calls.
+
+It is not proof of the shell parser, history ring, UI buffers or log renderer.
+
+Useful shell-specific regression gates would include command-boundary parsing, history wrap after more than eight commands, 158-character input, long-path rejection against the 96/160-byte application buffers, `cat`'s 64-read cutoff and log-trim preservation.
 
 ## Current limitations
 

@@ -12,6 +12,21 @@ sources:
   - LIB/WIN.CC
   - LIB/UI.CC
   - LIB/APP.CC
+  - compiler/lang_pipeline.c
+  - kernel/lang/clvm_sys.c
+  - kernel/fs/cfs.h
+  - tools/test_cfs_paths.c
+symbols:
+  - cwd_set
+  - name_ok
+  - copy_show
+  - is_clv
+  - is_textish
+  - join_path
+  - parent_cwd
+  - open_entry
+  - count_entries
+  - entry_at
 depends_on:
   - input-routing
   - window-manager
@@ -64,6 +79,16 @@ Seleção e viewport são representadas explicitamente: `g_sel` identifica a ent
 
 Esses buffers fixos e contadores são parte da implementação atual, não uma abstração genérica de UI de filesystem com tamanho variável.
 
+## Complexidade da enumeração
+
+O Explorer não mantém um vetor persistente de directory entries.
+
+`count_entries` percorre desde o índice zero até `readdir` terminar ou chegar a 512 tentativas. Durante rendering, `entry_at(i)` é chamado para cada entrada lógica visível e cada chamada recomeça do índice zero.
+
+Com D entradas escaneadas/aceitas e V linhas visíveis, um frame pode realizar aproximadamente O(D + V*D) trabalho de enumeração no pior caso, com D <= 512.
+
+Para o filesystem atual isso é simples e previsível, mas diretórios maiores podem produzir latência. Cachear entries reduziria chamadas repetidas ao custo de memória e invalidação.
+
 ## Enumeração de diretórios
 
 `count_entries()` e `entry_at()` utilizam `readdir(g_cwd, index, g_ent)`. A enumeração é limitada a 512 tentativas. Uma entrada só é aceita quando `name_ok()` retorna sucesso.
@@ -71,6 +96,16 @@ Esses buffers fixos e contadores são parte da implementação atual, não uma a
 `name_ok()` rejeita nomes vazios e bytes fora do intervalo ASCII imprimível, atualmente 32 a 126. O Explorer possui, portanto, um modelo de nomes exibíveis mais restrito que um gerenciador de arquivos com Unicode.
 
 O projeto atual enumera novamente o diretório para contar entradas e para localizar determinada entrada selecionada/visível. Isso mantém pouco estado na aplicação, ao custo de repetir travessias do filesystem.
+
+## Buffers da aplicação versus ChrisFS
+
+Explorer utiliza `g_cwd[96]`, `g_ent[64]` e `g_path[160]`. A camada ChrisFS, por outro lado, define `CFS_PATH_MAX = 512`.
+
+`cwd_set` e `join_path` copiam bytes até o zero terminal sem receber capacidade do destino. A representação da aplicação é, portanto, menor que o contrato do filesystem e os helpers não impõem esse limite menor.
+
+Um caminho profundo mas válido em ChrisFS pode ultrapassar os buffers do Explorer. Isso é dívida de segurança de memória na camada de aplicação.
+
+A evolução correta é usar cópia capacity-aware e retornar erro explícito de path longo, não depender de callers sempre produzirem strings menores.
 
 ## Construção de caminhos
 
@@ -96,6 +131,18 @@ diretório   -> navegação do Explorer
 
 A lógica de associação está codificada diretamente na aplicação. A revisão analisada não estabelece registry, banco MIME ou camada configurável de associações.
 
+## Bordas do reconhecimento de extensão
+
+Os predicates de associação são pequenos, mas seu comportamento exato é mais permissivo que o nome sugere.
+
+`is_clv` exige pelo menos quatro bytes, ponto em `n-4` e verifica apenas se o último byte é `V` ou `v`. Os dois bytes intermediários não são comparados com `C` e `L`. Assim, um nome com formato `.XXV` pode ser classificado como CLV.
+
+No ramo de extensões de quatro caracteres de `is_textish`, o código confere ponto e `TX`/`tx`, mas não valida o último `T/t`. O ramo `.CC/.cc` é mais estrito.
+
+Como `open_entry` testa CLV antes de text e antes de `isdir`, esses predicates influenciam diretamente o dispatch.
+
+O hardening deve usar comparação exata case-insensitive e testes dedicados.
+
 ## Reconhecimento de CLV
 
 `is_clv()` verifica o formato da extensão e aceita `V`/`v` final. A implementação é propositalmente leve, não um parser completo de extensões case-insensitive.
@@ -115,6 +162,16 @@ O loop principal cria uma janela de 520×380 chamada `Files` através de `win_be
 A lista usa linhas de 18 pixels. A altura disponível determina `view`, o número de entradas visíveis. A linha selecionada é mantida dentro da viewport ajustando `g_scroll`. `win_vscroll()` fornece a barra vertical e `win_hscroll()` controla o deslocamento usado para exibir caminhos atuais longos.
 
 A aplicação demonstra, assim, scrolling lógico e widgets reutilizáveis da biblioteca de janelas.
+
+## Entrega de input
+
+Explorer lê teclado com `ev_key()`, portanto herda os limites das filas de eventos do runtime CLVM documentados no capítulo de desktop.
+
+O loop drena todas as keys pendentes. Up/down alteram `g_sel`; Enter chama `entry_at(g_sel)` e depois `open_entry`.
+
+Mouse é edge-triggered por `g_prev`, evitando múltiplas ativações enquanto o botão fica pressionado. Coordenadas globais são convertidas para a área local usando `win_ox` e `win_oy`.
+
+Overflow da fila de keyboard/text é, portanto, condição do runtime, não algo tratado por um buffer adicional do Explorer.
 
 ## Seleção e teclado
 
@@ -138,6 +195,16 @@ Caminhos longos não podem ultrapassar a área visual. `copy_show()` recebe um d
 
 Isso é clipping de apresentação, não truncamento do caminho no sistema de arquivos. O caminho atual permanece armazenado separadamente da string abreviada de exibição.
 
+## Dispatch e fronteira de confiança
+
+Ativar um objeto pode atravessar a fronteira entre namespace persistente e execução.
+
+Nome classificado como CLV chama `app_launch(g_path)`. Nome text-like inicia `APPS/EDITOR/EDITOR.CLV` com `app_spawn_arg`, passando o path. Caso contrário, se for diretório, o Explorer altera o cwd.
+
+Explorer não interpreta bytecode nem valida semântica do executável. Isso pertence ao loader/runtime.
+
+Da mesma forma, associação de arquivo é política de UI, não fronteira de segurança. O runtime precisa manter validação e capabilities próprias mesmo se a UI classificar um nome incorretamente.
+
 ## Diretórios vazios e trabalho limitado
 
 O loop acompanha explicitamente `g_empty`. Quando nenhuma entrada válida é retornada, o Explorer mostra `(empty dir)` em vez de uma lista vazia ambígua.
@@ -155,6 +222,28 @@ ChrisShell  -> controle do filesystem/build/runtime por comandos
 ```
 
 Explorer entrega arquivos textuais ao ChrisEditor. ChrisShell manipula o mesmo filesystem com comandos como `ls`, `cat`, `mkdir` e `rm`. Juntos, formam o ambiente atual de desenvolvimento voltado ao usuário sobre ChrisFS.
+
+## Evidência executável e lacunas
+
+Não há host test dedicado a `APPS/EXPLORER/EXPLORER.CC` no conjunto inspecionado.
+
+A camada inferior possui `tools/test_cfs_paths.c`, que verifica diretórios aninhados, listagem, rename entre diretórios, remoção de arquivo/diretório e regras de path. Isso sustenta as primitivas ChrisFS usadas pelo Explorer.
+
+O teste não cobre buffers 96/160 da aplicação, limite de 512 posições, invariantes de seleção/scroll ou predicates de extensão.
+
+Gates de alto valor: classificação exata de extensões, diretórios sintéticos perto/acima de 512 posições, seleção após shrink do diretório, paths aninhados acima de 95/159 bytes e equivalência entre ativação por mouse e teclado.
+
+## Resumo de complexidade
+
+| Operação | Algoritmo atual | Custo |
+|---|---|---|
+| contar entries | `readdir` sequencial | O(D), D <= 512 |
+| localizar entry n | rescan desde zero | O(D) |
+| renderizar V entries | V rescans | O(V*D) |
+| subir diretório | scan pela última barra | O(P) |
+| montar path | copiar cwd + nome | O(P + N) |
+| classificar extensão | probes após calcular length | O(tamanho do nome) |
+| mover seleção | atualização de inteiro | O(1) |
 
 ## Limitações atuais
 

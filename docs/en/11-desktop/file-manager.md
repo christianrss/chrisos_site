@@ -12,6 +12,21 @@ sources:
   - LIB/WIN.CC
   - LIB/UI.CC
   - LIB/APP.CC
+  - compiler/lang_pipeline.c
+  - kernel/lang/clvm_sys.c
+  - kernel/fs/cfs.h
+  - tools/test_cfs_paths.c
+symbols:
+  - cwd_set
+  - name_ok
+  - copy_show
+  - is_clv
+  - is_textish
+  - join_path
+  - parent_cwd
+  - open_entry
+  - count_entries
+  - entry_at
 depends_on:
   - input-routing
   - window-manager
@@ -64,6 +79,16 @@ Selection and viewport state are explicit integers: `g_sel` is the selected entr
 
 These fixed buffers and counters are part of the current implementation. They are not a generic variable-length filesystem UI abstraction.
 
+## Enumeration complexity
+
+Explorer deliberately avoids retaining a directory-entry vector.
+
+`count_entries` scans the directory from index zero until `readdir` ends or 512 indices have been attempted. Rendering then calls `entry_at(i)` for each visible logical entry. Each `entry_at` starts again at index zero and counts accepted names until it reaches the requested item.
+
+If D accepted/scanned entries exist and V rows are visible, one frame can therefore perform roughly O(D + V*D) directory-index work in the worst case, bounded by D <= 512.
+
+This is acceptable for the current small filesystem UI but can become visible latency on larger directories. A cached vector would trade memory and invalidation complexity for fewer repeated filesystem calls.
+
 ## Directory enumeration
 
 `count_entries()` and `entry_at()` both use `readdir(g_cwd, index, g_ent)`. Enumeration is bounded to 512 attempts. Entries are accepted only when `name_ok()` succeeds.
@@ -71,6 +96,16 @@ These fixed buffers and counters are part of the current implementation. They ar
 `name_ok()` rejects empty names and bytes outside printable ASCII, currently 32 through 126. The Explorer consequently has a narrower display-name model than a Unicode-capable desktop file manager.
 
 The current design re-enumerates directory data to count entries and again to locate a particular visible/selected entry. This keeps application state small and simple at the cost of repeated filesystem traversal.
+
+## Application buffers versus ChrisFS paths
+
+Explorer uses `g_cwd[96]`, `g_ent[64]` and `g_path[160]`. ChrisFS itself permits paths up to `CFS_PATH_MAX = 512`.
+
+`cwd_set` and `join_path` copy until the input terminator without receiving destination capacities. Therefore the application representation is narrower than the filesystem contract, and the copy helpers do not currently enforce that narrower limit.
+
+A deep but valid ChrisFS path can exceed the Explorer's fixed buffers. This is a memory-safety hardening gap in the application layer.
+
+The correct future design should use capacity-aware copies and return an explicit "path too long" result rather than relying on the caller never presenting a larger filesystem path.
 
 ## Path construction
 
@@ -96,6 +131,18 @@ folder      -> Explorer navigation
 
 The association logic is hard-coded in the application source. The reviewed revision does not establish a registry, MIME database or user-configurable association layer.
 
+## Extension-recognition edge cases
+
+The current file association predicates are intentionally small, but their exact behavior is looser than their names suggest.
+
+`is_clv` requires a name of at least four bytes, a dot at `n-4`, and only checks whether the final byte is `V` or `v`. It does not verify that the two middle extension bytes are `C` and `L`. A name shaped like `.XXV` can therefore be classified as a CLV candidate.
+
+Similarly, the four-character text-extension branch verifies the dot plus `TX` or `tx` but does not validate the final `T/t`. The two-character `.CC/.cc` branch is stricter.
+
+Because `open_entry` checks CLV classification before text classification and before `isdir`, these predicates directly affect dispatch policy.
+
+This should be hardened with exact case-insensitive extension comparison and dedicated tests.
+
 ## CLV recognition
 
 `is_clv()` checks the extension shape and accepts upper- or lower-case final `V`/`v`. The implementation is deliberately lightweight rather than a complete case-insensitive extension parser.
@@ -115,6 +162,16 @@ The main loop creates a 520×380 window titled `Files` through `win_begin()`. Th
 The list uses 18-pixel rows. Available list height determines `view`, the number of visible entries. The selected row is kept inside the vertical viewport by adjusting `g_scroll`. `win_vscroll()` provides the vertical scrollbar and `win_hscroll()` controls the displayed offset for long current-directory paths.
 
 The implementation therefore demonstrates both logical scrolling and reusable window-library scrollbar widgets.
+
+## Input delivery
+
+Explorer consumes keyboard events through `ev_key()`, so the desktop/runtime queue limits documented for CLVM applications also apply here.
+
+The application drains all pending keys each loop iteration. Up/down adjust `g_sel`; enter calls `entry_at(g_sel)` and then `open_entry`.
+
+Pointer interaction is edge-triggered with `g_prev`. This prevents repeated activation from a held button. Coordinates are translated from global desktop space into the window-local list using `win_ox` and `win_oy`.
+
+As with ChrisEditor and ChrisShell, keyboard/text queue overflow is a runtime-level backpressure condition rather than something Explorer handles locally.
 
 ## Selection and keyboard input
 
@@ -138,6 +195,16 @@ Long current-directory paths are not allowed to overflow the path display. `copy
 
 This is display clipping, not path truncation in the filesystem itself. The application maintains the current path separately from the shortened visible string.
 
+## Dispatch and trust boundary
+
+Activating an object can cross from filesystem namespace into executable runtime state.
+
+For a CLV-classified name, `app_launch(g_path)` requests execution. For a text-classified name, `app_spawn_arg("APPS/EDITOR/EDITOR.CLV", g_path)` starts ChrisEditor with the path as application argument. Otherwise, a directory changes the current Explorer path.
+
+Explorer does not itself parse CLV bytecode or validate compiler semantics. Those responsibilities belong to the application/runtime loader.
+
+Likewise, file association is UI policy, not a security boundary. The runtime must continue to enforce its own validity and capability rules even if Explorer misclassifies a filename.
+
 ## Empty directories and bounded work
 
 The main loop explicitly tracks `g_empty`. When no valid entries are returned, Explorer renders `(empty dir)` rather than leaving an ambiguous blank list.
@@ -155,6 +222,28 @@ ChrisShell  -> command-oriented filesystem/build/runtime control
 ```
 
 Explorer hands text-oriented files to ChrisEditor. ChrisShell can manipulate the same filesystem through commands such as `ls`, `cat`, `mkdir` and `rm`. Together they form the current user-facing development environment over ChrisFS.
+
+## Executable evidence and validation gaps
+
+There is no dedicated host test for `APPS/EXPLORER/EXPLORER.CC` in the inspected repository.
+
+The lower filesystem path behavior is covered by `tools/test_cfs_paths.c`, which validates nested directories, listing, cross-directory rename, file removal, directory removal and path-depth rules. That supports the ChrisFS primitives consumed by Explorer.
+
+It does not validate Explorer's 96/160-byte application buffers, 512-entry enumeration cap, selection/scroll invariants or extension predicates.
+
+High-value Explorer tests would include exact extension classification, synthetic directories near and beyond 512 scanned entries, selection after directory shrink, nested paths beyond 95/159 bytes and pointer/keyboard activation of the same logical entry.
+
+## Algorithmic cost summary
+
+| Operation | Current algorithm | Cost |
+|---|---|---|
+| count entries | sequential `readdir` | O(D), D <= 512 |
+| locate nth accepted entry | rescan from zero | O(D) |
+| render V entries | V rescans | O(V*D) |
+| parent path | scan for last slash | O(P) |
+| join path | copy cwd + name | O(P + N) |
+| classify extension | fixed suffix probes | O(name length) because length is rescanned |
+| keyboard move | bounded integer update | O(1) |
 
 ## Current limitations
 
