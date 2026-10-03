@@ -368,6 +368,16 @@ Essa separação é a razão pela qual o capítulo seguinte trata clipping como 
 
 Em rendering, o fator relevante é quantos vértices executam essas operações constantes.
 
+## Invariantes úteis de debugging
+
+Ao investigar uma transformação incorreta, a ordem de diagnóstico mais confiável é separar os espaços.
+
+Primeiro valide o ponto local antes da model matrix. Depois verifique world space após model. Em seguida aplique view e confirme que um objeto à frente produz Z positivo no caminho legado. Somente então aplique projection ou a divisão por Z correspondente.
+
+Também é importante verificar o layout no momento de cruzar CPU e shader. Um resultado correto na CPU pode parecer transposto no shader se o caller ignorar `mat4f_to_glsl`.
+
+Esses passos distinguem erro de ordem de multiplicação, convenção de câmera, sinal de pitch, storage layout e projeção, evitando atribuir todos os sintomas à mesma "matriz errada".
+
 ## Limitações atuais
 
 O projector software possui escala implícita em vez de FOV configurável. Pontos com Z não positivo são rejeitados sem clipping poligonal nesse helper. A trigonometria é quantizada em graus inteiros. Câmera/tela ainda possuem estado global. A normal matrix geral por inverse-transpose não existe.

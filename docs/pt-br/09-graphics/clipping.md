@@ -395,6 +395,16 @@ No voxel path, um triângulo cortado pode virar dois triângulos antes de chamar
 
 O bounding-box clipping dentro de `tri.c` acontece depois, já em screen space, e apenas reduz a região percorrida. Ele não corrige um triângulo que deveria ter sido cortado geometricamente antes da projeção.
 
+## Invariantes úteis de debugging
+
+Geometria que desaparece perto da câmera deve ser classificada pelo estágio em que some.
+
+Se o vértice falha em `project_vertex`, trata-se da regra de Z do projector legado. Se um voxel atravessa Z=0.08, o caso pertence a `clip_near_tri`. Se a primitiva existe mas nenhum pixel é visitado, verifique `clip_box` e o bounding rectangle. Se o objeto inteiro nunca chega ao draw, investigue `scene_in_frustum`.
+
+Essa separação reduz falsos diagnósticos entre clipping, culling, depth e raster bounds.
+
+Também convém reproduzir problemas com câmera e triângulos determinísticos. Casos mínimos com um vértice em cada lado do near plane são mais informativos que cenas completas ao validar interseções e winding.
+
 ## Limitações atuais
 
 Clipping poligonal de near plane existe apenas em partes do renderer software, principalmente voxel. Mesh legado descarta triângulos parcialmente visíveis. O backend software de shaders não possui uma etapa poligonal completa do clip volume canônico. O rasterizador limita bounding boxes/rectangles. Frustum da scene é aproximado.
