@@ -4,7 +4,7 @@ lang: en
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/syscall.c
   - kernel/metal/syscall.h
@@ -13,12 +13,16 @@ sources:
   - kernel/metal/mm.c
   - kernel/metal/mm.h
   - kernel/metal/bootinfo.c
+  - kernel/metal/irq.c
+  - tools/test_sys_write.c
 symbols:
   - user_span_ok
   - user_copy
   - copy_to_user
   - copy_from_user
   - mm_translate
+  - translate_leaf
+  - bootinfo_phys_to_virt
   - proc_cr3
 depends_on:
   - virtual-memory
@@ -104,6 +108,14 @@ Failure immediately returns -1.
 It then requires `MM_PRESENT` and `MM_USER`. For a kernel-to-user copy it additionally requires `MM_WRITE`.
 
 This asymmetry is correct. Reading from a user mapping only needs a readable/present user page under the current page-table model. Writing into user memory must not bypass the PTE's write-protection rule.
+
+## Page-walk behavior
+
+`mm_translate` does not consult only the current CR3's final 4 KiB page table. It enters the MM critical section and recursively walks PML4, PDPT, PD and PT levels. Non-present entries fail the walk. Large-page leaves are recognized at PDPT and PD levels, and the returned physical address includes the offset within the selected mapping. The returned flags are the leaf entry used by the policy check.
+
+`user_copy` still chunks transfers at 4 KiB boundaries even when translation resolves through a larger page. This is conservative: permission is re-evaluated at least once per 4 KiB segment and the byte-copy loop never assumes that a long virtual span can be authorized from one translation result.
+
+The MM lock protects the page-table walk itself. It does not pin the translated physical frame for the subsequent byte copy. The current BSP-only process model and absence of concurrent teardown for the active user process are therefore part of the lifetime argument.
 
 ## Crossing page boundaries
 
@@ -203,6 +215,14 @@ Because the copy walks page tables before accessing each chunk through kernel ma
 
 This does not guarantee the copy path can never fault: corrupted page tables, invalid HHDM mappings or bugs in `mm_translate` can still be kernel failures. The property is narrower and important: user-controlled absence/permission failures are checked before the memory access.
 
+## Translation-to-copy lifetime window
+
+There is a deliberate boundary between translation and data movement. `mm_translate` releases the MM lock before `user_copy` copies through the HHDM. In a future design where another CPU can unmap and free the same process page concurrently, a successful translation would not by itself guarantee that the frame remains owned until the copy completes.
+
+A scalable design would need a lifetime mechanism such as process/address-space references, pinned pages, a read-side lock spanning validation and copy, or another reclamation protocol. The current implementation instead relies on the architectural restriction that native user execution and process switching are BSP-only and that teardown is not racing the syscall copy of the current task.
+
+This constraint is memory-safety relevant. It should be removed only together with a replacement ownership protocol.
+
 ## Process teardown
 
 `proc_destroy` can release owned pages and free the user address space. In the current BSP-only user/syscall model, the syscall copying a current process buffer is not racing a separate CPU executing process teardown for the same task.
@@ -224,6 +244,12 @@ The current implementation translates every page and copies byte-by-byte. This i
 For small syscall limits—80-byte console writes and 512-byte file operations—the overhead is bounded. A future large-I/O path would benefit from page-granular bulk copies, validated iovecs, pinning or more efficient primitives.
 
 Optimization must preserve the rule that every crossed page is independently authorized.
+
+## Existing executable evidence
+
+The repository contains `tools/test_sys_write.c`, which exercises the capacity rule of `syscall_write_term`: an 80-byte payload requires an 81-byte destination so the terminating NUL remains in bounds, while an 81-byte payload is rejected. This is useful evidence for the console-write boundary layered on top of copy-from-user.
+
+It is not a test of `user_copy`, page-table translation, cross-page permission handling or concurrent lifetime. No dedicated host test in the inspected tool set directly executes the static `user_copy` implementation with synthetic page tables. Those contracts therefore remain established primarily by source inspection and require targeted host/QEMU tests for stronger evidence.
 
 ## Validation
 
@@ -249,6 +275,10 @@ The permitted span is one global low/high pair rather than a full VM-area lookup
 
 Within the current process model, however, the implementation enforces the crucial invariants: canonical/range validation, current-CR3 translation, per-page presence/user checks and write-permission checks before kernel-to-user modification.
 
+## Revision reconciliation
+
+This chapter was reconciled from the previous reviewed revision to `e05a17fd76333114a3fb5c2452f38ca747d4ac56`. The intervening ChrisOS commits did not change the user-copy, MM, process or boot-information implementation files described here. The reviewed revision can therefore advance without attributing unobserved runtime behavior.
+
 ## Source map
 
-The boundary implementation is in `kernel/metal/syscall.c`. Current process CR3 comes from `kernel/metal/proc.c`. Page translation and flag definitions belong to `kernel/metal/mm.c`/`mm.h`. Physical-to-kernel addressing comes through `kernel/metal/bootinfo.c`. The Source Atlas contains the complete reviewed sources at `da3df29cb397932c43d32373871fb9380e688ade`.
+The boundary implementation is in `kernel/metal/syscall.c`. Current process CR3 comes from `kernel/metal/proc.c`. Page translation and flag definitions belong to `kernel/metal/mm.c`/`mm.h`. Physical-to-kernel addressing comes through `kernel/metal/bootinfo.c`. The Source Atlas contains the complete reviewed sources at `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.

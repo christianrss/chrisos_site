@@ -4,7 +4,7 @@ lang: pt-br
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/syscall.c
   - kernel/metal/syscall.h
@@ -13,12 +13,16 @@ sources:
   - kernel/metal/mm.c
   - kernel/metal/mm.h
   - kernel/metal/bootinfo.c
+  - kernel/metal/irq.c
+  - tools/test_sys_write.c
 symbols:
   - user_span_ok
   - user_copy
   - copy_to_user
   - copy_from_user
   - mm_translate
+  - translate_leaf
+  - bootinfo_phys_to_virt
   - proc_cr3
 depends_on:
   - virtual-memory
@@ -100,6 +104,14 @@ Falha retorna -1.
 Depois exige `MM_PRESENT` e `MM_USER`. Para copy-to-user exige também `MM_WRITE`.
 
 Essa assimetria preserva write protection: ring 0 não deve usar seu privilégio para escrever em mapeamento user que o próprio processo vê como read-only.
+
+## Comportamento do page walk
+
+`mm_translate` entra na região crítica da MM e percorre recursivamente PML4, PDPT, PD e PT. Uma entrada não presente encerra a tradução com erro. O walker também reconhece huge pages nos níveis PDPT e PD; nesses casos calcula o endereço físico usando o offset correspondente ao tamanho da página e devolve como flags a entrada leaf efetivamente encontrada.
+
+Mesmo quando a tradução termina em uma huge page, `user_copy` divide a transferência em fronteiras de 4 KiB. Isso é conservador: a política de permissão é reavaliada a cada segmento e o código não autoriza um span longo apenas porque o primeiro endereço traduziu corretamente.
+
+O lock da MM protege a caminhada das page tables, não toda a transferência. Depois que `mm_translate` retorna, o lock já foi liberado e a cópia ocorre pelo HHDM. Portanto a validade do frame durante a cópia também depende do modelo de lifetime do processo.
 
 ## Buffers que cruzam páginas
 
@@ -193,6 +205,14 @@ Como cada chunk é autorizado antes do acesso físico, ponteiros inválidos usua
 
 Isso não torna impossível um kernel fault: page tables corrompidas, HHDM incorreto ou bug de tradução ainda são falhas privilegiadas. A garantia é específica contra input user esperado como inválido.
 
+## Janela entre tradução e cópia
+
+Existe uma janela explícita entre provar a tradução e movimentar os bytes. A função traduz sob o lock da MM, retorna o endereço físico e somente depois acessa o frame via HHDM. Se outro CPU pudesse remover o mapping e devolver o mesmo frame à PMM nesse intervalo, uma tradução válida deixaria de ser garantia suficiente de lifetime.
+
+No modelo atual, processos user e syscalls nativas ficam no BSP e o teardown do processo corrente não ocorre concorrentemente em outro core. Essa restrição é parte do argumento de segurança de memória, não apenas uma escolha de scheduler.
+
+Para userspace SMP seria necessário acrescentar uma garantia de lifetime: referência ao address space/processo, pinning dos frames, read-side lock que cubra validação+cópia ou outro protocolo de reclamation. Apenas transformar `g_current` em per-CPU não resolveria essa corrida.
+
 ## Teardown e concorrência
 
 `proc_destroy` libera páginas e address space. Atualmente syscall e process lifecycle user são BSP-only, então a cópia do processo atual não compete com teardown remoto em outro CPU.
@@ -213,15 +233,42 @@ Cada página é traduzida e cada chunk copiado byte a byte. Para limites atuais 
 
 I/O maior pode justificar bulk copy, iovecs validados ou pinning. Qualquer otimização deve preservar autorização por página.
 
+## Evidência executável existente
+
+O repositório possui `tools/test_sys_write.c`, que valida uma fronteira concreta usada por `SYS_WRITE`: payload de 80 bytes exige capacidade 81 para o NUL final, capacidade 80 é rejeitada e comprimento 81 também é rejeitado. Essa evidência cobre `syscall_write_term`, que fica imediatamente depois de copy-from-user no caminho de console.
+
+Ela não executa `user_copy`, não monta page tables sintéticas e não prova crossing de páginas, flags `USER/WRITE` ou lifetime entre tradução e cópia. Na inspeção atual não há um host test dedicado à função estática `user_copy`. Esses contratos ainda precisam de testes específicos, idealmente combinando casos host para o walker com gates em QEMU para o caminho real de syscall.
+
 ## Validação
 
 Casos necessários incluem zero length, limites exatos, overflow, buffer em uma página, crossing válido, segunda página ausente, supervisor-only, read-only em copy-to-user, CR3 inválido, write de 80 bytes com terminador e I/O de 512 bytes.
+
+## Matriz de decisão da cópia
+
+| Situação | Resultado atual |
+|---|---|
+| `n == 0` | sucesso sem consultar CR3 |
+| endereço inicial no upper half | erro |
+| soma endereço+comprimento cruzaria limite canônico | erro |
+| span sai da janela configurada | erro |
+| CR3 atual é zero | erro |
+| algum nível da tradução não está presente | erro |
+| leaf sem `MM_USER` | erro |
+| copy-to-user em leaf sem `MM_WRITE` | erro |
+| várias páginas válidas | cópia por chunks, com nova tradução |
+| página lazy ainda ausente | erro; a cópia não faz demand paging |
+
+A tabela evidencia que "ponteiro dentro da faixa" é apenas a primeira condição. A autorização real combina range, address-space ownership, page walk e permissões.
 
 ## Limitações atuais
 
 A política usa uma janela global low/high, não uma lookup completa de VMAs. Cópia é byte-oriented. Página ausente retorna erro. Não há SMAP-aware accessor, exception-table recovery nem refcount para teardown concorrente.
 
 Mesmo assim os invariantes centrais estão implementados: faixa/canonicalidade, CR3 correto, validação por página, User bit e Write bit na direção apropriada.
+
+## Reconciliação de revisão
+
+O capítulo foi reconciliado com a revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`. Os commits intermediários não alteraram `syscall.c`, `mm.c`, `proc.c` nem o mecanismo HHDM descrito aqui; portanto o avanço de `reviewed_revision` não implica atribuir comportamento novo à implementação.
 
 ## Mapa de fonte
 

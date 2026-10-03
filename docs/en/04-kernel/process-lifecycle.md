@@ -4,7 +4,7 @@ lang: en
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/proc.c
   - kernel/metal/proc.h
@@ -14,6 +14,8 @@ sources:
   - kernel/metal/pmm.h
   - kernel/metal/syscall.c
   - kernel/net/sock.c
+  - kernel/metal/irq.c
+  - tools/test_pmm_cycle.c
 symbols:
   - proc_init
   - proc_create
@@ -24,6 +26,10 @@ symbols:
   - proc_block
   - proc_unblock
   - proc_fault_demand
+  - proc_set_vm
+  - proc_sbrk
+  - proc_fb_ptr
+  - mm_free_user_space
 depends_on:
   - virtual-memory
   - physical-memory
@@ -74,6 +80,20 @@ The public header defines:
 A process is considered runnable only when its slot is valid, alive and state is READY.
 
 The state is intentionally small. There is no separate zombie state, stop/continue state, priority or per-thread state in this structure.
+
+## State transitions
+
+The process-state API is intentionally small enough to express as a finite set of transitions:
+
+| From | Operation/event | To |
+|---|---|---|
+| FREE | successful `proc_create` initialization | READY |
+| READY | `proc_block(pid, reason)` | BLOCK_SOCK / BLOCK_JOIN / BLOCK_IRQ |
+| blocked | `proc_unblock` or matching `proc_unblock_why` | READY |
+| any live user state | fatal user fault | alive = 0, then teardown |
+| any used user slot | `proc_destroy` | FREE |
+
+`alive` and `state` are separate fields. `proc_runnable` requires both `alive` and READY, so recording a fault can make a process non-runnable before its slot is finally cleared by destruction. This two-field model is simple but means callers must not infer liveness from `state` alone.
 
 ## Initialization
 
@@ -256,6 +276,14 @@ After the loop it resets page count, VM bytes, framebuffer page count and heap b
 
 The ownership table ensures each recorded frame is freed once. Duplicate virtual addresses are rejected during owned mapping, reducing double-ownership risk.
 
+## Layered teardown: frames versus page tables
+
+Process teardown separates two ownership classes that are easy to conflate.
+
+`proc_release_user` owns leaf data frames recorded in `ProcPage[]`. It unmaps each recorded virtual address and returns the associated physical frame to PMM. After those leaf frames are gone, `mm_free_user_space` walks only the lower 256 PML4 entries and recursively frees user-half intermediate page-table pages plus the process PML4 itself. Its contract explicitly leaves leaf frames to the process ownership list.
+
+The order prevents two classes of bug: freeing a leaf frame twice through both VM and process code, or freeing page-table structures while they are still needed to locate/unmap owned leaves. Kernel-half mappings are not recursively freed as part of a user process because they are shared architectural context, not process-owned leaves.
+
 ## File and socket cleanup
 
 `syscall_close_owner(pid)` scans the small syscall file table and invalidates descriptors belonging to the process.
@@ -271,6 +299,18 @@ The initial switch to kernel PID before release also changes CR3 through the nor
 Because only the BSP is allowed to switch processes, destruction of the current user process is expected on BSP. A future concurrent architecture must guarantee that no other CPU can still execute in the address space before pages/page tables are freed.
 
 This requirement connects process teardown directly to TLB shootdown and task migration.
+
+## Capacity coupling and partial-failure semantics
+
+The 288-entry ownership table is shared by all process-owned mappings. VM pages, stack growth, heap pages and the software framebuffer all consume the same `ProcPage[]` capacity. Consequently, each region's nominal size is not an independent reservation.
+
+For example, `proc_set_vm` can advertise up to `PROC_PAGES * 4096` bytes, but the process already owns its initial stack page. A VM request at the nominal maximum therefore cannot materialize every VM page through `proc_commit` without exhausting the shared ownership table. Heap and framebuffer commitments further reduce the available count.
+
+Failure can also leave useful metadata in place. `proc_set_vm` stores `vm_bytes` before committing the first VM page; if that commit fails, the function returns zero while the declared VM range remains recorded. `proc_fb_ptr` stores `fb_pages` before committing the pages, so a mid-loop allocation failure can leave a partially materialized framebuffer region whose already-owned pages are still correctly reclaimed by later teardown.
+
+These are concrete current semantics. Callers should treat a returned failure as failure even though the process object may retain region metadata used by later demand-fault logic.
+
+`proc_sbrk` is grow-only and checks `old + inc` against the 256 KiB ceiling, but the current expression does not first reject unsigned addition overflow. With an adversarially large increment, wraparound is therefore an implementation edge case that should be covered by validation before this interface is treated as hardened.
 
 ## Capacity and failure
 
@@ -305,6 +345,12 @@ For current small limits this favors simplicity over sophisticated VM trees. Sca
 
 Demand paging reduces eager allocation but adds first-touch faults.
 
+## Existing executable evidence and gaps
+
+`tools/test_pmm_cycle.c` verifies the lower-layer allocator's accounting across 1,000 allocations and frees: free-page count falls by exactly 1,000 and returns to its original value after the cycle. That is relevant evidence for the PMM primitive used by `proc_commit` and `proc_release_user`.
+
+It is not a lifecycle test. The host test does not create real `Proc` objects, clone CR3 roots, exercise `proc_destroy`, verify descriptor/socket cleanup or prove that process-owned frames and user page-table pages are each released exactly once. The lifecycle chapter therefore distinguishes lower-layer allocator evidence from the still-needed process-level create/destroy gate.
+
 ## Validation
 
 Lifecycle tests should verify:
@@ -329,6 +375,10 @@ One process-level execution context is represented per PID; no user threads are 
 
 These limits should remain visible instead of being obscured by generic language such as “full process management”.
 
+## Revision reconciliation
+
+The lifecycle implementation sources described here are unchanged between the former reviewed revision and `e05a17fd76333114a3fb5c2452f38ca747d4ac56`. Repository changes in between were documentation/project-maintenance changes rather than modifications to the process, MM, PMM or teardown code. The page is therefore reconciled to the newer source revision without introducing new runtime claims.
+
 ## Source map
 
-`kernel/metal/proc.c`/`proc.h` define process state and lifecycle. `mm.c`/`mm.h` provide CR3/mapping operations. `pmm.c`/`pmm.h` own physical frames. `syscall.c` and `kernel/net/sock.c` participate in teardown. The Source Atlas publishes each source in full at revision `da3df29cb397932c43d32373871fb9380e688ade`.
+`kernel/metal/proc.c`/`proc.h` define process state and lifecycle. `mm.c`/`mm.h` provide CR3/mapping operations. `pmm.c`/`pmm.h` own physical frames. `syscall.c` and `kernel/net/sock.c` participate in teardown. The Source Atlas publishes each source in full at revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
