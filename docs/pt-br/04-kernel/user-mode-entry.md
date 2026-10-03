@@ -4,7 +4,7 @@ lang: pt-br
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/user_enter.c
   - kernel/metal/user_enter.h
@@ -15,6 +15,8 @@ sources:
   - kernel/metal/syscall.c
   - kernel/metal/syscall.h
   - kernel/metal/idt.c
+  - kernel/metal/irq.c
+  - kernel/metal/irq.h
 symbols:
   - enter_user
   - syscall_set_kernel_return
@@ -133,6 +135,14 @@ Isso acompanha a regra de `proc_switch`. O ChrisOS atual não migra contexto use
 
 A restrição simplifica `g_current` e `g_user_kernel_rip` globais, mas limita escalabilidade.
 
+## Contrato interno do `irq_frame`
+
+A entrada de interrupção não entrega apenas um número de vetor. O stub comum organiza os registradores em `struct irq_frame`, definida em `irq.h`. A ordem inclui os registradores gerais, depois `vector`, `error`, `rip`, `cs` e `rflags`.
+
+Esse layout é um ABI interno entre assembly e C. `syscall_dispatch` lê diretamente RAX como número, RDI/RSI/RDX como argumentos e altera RAX/RIP no próprio frame. `panic_user_fault` usa RIP e o código de erro; `irq_dispatch` consulta CS para distinguir origem ring 0 de ring 3.
+
+Se a ordem de pushes no stub e a struct C divergirem, o kernel pode interpretar um registrador como outro mesmo que toda a numeração de syscalls permaneça correta. Por isso a compatibilidade do frame precisa ser tratada como parte da interface de entrada privilegiada.
+
 ## Retorno normal de syscall
 
 A maioria das syscalls grava resultado em RAX salvo, avança RIP em 2 bytes e retorna ao stub. O stub restaura estado e executa `iretq` para ring 3.
@@ -140,6 +150,12 @@ A maioria das syscalls grava resultado em RAX salvo, avança RIP em 2 bytes e re
 O incremento de 2 corresponde ao tamanho de `int imm8` e ao convention adotado pelo frame do sistema. Essa convenção precisa permanecer consistente com o código user e os stubs.
 
 Mudar para SYSCALL/SYSRET exigiria outra semântica de entry/return e registradores.
+
+## Invariante de control flow no retorno
+
+O retorno normal de syscall e o retorno de término compartilham o mesmo mecanismo físico de `iretq`, mas não o mesmo destino lógico. No retorno normal o frame preserva CS de usuário e avança para a próxima instrução user. No término, o kernel substitui RIP e CS para transformar o mesmo epílogo de interrupção em retorno privilegiado.
+
+Isso reduz duplicação de assembly, mas cria um invariante: o formato do frame produzido na entrada precisa ser exatamente o formato que `syscall_return_to_kernel` espera modificar. Mudanças futuras em stubs, IST, stack frame ou mecanismo de syscall devem revalidar essa hipótese antes de reutilizar o caminho de saída.
 
 ## Exit e retorno a ring 0
 
@@ -182,6 +198,12 @@ A fronteira resulta da composição:
 
 Nenhuma dessas camadas sozinha é “todo o sandbox”.
 
+## Ownership da continuação privilegiada
+
+`g_user_kernel_rip` não pertence ao processo em uma estrutura `Proc`; ele pertence à execução user corrente do modelo global. `enter_user` o sobrescreve imediatamente antes da queda de privilégio, e tanto `SYS_EXIT` quanto fault fatal de user mode dependem desse valor.
+
+Esse desenho funciona porque o sistema impede process switching em AP e trata a execução nativa como fluxo serializado no BSP. Se duas execuções user independentes pudessem coexistir, a segunda poderia substituir a continuação da primeira. A evolução para SMP precisa mover esse estado para uma estrutura com ownership explícito por thread/processo ou por CPU.
+
 ## Estado global
 
 `g_user_kernel_rip`, exit flags e `g_current` são globais. A regra BSP-only torna isso coerente na revisão atual.
@@ -220,6 +242,12 @@ Demand paging reduz commitment inicial e desloca custo para first touch, introdu
 
 A decisão sobre otimização deve ser baseada em medição, não apenas no custo teórico da instrução.
 
+## Evidência e limites da revisão
+
+A revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56` preserva os mesmos arquivos de implementação de user entry, processo e syscall usados pela revisão anteriormente documentada. Os commits intermediários alteraram principalmente documentação e metadados do repositório, não o mecanismo de transição descrito aqui.
+
+Isso permite avançar `reviewed_revision` sem inferir comportamento novo. Ainda assim, inspeção estática prova somente a estrutura do mecanismo. A correção efetiva da sequência `iretq`, da troca de stack via TSS e do retorno por frame depende de execução em ambiente compatível; portanto, boot/QEMU/hardware continuam sendo evidência necessária para a transição completa.
+
 ## Validação
 
 Gates relevantes devem provar:
@@ -240,6 +268,21 @@ Execução user é BSP-only. Return target é global. TSS usa stack ring-0 fixa.
 
 São limites do ChrisOS atual, não limites inerentes ao x86-64.
 
+## Resumo dos invariantes
+
+A transição é correta somente enquanto todos estes contratos permanecem simultaneamente verdadeiros:
+
+- CR3 do processo correto já está ativo antes de `enter_user`;
+- RIP e RSP user são canônicos e mapeados com `MM_USER`;
+- seletores GDT de código/dados aceitam CPL 3;
+- TSS fornece stack privilegiada válida para a entrada no kernel;
+- gate 0x80 permanece DPL 3 e os demais gates não são acidentalmente expostos;
+- layout assembly do frame coincide com `struct irq_frame`;
+- retorno global aponta para continuação kernel válida;
+- política BSP-only impede corrida sobre estado global de execução user.
+
+A quebra de qualquer camada pode produzir #GP/#SS/#PF, corrupção de retorno ou escalonamento inseguro. Esse é o motivo para tratar user-mode entry como composição de contratos, não como uma única instrução `iretq`.
+
 ## Mapa de fonte
 
-A transição está em `kernel/metal/user_enter.c`. GDT/TSS em `gdt.c`/`gdt.h`. CR3 e regiões user em `proc.c`/`proc.h`. Retorno e syscall 0x80 em `syscall.c`/`syscall.h`; `idt.c` expõe DPL 3. O Source Atlas publica todos integralmente na revisão `da3df29cb397932c43d32373871fb9380e688ade`.
+A transição está em `kernel/metal/user_enter.c`. GDT/TSS em `gdt.c`/`gdt.h`. CR3 e regiões user em `proc.c`/`proc.h`. Retorno e syscall 0x80 em `syscall.c`/`syscall.h`; `idt.c` expõe DPL 3. O Source Atlas publica todos integralmente na revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
