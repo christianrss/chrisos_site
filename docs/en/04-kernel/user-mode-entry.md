@@ -4,7 +4,7 @@ lang: en
 type: concept
 volume: 04-kernel
 status: maintained
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/user_enter.c
   - kernel/metal/user_enter.h
@@ -15,6 +15,8 @@ sources:
   - kernel/metal/syscall.c
   - kernel/metal/syscall.h
   - kernel/metal/idt.c
+  - kernel/metal/irq.c
+  - kernel/metal/irq.h
 symbols:
   - enter_user
   - syscall_set_kernel_return
@@ -246,4 +248,4 @@ These are implementation boundaries, not properties of user mode in general.
 
 ## Source map
 
-`kernel/metal/user_enter.c` performs the privilege drop. GDT/TSS definitions are in `kernel/metal/gdt.c`/`gdt.h`. Process CR3 and user-region ownership are in `kernel/metal/proc.c`/`proc.h`. The ring-0 return convention and vector 0x80 dispatch are in `kernel/metal/syscall.c`/`syscall.h`; `kernel/metal/idt.c` supplies the DPL-3 gate change. Every source is mirrored in full by the Source Atlas at revision `da3df29cb397932c43d32373871fb9380e688ade`.
+`kernel/metal/user_enter.c` performs the privilege drop. GDT/TSS definitions are in `kernel/metal/gdt.c`/`gdt.h`. Process CR3 and user-region ownership are in `kernel/metal/proc.c`/`proc.h`. The ring-0 return convention and vector 0x80 dispatch are in `kernel/metal/syscall.c`/`syscall.h`; `kernel/metal/idt.c` supplies the DPL-3 gate change. Every source is mirrored in full by the Source Atlas at revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
