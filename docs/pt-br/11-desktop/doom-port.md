@@ -1,5 +1,6 @@
 ---
 id: doom-port
+lang: pt-br
 title: "Port do Doom: trazendo um motor de jogo C real para o ChrisOS"
 type: technical-chapter
 volume: 11-desktop
@@ -14,6 +15,26 @@ sources:
   - GAMES/DOOM/I_INPUT.CC
   - GAMES/DOOM/I_SOUND.CC
   - GAMES/DOOM/W_FILE.CC
+  - tools/doom_qemu_long_smoke.py
+  - tools/doom_qemu_smoke.py
+  - tools/test_doom_jit_smoke.c
+  - tools/test_doom_path_pcs.c
+  - tools/test_doom_compile.c
+  - tools/test_doom_engine.c
+symbols:
+  - doomgeneric_Create
+  - DG_Init
+  - DG_DrawFrame
+  - DG_SleepMs
+  - DG_GetTicksMs
+  - DG_GetKey
+  - I_InitGraphics
+  - I_FinishUpdate
+  - I_StartTic
+  - poll_key
+  - W_OpenFile
+  - W_Read
+  - W_CloseFile
 depends_on:
   - chrisc-clvm
   - input-routing
@@ -46,6 +67,16 @@ Um motor Doom real exercita várias camadas ao mesmo tempo:
 
 Assim, uma falha depois do boot do kernel não é necessariamente um problema gráfico. Ela pode estar no compilador, na semântica da CLVM, no modelo de memória, na libc disponível, no filesystem, nos adaptadores da plataforma ou em uma suposição feita pelo código original do Doom.
 
+## Dois alvos de validação distintos
+
+Os testes do repositório diferenciam o demo pequeno do motor completo.
+
+`tools/test_doom_compile.c` compila `GAMES/DOOM/DOOM.LST`, correspondente ao alvo de bring-up menor. É cobertura válida do compilador, mas não prova a compilação de `ENGINE.LST`.
+
+`tools/test_doom_engine.c` é o gate específico do motor. Ele lê `ENGINE.LST`, reserva buffer de saída de 8 MiB, chama `chrisc_compile_files_ex` e exige que o callback de progresso cubra todos os fontes da lista.
+
+Essa diferença evita a afirmação ambígua "Doom compila": ela pode se referir ao demo ou ao port muito maior do engine.
+
 ## Composição do build
 
 `ENGINE.LST` começa com implementações do ChrisOS para string, stdio, stdlib, ctype e math. Depois adiciona os adaptadores do Doom para o ChrisOS:
@@ -71,6 +102,16 @@ doom -iwad GAMES/DOOM/DOOM1.WAD -mb 16
 Depois atribui `myargc` e `myargv`, inicializa a camada DoomGeneric com `DG_Init()` e chama `D_DoomMain()`. O ponto de entrada ChrisC continua chamando `doomgeneric_Tick()` e cedendo execução com `wait(1)`.
 
 Essa construção explícita evita depender de um ABI convencional de inicialização de processos Unix e torna determinísticos o caminho do WAD e a configuração de memória usada no ambiente atual.
+
+## Memória e pressupostos de execução
+
+Ferramentas do engine evidenciam que `ENGINE.CLV` é uma carga CLVM muito maior que demos comuns.
+
+Vários diagnósticos instanciam a imagem com 32 MiB de memória de VM. Separadamente, o argv sintético fornece `-mb 16` ao próprio Doom. São camadas diferentes: os 32 MiB pertencem ao harness/VM; `-mb 16` é argumento interpretado pelo motor.
+
+A documentação não deve tratar os dois números como um único limite de heap.
+
+O engine pode atravessar caminhos interpreter ou JIT conforme a configuração do runtime. Portanto, além da compilação, a correção depende da semântica das instruções CLVM e da equivalência do JIT para esse programa.
 
 ## Caminho de vídeo
 
@@ -100,6 +141,18 @@ subsistema gráfico do ChrisOS
 
 Não há aqui uma API de GPU moderna. O objetivo do backend é fornecer uma fronteira pequena de compatibilidade baseada em framebuffer indexado.
 
+## Detalhes do ABI de vídeo
+
+A fronteira de vídeo possui invariantes concretos.
+
+`DG_Screen` contém exatamente 64.000 bytes e `I_ReadScreen` copia exatamente 64.000. `I_InitGraphics` define `I_VideoBuffer = DG_Screen`, largura 320 e altura 200.
+
+Transporte de paleta é separado de pixels. `I_SetPalette` envia a paleta de 768 bytes a `setpal`; o screen buffer continua contendo índices de cor de um byte.
+
+Vários hooks de configuração são stubs. `I_GetPaletteIndex`, por exemplo, retorna zero em vez de procurar RGB, e callbacks de título/configuração não formam um backend completo de vídeo desktop.
+
+Esses no-ops importam porque código upstream pode chamá-los mesmo que o caminho comum não dependa fortemente do resultado.
+
 ## Tradução de entrada
 
 O caminho do motor completo não depende de `DG_GetKey()` para a jogabilidade. Essa função atualmente não retorna eventos. Em vez disso, `I_StartTic()` consulta o estado das teclas do ChrisOS e converte transições em eventos do Doom por meio de `D_PostEvent()`.
@@ -120,6 +173,16 @@ milissegundos = ticks × 1000 / 60
 
 `DG_SleepMs()` faz a aproximação inversa e usa `wait()`, garantindo pelo menos um tick. É uma ponte de bring-up, não um temporizador de alta resolução.
 
+## Memória do estado de input
+
+O tradutor de bordas armazena estado anterior em `key_was[128]`. `poll_key(sc, code)` indexa essa tabela diretamente com os scan codes fixos usados pelo adaptador.
+
+Todos os scan codes atualmente mapeados ficam abaixo de 128. Adicionar futuramente um código >=128 exige ampliar a estrutura ou validar o índice.
+
+Cada transição cria um `dg_event` local: type 0 para key-down, type 1 para key-up; o key code traduzido é copiado para `data1` e `data2`.
+
+Isso é uma adaptação concreta de ABI/event model, não apenas "suporte a teclado".
+
 ## Acesso ao WAD
 
 `W_FILE.CC` adapta a interface de arquivos WAD para a API ChrisC. `W_OpenFile()` usa `fopen()`, obtém o tamanho com `fsize()`, aloca um pequeno descritor e preserva o file descriptor inteiro. `W_Read()` usa `fseek()` e `fread()`. `W_CloseFile()` fecha o arquivo e libera o wrapper.
@@ -127,6 +190,16 @@ milissegundos = ticks × 1000 / 60
 O repositório analisado contém `DOOM1.WAD` e também um `DOOM1.MINI.WAD` muito pequeno. O ponto de entrada do motor completo seleciona explicitamente `GAMES/DOOM/DOOM1.WAD`.
 
 O demo separado em `DOOM.CC` usa outra estratégia: carrega o WAD inteiro em memória, percorre o diretório, localiza o lump `PLAYPAL` e copia 768 bytes de paleta. Isso valida parsing de WAD e transporte da paleta, mas não deve ser descrito como o motor completo.
+
+## Semântica de falha no I/O do WAD
+
+`W_OpenFile` rejeita `fopen` falho, erro de alocação e tamanho não positivo. Se malloc falhar, fecha o descriptor já aberto antes de retornar.
+
+`W_Read`, porém, confia no offset e comprimento recebidos e delega a `fseek`/`fread`; não compara por conta própria `offset + buffer_len` com o tamanho armazenado do WAD. A camada WAD do engine deve solicitar ranges válidos.
+
+O adaptador também não faz memory mapping: `mapped` permanece nulo e as leituras são baseadas em file descriptor.
+
+Isso mantém a ponte pequena, mas não acrescenta uma segunda camada de range checking contra requests inesperados.
 
 ## Estado do áudio
 
@@ -151,6 +224,18 @@ O port demonstra uma regra útil para levar software existente a um novo sistema
 | som/música | atualmente stubs |
 
 Assim, a maior parte do código do Doom permanece sem conhecer detalhes específicos do ChrisOS.
+
+## Evidência executável disponível
+
+A árvore contém vários gates com força crescente:
+
+- `test_doom_engine.c`: compila o `ENGINE.LST` completo e verifica progresso de todos os fontes;
+- `test_doom_path_pcs.c`: carrega `ENGINE.CLV`, fornece 32 MiB à VM e executa interpreter registrando checkpoints de PC/SP;
+- `test_doom_jit_smoke.c`: faz parse, compilação JIT e slices repetidos de execução;
+- `doom_qemu_smoke.py`: inicializa ChrisOS em QEMU e captura serial;
+- `doom_qemu_long_smoke.py`: ativa `SYS/SMOKE.DOOM`, executa uma janela longa e define sucesso como abertura de `DOOM1.WAD`, evidência de startup e ausência dos fatal markers configurados.
+
+Esses arquivos definem níveis de evidência. A presença deles não significa que todos foram executados com sucesso nesta atualização da documentação. Resultado de teste deve ser registrado separadamente da descrição do gate.
 
 ## O que o port atual demonstra
 
@@ -178,6 +263,14 @@ Uma sequência prática é:
 ```
 
 Isso separa falhas de compilador/runtime, dados e adaptadores de dispositivos.
+
+## Considerações algorítmicas e de desempenho
+
+Em 320×200, `I_ReadScreen` custa O(64.000) por cópia completa. A apresentação também movimenta uma superfície indexada de 64.000 bytes antes do caminho gráfico posterior de composição/escala.
+
+Polling de input é O(K) no conjunto fixo de teclas mapeadas por tic. Leitura WAD é proporcional ao tamanho solicitado mais o custo de seek/read do filesystem.
+
+Os shims são propositalmente pequenos; os custos maiores continuam no renderer, gameplay, zone allocator e WAD logic upstream. Doom deve ser perfilado como workload end-to-end, não apenas pelos adapters.
 
 ## Limitações conhecidas na revisão analisada
 

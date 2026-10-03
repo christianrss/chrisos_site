@@ -21,6 +21,24 @@ sources:
   - LIB/ANIM.CC
   - LIB/SIM.CC
   - LIB/HIT.CC
+  - tools/test_mine_spawn_view.c
+symbols:
+  - paint_world
+  - boot_gfx
+  - play_step
+  - spawn_player
+  - boot_actors
+  - shoot
+  - break_block
+  - place_block
+  - ai_step
+  - gen_world
+  - save_pack
+  - save_write
+  - save_read
+  - respawn
+  - clock_h
+  - sky_frame
 depends_on:
   - input-routing
   - desktop-applications
@@ -60,6 +78,20 @@ Mode 0 displays the menu. Gameplay uses mode 1, mode 2 is pause, mode 3 is inven
 
 This is a direct state-machine architecture rather than a general scene framework.
 
+## Frame scheduling and subsystem cadence
+
+The outer game loop performs one logical iteration and then calls `wait(1)`. During active gameplay, `play_step` runs before world rendering and HUD painting.
+
+Not every subsystem updates on every iteration. AI is guarded by:
+
+```text
+(ticks() / 8) % 2 == 0
+```
+
+so AI work is enabled for alternating eight-tick windows rather than being called unconditionally every frame. Projectiles and player simulation, by contrast, are handled directly in `play_step` each active iteration.
+
+This distinction matters when interpreting game behavior as an OS workload. Rendering cadence, player physics and AI cadence are related but not identical clocks.
+
 ## State representation
 
 `STATE.CC` defines a compact `Actor` structure with position, velocity, yaw, pitch, kind, state, timer and bit-field flags for ground, water, bow and alive state. The global actor pool contains 16 entries. Entry zero is the player; the remaining slots are reused for world actors, pickups and projectiles.
@@ -98,6 +130,14 @@ A high charge can additionally harvest certain nearby voxel types before the pro
 
 The fixed actor pool therefore creates a visible resource limit in gameplay and simultaneously exercises bounded runtime state.
 
+## Actor-pool ownership and collision cost
+
+The fixed actor array is also the ownership model. A slot is considered reusable when `kind == 0`. Projectile creation scans slots 1 through 15 for the first free entry. Pickups and mobs use the same storage.
+
+The projectile/mob collision path performs a bounded nested scan: every projectile candidate is compared against actor slots 1 through 7 using `body_hit` or `clip_ray_aabb`. With a 16-entry pool this remains constant-bounded in practice, but the design is structurally quadratic if generalized to a larger homogeneous actor set.
+
+A projectile that collides or times out sets `kind = 0`, returning the slot to the pool. There is no allocator, free list or generational handle protecting against stale references because gameplay code addresses slots directly.
+
 ## Actors and AI
 
 `boot_actors()` initializes the 16-slot pool, creates the player and seeds several actors/pickups at fixed world coordinates. `AI.CC` updates non-projectile/non-pickup actors using a small state machine based on actor kind, rain, game phase, distance to the player and a timer.
@@ -134,6 +174,29 @@ The reviewed gameplay code has explicit phase transitions. The initial state is 
 
 These rules are hard-coded game logic and should not be generalized into a quest engine.
 
+## Save-file byte contract
+
+`save_pack` writes a compact fixed-layout record into `g_sav[48]`, while file I/O writes 40 bytes.
+
+The currently assigned offsets are:
+
+| Offset | Meaning |
+|---|---|
+| 0 | marker 77 |
+| 1 | phase |
+| 2–4 | integer-converted player x/y/z |
+| 5 | integer-converted yaw |
+| 6 | wood |
+| 7 | pearls |
+| 8 | arrows |
+| 9 | currently unassigned by `save_pack` |
+| 10–25 | 16 inventory counters |
+| 26–39 | currently unassigned by `save_pack` |
+
+The conversion from floating player coordinates/yaw to integer and then byte storage is intentionally lossy. Loading reconstructs floats from those stored byte values, not the original sub-unit positions.
+
+There is also no stored pitch, velocity, actor-pool state, weather bias, voxel mutations or complete environmental state.
+
 ## Save and checkpoint model
 
 `SAVE.CC` maintains two different persistence concepts. `g_snap` is an in-memory player snapshot used by `respawn()`. `MINE.SAV` is a filesystem save.
@@ -141,6 +204,14 @@ These rules are hard-coded game logic and should not be generalized into a quest
 `save_pack()` writes a compact byte representation containing a marker value, phase, integer-converted player position/yaw, resource counts and 16 inventory entries. `save_write()` writes 40 bytes to `MINE.SAV`; `save_read()` reads 40 bytes and accepts the data only when the first byte equals 77.
 
 This format is intentionally small. The reviewed code does not establish versioning, checksums, atomic replacement, schema migration or robust corruption recovery. It also does not persist the complete mutable voxel world or all actor state.
+
+## Input and camera edge handling
+
+`play_step` consumes both absolute pointer coordinates and relative deltas. On the first look iteration it snapshots the pointer position. Relative deltas outside the range -60..60 are discarded as implausible jumps.
+
+The code also retains keyboard-arrow fallback behavior when the absolute pointer lies near screen edges. Pitch is clamped to [-50, +50], while yaw is allowed to accumulate.
+
+This hybrid input path makes the game a useful regression workload for pointer capture because a sign or coordinate-convention bug is immediately visible as inverted or displaced camera motion.
 
 ## Audio
 
@@ -165,6 +236,28 @@ ChrisFS <-> save data        audio <- gameplay events
 ```
 
 A kernel or runtime feature can appear correct in isolation and still fail when combined with input capture, continuous simulation, filesystem calls, rendering and audio. A game creates sustained cross-subsystem pressure that small unit demonstrations do not.
+
+## Executable evidence
+
+The repository contains `tools/test_mine_spawn_view.c`. It configures the math3d camera at the Mine Chris spawn convention, projects a ground point one step in front and verifies that it lands below the 800×600 horizon. It then projects a high point and verifies that it lands above the horizon.
+
+That test is useful evidence for the camera/view convention that previously produced inverted-looking spawn behavior. It does not execute `MINE.CLV`, generate voxels, run AI, test saves or exercise the desktop input path.
+
+Those remaining contracts still need application-level or QEMU regression gates.
+
+## Algorithmic cost summary
+
+| Operation | Current structure | Cost |
+|---|---|---|
+| world draw actor loop | 15 non-player slots | O(A) |
+| find projectile slot | scan slots 1–15 | O(A) |
+| AI update | scan slots 1–15 | O(A) |
+| projectile-vs-mob checks | nested bounded scans | O(A²) structurally |
+| find ground at spawn | y from 60 downward | O(60) |
+| save pack/load inventory | 16 entries | O(16) |
+| world generation | fixed authored loops | bounded by fixed region |
+
+The constants are intentionally small in the reviewed game. The table describes algorithm structure, not benchmark timings.
 
 ## Current limitations
 

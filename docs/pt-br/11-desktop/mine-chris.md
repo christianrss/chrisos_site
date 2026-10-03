@@ -21,6 +21,24 @@ sources:
   - LIB/ANIM.CC
   - LIB/SIM.CC
   - LIB/HIT.CC
+  - tools/test_mine_spawn_view.c
+symbols:
+  - paint_world
+  - boot_gfx
+  - play_step
+  - spawn_player
+  - boot_actors
+  - shoot
+  - break_block
+  - place_block
+  - ai_step
+  - gen_world
+  - save_pack
+  - save_write
+  - save_read
+  - respawn
+  - clock_h
+  - sky_frame
 depends_on:
   - input-routing
   - desktop-applications
@@ -60,6 +78,20 @@ Modo 0 apresenta o menu. Gameplay usa modo 1, modo 2 representa pausa, modo 3 in
 
 É uma máquina de estados direta, não um framework geral de cenas.
 
+## Cadência de frame e subsistemas
+
+O loop externo executa uma iteração lógica e chama `wait(1)`. Durante gameplay, `play_step` acontece antes do desenho do mundo e do HUD.
+
+Nem todo subsistema atualiza em toda iteração. A IA é condicionada por:
+
+```text
+(ticks() / 8) % 2 == 0
+```
+
+portanto o trabalho de IA fica habilitado em janelas alternadas de oito ticks, e não em todos os frames. Física do jogador e projéteis são tratadas diretamente por `play_step` em cada iteração ativa.
+
+Isso importa ao usar o jogo como workload: cadence de rendering, física e IA não é exatamente a mesma.
+
 ## Representação de estado
 
 `STATE.CC` define `Actor` com posição, velocidade, yaw, pitch, tipo, estado, timer e bit-fields para chão, água, arco e estado vivo. O pool global possui 16 atores. A entrada zero representa o jogador; as demais são reutilizadas por atores do mundo, pickups e projéteis.
@@ -98,6 +130,14 @@ Carga alta pode coletar determinados voxels próximos antes da alocação do pro
 
 O pool fixo produz, assim, um limite observável de recursos e exercita estado limitado no runtime.
 
+## Ownership do pool e custo de colisão
+
+O array fixo também funciona como modelo de ownership. Um slot pode ser reutilizado quando `kind == 0`. A criação de projétil percorre slots 1 a 15 e pega o primeiro livre. Mobs, pickups e projéteis compartilham a mesma estrutura.
+
+O caminho de colisão projétil/mob contém scans aninhados: cada projétil é comparado com slots 1 a 7 usando `body_hit` ou `clip_ray_aabb`. Com apenas 16 entradas o custo é pequeno e limitado, mas a estrutura seria quadraticamente escalável caso o pool fosse ampliado sem outra organização.
+
+Quando projétil colide ou expira, `kind = 0` devolve o slot ao pool. Não há allocator, free list ou handle geracional; lógica de gameplay referencia slots diretamente.
+
 ## Atores e IA
 
 `boot_actors()` inicializa o pool, cria o jogador e posiciona vários atores/pickups em coordenadas fixas. `AI.CC` atualiza atores que não sejam projéteis ou pickups através de uma pequena máquina de estados dependente de tipo, chuva, fase, distância ao jogador e timer.
@@ -134,6 +174,29 @@ O gameplay possui transições explícitas de fase. O estado inicial é fase 1. 
 
 Essas regras são lógica de jogo codificada diretamente e não constituem um quest engine genérico.
 
+## Contrato de bytes do save
+
+`save_pack` monta um record fixo em `g_sav[48]`, enquanto a operação de arquivo grava 40 bytes.
+
+Offsets atualmente atribuídos:
+
+| Offset | Conteúdo |
+|---|---|
+| 0 | marcador 77 |
+| 1 | fase |
+| 2–4 | x/y/z do jogador convertidos para inteiro |
+| 5 | yaw convertido para inteiro |
+| 6 | madeira |
+| 7 | pérolas |
+| 8 | flechas |
+| 9 | não atribuído atualmente por `save_pack` |
+| 10–25 | 16 contadores de inventário |
+| 26–39 | não atribuídos atualmente por `save_pack` |
+
+Converter coordenadas/yaw float para inteiro e depois armazenar em byte perde precisão. O load reconstrói floats a partir desses bytes, e não a posição sub-unidade original.
+
+Pitch, velocidades, pool de atores, bias climático, voxels modificados e o estado completo do ambiente também não são persistidos.
+
 ## Save e checkpoint
 
 `SAVE.CC` mantém dois conceitos. `g_snap` é um snapshot em memória do jogador usado por `respawn()`. `MINE.SAV` é a persistência no filesystem.
@@ -141,6 +204,16 @@ Essas regras são lógica de jogo codificada diretamente e não constituem um qu
 `save_pack()` produz uma representação compacta em bytes contendo marcador, fase, posição/yaw convertidos para inteiro, recursos e 16 entradas de inventário. `save_write()` grava 40 bytes em `MINE.SAV`; `save_read()` lê 40 bytes e só aceita os dados quando o primeiro byte é 77.
 
 O formato é deliberadamente pequeno. O código revisado não estabelece versionamento, checksum, substituição atômica, migração de schema ou recuperação robusta de corrupção. Também não persiste todo o mundo voxel mutável nem todo o estado dos atores.
+
+`save_read` ignora atualmente o valor retornado por `fread(fd, g_sav, 40)`. Depois de fechar o arquivo, aceita o record se o primeiro byte for 77. Uma leitura curta/truncada não é rejeitada apenas por ter retornado menos de 40 bytes. O hardening deve exigir o tamanho esperado antes de validar o marcador.
+
+## Bordas de input e câmera
+
+`play_step` combina coordenadas absolutas do ponteiro com deltas relativos. Na primeira iteração de look, salva a posição atual. Deltas relativos fora da faixa -60..60 são descartados como saltos improváveis.
+
+Há também fallback por setas quando o ponteiro absoluto está próximo das bordas da tela. Pitch fica limitado a [-50, +50], enquanto yaw pode continuar acumulando.
+
+Esse caminho híbrido torna Mine Chris um teste útil para captura de mouse: erros de sinal ou convenção de coordenadas aparecem imediatamente como câmera invertida ou deslocada.
 
 ## Áudio
 
@@ -165,6 +238,28 @@ ChrisFS <-> save             áudio <- eventos do jogo
 ```
 
 Uma funcionalidade de kernel/runtime pode parecer correta isoladamente e ainda falhar quando combinada com captura de input, simulação contínua, filesystem, renderização e áudio. Um jogo cria pressão integrada que pequenos exemplos unitários não produzem.
+
+## Evidência executável
+
+O repositório contém `tools/test_mine_spawn_view.c`. O teste configura a câmera math3d segundo a convenção de spawn do Mine Chris, projeta um ponto de chão à frente e verifica que aparece abaixo do horizonte de 800×600. Depois projeta um ponto alto e exige que apareça acima do horizonte.
+
+É evidência específica da convenção de câmera/view que pode produzir sintomas de imagem invertida. Não executa `MINE.CLV`, geração voxel, IA, save nem input do desktop.
+
+Esses caminhos ainda precisam de gates de aplicação/QEMU.
+
+## Resumo de complexidade
+
+| Operação | Estrutura atual | Custo |
+|---|---|---|
+| desenho de atores | 15 slots não-player | O(A) |
+| procurar slot de projétil | scan 1–15 | O(A) |
+| IA | scan 1–15 | O(A) |
+| colisão projétil/mob | scans aninhados | O(A²) estrutural |
+| achar chão no spawn | y de 60 para baixo | O(60) |
+| pack/load do inventário | 16 entradas | O(16) |
+| geração do mundo | loops fixos | limitada pela região fixa |
+
+A tabela descreve estrutura algorítmica, não benchmarks.
 
 ## Limitações atuais
 
