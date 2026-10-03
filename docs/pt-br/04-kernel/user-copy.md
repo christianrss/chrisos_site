@@ -272,4 +272,4 @@ O capítulo foi reconciliado com a revisão `e05a17fd76333114a3fb5c2452f38ca747d
 
 ## Mapa de fonte
 
-A fronteira fica em `kernel/metal/syscall.c`. CR3 vem de `proc.c`. Tradução/flags estão em `mm.c`/`mm.h`. Conversão phys→virt vem de `bootinfo.c`. O Source Atlas contém a íntegra desses arquivos na revisão `da3df29cb397932c43d32373871fb9380e688ade`.
+A fronteira fica em `kernel/metal/syscall.c`. CR3 vem de `proc.c`. Tradução/flags estão em `mm.c`/`mm.h`. Conversão phys→virt vem de `bootinfo.c`. O Source Atlas contém a íntegra desses arquivos na revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
