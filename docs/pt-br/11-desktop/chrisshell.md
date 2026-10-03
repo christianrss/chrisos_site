@@ -148,6 +148,16 @@ O shell também possui atalhos explícitos para aplicações. No fonte revisado,
 
 Eles não constituem, por si, um gerenciador de pacotes ou linguagem geral de controle de processos.
 
+## Semântica de argumentos de `make` e `run`
+
+`run` considera todo o restante da linha como um único caminho, resolve-o contra o cwd e chama `sys_run`.
+
+`make` possui gramática diferente. Sem argumento, chama `sys_make("Makefile", "all")`. Com um argumento, esse valor é tratado como caminho do makefile e o target continua sendo `all`. Com duas partes separadas por espaço, o parser grava zero no primeiro separador e passa a primeira substring como makefile e a segunda como target.
+
+Não há quoting nem escaping. Caminhos ou targets que contenham espaços não podem ser representados pelo parser atual.
+
+Isso importa para self-hosting porque o comando é uma frontend direta da interface de build do ChrisOS, não uma implementação compatível com toda a gramática de linha de comando do GNU make.
+
 ## Diagnóstico do runtime
 
 `heap` mostra valores retornados por `sys_heap_used_kb()` e `sys_heap_free_kb()`. `fps` informa taxa atual de frames junto de `sys_frame_p50()` e `sys_frame_p95()`.

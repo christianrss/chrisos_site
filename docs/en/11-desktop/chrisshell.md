@@ -156,6 +156,16 @@ The shell also has explicit application shortcuts. In the reviewed source, `doom
 
 They should not be interpreted as a general package manager or process-control language.
 
+## `make` and `run` argument semantics
+
+`run` resolves the entire remainder of the command line as one path and passes the assembled path to `sys_run`.
+
+`make` has a slightly different grammar. With no argument it calls `sys_make("Makefile", "all")`. With one argument it treats that argument as the makefile path and still uses target `all`. With two space-separated parts, it modifies the command buffer at the first separator and passes the first part as makefile and the second as target.
+
+There is no quoting or escaping around either field. A path or target containing spaces cannot be represented by this parser.
+
+This behavior is relevant to self-hosting documentation because the command is a direct frontend to the ChrisOS build interface, not a compatibility implementation of GNU make's full command-line grammar.
+
 ## Runtime diagnostics
 
 `heap` displays values returned by `sys_heap_used_kb()` and `sys_heap_free_kb()`. `fps` reports the current frame rate together with `sys_frame_p50()` and `sys_frame_p95()` timing values.
