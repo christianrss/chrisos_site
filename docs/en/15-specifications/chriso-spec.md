@@ -23,8 +23,8 @@ symbols:
   - chrisld_validate
 depends_on:
   - specifications-policy
-  - object-files
-  - linker
+  - chriso
+  - chrisld
 related:
   - elf-linking
   - chrisasm
