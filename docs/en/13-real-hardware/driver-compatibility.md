@@ -25,14 +25,14 @@ sources:
 symbols:
   - pci_read
   - storage_init
-  - ata_probe
+  - ata_pio_identify
   - ahci_probe
   - nvme_probe
   - virtio_blk_probe
   - usb_msc_probe
   - xhci_hid_probe
   - ps2_init
-  - virtio_gpu_boot
+  - vgpu_boot
   - ac97_init
   - virtio_net_init
 depends_on:
