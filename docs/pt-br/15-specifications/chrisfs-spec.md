@@ -38,10 +38,11 @@ symbols:
 depends_on:
   - specifications-policy
   - chrisfs
-  - block-devices
+  - block-storage
 related:
   - chrisfs-cache
-  - chrisfs-indirect
+  - chrisfs-inodes
+  - chrisfs-fsck
   - chrisfs-journal
   - fault-injection
 ---
