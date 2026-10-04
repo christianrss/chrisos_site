@@ -2,7 +2,7 @@
 
 Snapshot date: 2026-10-04  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `319b408ee99e4dc59daa92ca11fc46986c1e0681`
+Baseline documentation commit: `b5e7efad982b87d6efcb4f49cc93a32621c0d415`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -22,11 +22,11 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **221**.
 
 Authored chapters:
-- EN: **207 present**
-- PT-BR: **207 present**
-- structurally bilingual authored pairs: **207**
-- structural coverage: **93.7%**
-- missing chapters in both languages: **14**
+- EN: **209 present**
+- PT-BR: **209 present**
+- structurally bilingual authored pairs: **209**
+- structural coverage: **94.6%**
+- missing chapters in both languages: **12**
 
 The structural count above was recomputed directly from `data/documentation-manifest.yml` against the current EN/PT-BR source tree after the validated 2026-10-04 batch.
 
@@ -34,7 +34,7 @@ Depth-floor state is intentionally not duplicated here because it is a generated
 
 The remaining chapter IDs, in curriculum order, are:
 
-`chriso-spec`, `chrisfs-spec`, `clvm-spec`, `shader-spec`, `bibliography`, `graphics-history`, `toolchain-history`, `chrisvm-history`, `developer-guide`, `development-environment-linux`, `development-environment-windows`, `development-troubleshooting`, `source-policy`, `documentation-schema`.
+`clvm-spec`, `shader-spec`, `bibliography`, `graphics-history`, `toolchain-history`, `chrisvm-history`, `developer-guide`, `development-environment-linux`, `development-environment-windows`, `development-troubleshooting`, `source-policy`, `documentation-schema`.
 
 ## Missing chapters by volume
 
@@ -54,13 +54,13 @@ The remaining chapter IDs, in curriculum order, are:
 | 12-self-hosting | 0 |
 | 13-real-hardware | 0 |
 | 14-validation | 0 |
-| 15-specifications | 5 |
+| 15-specifications | 3 |
 | 16-history | 3 |
 | 17-developer-guide | 4 |
 | 98-maintenance | 2 |
-| **Total** | **14** |
+| **Total** | **12** |
 
-The 2026-10-04 completion campaign has validated `driver-compatibility`, `host-tests`, `qemu-gates`, `hardware-gates`, `fault-injection`, `fuzzing`, `performance-measurement`, `chrisvm-spec` and `chrisvm-boot-spec`. Volume 14 — Validation is structurally complete, and the first two expansion specifications in volume 15 are complete. The next structural gap is `chriso-spec`.
+The 2026-10-04 completion campaign has validated `driver-compatibility`, `host-tests`, `qemu-gates`, `hardware-gates`, `fault-injection`, `fuzzing`, `performance-measurement`, `chrisvm-spec`, `chrisvm-boot-spec`, `chriso-spec` and `chrisfs-spec`. Volume 14 — Validation is structurally complete, and four expansion specifications in volume 15 are complete. The next structural gap is `clvm-spec`.
 
 For the exact ordered list, run:
 
@@ -86,7 +86,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline for the validated content snapshot: `319b408ee99e4dc59daa92ca11fc46986c1e0681`.
+Last known successful reader/deploy baseline for the validated content snapshot: `b5e7efad982b87d6efcb4f49cc93a32621c0d415`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
