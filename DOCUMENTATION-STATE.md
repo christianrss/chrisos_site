@@ -1,8 +1,8 @@
 # ChrisOS Documentation — Operational State Memory
 
-Snapshot date: 2026-10-02  
+Snapshot date: 2026-10-04  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `dc7160a4e92491c408a642314727b51325d60dce`
+Baseline documentation commit: `7aee0c56c2be560dd7b59bc012e2ad2ad048563d`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -22,28 +22,19 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **221**.
 
 Authored chapters:
-- EN: **153 present**
-- PT-BR: **153 present**
-- structurally bilingual authored pairs: **153**
-- structural coverage: **69.2%**
-- missing chapters in both languages: **68**
+- EN: **204 present**
+- PT-BR: **204 present**
+- structurally bilingual authored pairs: **204**
+- structural coverage: **92.3%**
+- missing chapters in both languages: **17**
 
-Depth-floor state:
-- EN: **135** chapters above the text floor; **18** present but below the floor.
-- PT-BR: **129** chapters above the text floor; **24** present but below the floor.
-- chapters above the floor in **both** languages: **129**.
-- chapters needing expansion in at least one language: **24**.
-- three kernel chapters meet the EN floor but still need PT-BR expansion: `process-lifecycle`, `user-copy`, `user-mode-entry`.
+The structural count above was recomputed directly from `data/documentation-manifest.yml` against the current EN/PT-BR source tree after the validated 2026-10-04 batch.
 
-The word floor is only a length guardrail. A chapter is not technically complete merely because it crosses the floor.
+Depth-floor state is intentionally not duplicated here because it is a generated metric and changes as chapters are expanded. Use the generated `docs/*/98-maintenance/coverage.md` output after `scripts/build_all.py` for the current depth-floor report. The word floor remains only an editorial length guardrail, not a technical-completeness claim.
 
-## Chapters currently above the depth floor in both languages
+The remaining chapter IDs, in curriculum order, are:
 
-`ac-signals-frequency-impedance`, `acpi-platform`, `address-spaces`, `ahci`, `algorithmic-complexity`, `arithmetic-circuits`, `arrays-lists-stacks-queues`, `ata`, `atom-semiconductor`, `atomics-memory-model`, `bitmaps-rings-free-lists`, `block-storage`, `boolean-algebra`, `boot-information`, `branch-prediction-speculation`, `buses-mmio-dma`, `cache-hierarchy`, `calling-conventions`, `capacitance-inductance`, `clock-timing`, `chrisfs`, `chrisfs-cache`, `chrisfs-directories`, `chrisfs-fsck`, `chrisfs-inodes`, `chrisfs-journal`, `chrisfs-superblock`, `chrisasm`, `chrisc-clvm`, `chriso`, `chrisld`, `clvm-bytecode`, `clvm-interpreter`, `clvm-memory`, `clvm-syscalls`, `color-formats`, `cmos-switching-power`, `coherence`, `combinational-logic`, `compiler-pipeline`, `cpu-datapath-isa`, `crystal-bands-doping`, `data-representation-layout`, `data-structures`, `debugger`, `desktop-compositor`, `discrete-math-sets-relations-functions`, `electric-charge-field-potential`, `electromagnetic-induction-transformers`, `elf-linking`, `emulator-theory`, `gc-libraries`, `gfx2d`, `gdt-tss`, `graph-algorithms`, `graphs-union-find`, `hash-tables`, `heap-ownership`, `hhdm`, `higher-half-kernel`, `idt-exceptions`, `input-routing`, `intermediate-representation`, `interrupts-smp`, `jit`, `jit-memory`, `kcc`, `kernel-jobs-kthreads`, `kernel-model`, `latches-flipflops`, `lexical-analysis`, `limine`, `linker-script`, `logic-levels-noise-margins`, `logic-sequential`, `machine-code`, `memory-controller-dram-organization`, `native-toolchain`, `microarchitecture-pipeline`, `mos-capacitor`, `native-codegen`, `noise-grounding-signal-integrity`, `number-systems-binary-arithmetic`, `nvme`, `ohm-kirchhoff-circuits`, `out-of-order-renaming-retirement`, `page-faults`, `parsing`, `page-table-layout`, `panic-logging`, `partitions-gpt`, `pci-pcie`, `physical-memory`, `pic-apic-ioapic`, `pipeline-hazards-forwarding`, `pixels-framebuffer`, `pmm-algorithms`, `pn-junction`, `power-delivery-regulation`, `power-on-kstart`, `privilege-rings`, `proof-invariants-induction`, `rc-rlc-transients`, `recursion-recurrences-amortization`, `registers-counters`, `reset-firmware`, `resource-lifetime`, `semantic-analysis`, `sorting-searching`, `spinlocks`, `sram-dram`, `string-parsing-algorithms`, `systems-algorithms`, `timers`, `tlb`, `tlb-shootdown`, `transistor-cmos`, `transmission-lines-differential-signals`, `trees-heaps-tries`, `uefi`, `usb-storage`, `vectors-complex-numbers-systems`, `virtio-block`, `virtual-memory`, `voltage-current-resistance-power`, `x86-64-memory-privilege`, `x86-instruction-encoding`, `window-manager`, `x86-registers-flags`.
-
-## Authored chapters that still require expansion
-
-`agent-workflow`, `architecture-history`, `build-run-debug`, `chrisvm-chriscpu`, `contribution-workflow`, `desktop-applications`, `developer-guide`, `development-environment-linux`, `development-environment-windows`, `development-troubleshooting`, `installation-real-hardware`, `network-stack`, `process-lifecycle`, `processes-syscalls`, `self-hosting-bootstrap`, `shaders-csir`, `software-3d`, `specifications-policy`, `testing-validation`, `user-copy`, `user-mode-entry`, `validation-evidence`, `virtio-gpu-virgl`, `virtualization-chrishv`.
+`performance-measurement`, `chrisvm-spec`, `chrisvm-boot-spec`, `chriso-spec`, `chrisfs-spec`, `clvm-spec`, `shader-spec`, `bibliography`, `graphics-history`, `toolchain-history`, `chrisvm-history`, `developer-guide`, `development-environment-linux`, `development-environment-windows`, `development-troubleshooting`, `source-policy`, `documentation-schema`.
 
 ## Missing chapters by volume
 
@@ -56,18 +47,20 @@ The word floor is only a length guardrail. A chapter is not technically complete
 | 05-memory | 0 |
 | 06-storage | 0 |
 | 07-language-systems | 0 |
-| 08-graphics | 14 |
-| 09-emulation | 16 |
-| 10-networking | 6 |
-| 11-desktop | 5 |
-| 12-self-hosting | 4 |
-| 13-real-hardware | 5 |
-| 14-validation | 6 |
+| 08-graphics | 0 |
+| 09-emulation | 0 |
+| 10-networking | 0 |
+| 11-desktop | 0 |
+| 12-self-hosting | 0 |
+| 13-real-hardware | 0 |
+| 14-validation | 1 |
 | 15-specifications | 7 |
 | 16-history | 3 |
-| 17-developer-guide | 0 |
+| 17-developer-guide | 4 |
 | 98-maintenance | 2 |
-| **Total** | **68** |
+| **Total** | **17** |
+
+The 2026-10-04 validation batch added and validated the bilingual chapters `driver-compatibility`, `host-tests`, `qemu-gates`, `hardware-gates`, `fault-injection` and `fuzzing`. The next structural gap is `performance-measurement`.
 
 For the exact ordered list, run:
 
@@ -93,7 +86,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline: `dc7160a4e92491c408a642314727b51325d60dce`.
+Last known successful reader/deploy baseline for the validated content snapshot: `7aee0c56c2be560dd7b59bc012e2ad2ad048563d`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
