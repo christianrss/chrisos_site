@@ -8,22 +8,127 @@ references:
     title: AMD64 Architecture Programmer's Manual
     organization: AMD
     class: architecture-manual
-  virtio:
-    title: Virtual I/O Device (VIRTIO) Specification
-    organization: OASIS
-    class: specification
+  riscv-unprivileged:
+    title: The RISC-V Instruction Set Manual, Volume I — Unprivileged Architecture
+    organization: RISC-V International
+    class: architecture-specification
+  riscv-privileged:
+    title: The RISC-V Instruction Set Manual, Volume II — Privileged Architecture
+    organization: RISC-V International
+    class: architecture-specification
+
   uefi:
     title: Unified Extensible Firmware Interface Specification
     organization: UEFI Forum
-    class: specification
+    class: firmware-specification
+  acpi:
+    title: Advanced Configuration and Power Interface Specification
+    organization: UEFI Forum
+    class: firmware-specification
+  limine:
+    title: Limine Boot Protocol
+    organization: Limine project
+    class: boot-protocol-specification
+
   elf:
-    title: System V Application Binary Interface
+    title: System V Application Binary Interface — Executable and Linking Format
     organization: System V ABI
-    class: specification
+    class: abi-specification
+  sysv-amd64-abi:
+    title: System V Application Binary Interface — AMD64 Architecture Processor Supplement
+    organization: System V ABI
+    class: abi-specification
+  dwarf:
+    title: DWARF Debugging Information Format
+    organization: DWARF Standards Committee
+    class: debug-format-specification
+  iso-c:
+    title: ISO/IEC 9899 — Programming Languages — C
+    organization: ISO/IEC JTC 1/SC 22/WG 14
+    class: language-standard
+
   pci:
     title: PCI Express Base Specification
     organization: PCI-SIG
-    class: specification
+    class: bus-specification
+  virtio:
+    title: Virtual I/O Device (VIRTIO) Specification
+    organization: OASIS
+    class: device-specification
+  nvme:
+    title: NVM Express Base Specification
+    organization: NVM Express
+    class: storage-specification
+  ahci:
+    title: Serial ATA Advanced Host Controller Interface
+    organization: Intel
+    class: storage-specification
+  ata:
+    title: ATA/ATAPI Command Set
+    organization: INCITS Technical Committee T13
+    class: storage-specification
+  usb2:
+    title: Universal Serial Bus Specification
+    organization: USB Implementers Forum
+    class: device-specification
+  xhci:
+    title: eXtensible Host Controller Interface for Universal Serial Bus
+    organization: Intel
+    class: device-specification
+
+  rfc-826:
+    title: RFC 826 — An Ethernet Address Resolution Protocol
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc826
+  rfc-768:
+    title: RFC 768 — User Datagram Protocol
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc768
+  rfc-791:
+    title: RFC 791 — Internet Protocol
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc791
+  rfc-8200:
+    title: RFC 8200 — Internet Protocol, Version 6 (IPv6) Specification
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc8200
+  rfc-9293:
+    title: RFC 9293 — Transmission Control Protocol (TCP)
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc9293
+  rfc-1035:
+    title: RFC 1035 — Domain Names — Implementation and Specification
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc1035
+  rfc-2131:
+    title: RFC 2131 — Dynamic Host Configuration Protocol
+    organization: IETF
+    class: internet-standard
+    url: https://www.rfc-editor.org/rfc/rfc2131
+
+  glsl:
+    title: The OpenGL Shading Language Specification
+    organization: Khronos Group
+    class: graphics-language-specification
+  opengl:
+    title: OpenGL Specification
+    organization: Khronos Group
+    class: graphics-api-specification
+  virgl:
+    title: virglrenderer protocol and command definitions
+    organization: Mesa / virglrenderer project
+    class: graphics-protocol-reference
+  tgsi:
+    title: TGSI — Tungsten Graphics Shader Infrastructure
+    organization: Mesa
+    class: graphics-ir-reference
+
   mit-6012:
     title: Microelectronic Devices and Circuits, Spring 2009
     organization: MIT OpenCourseWare
