@@ -309,8 +309,13 @@ def on_post_build(config):
         # Preserve every section title/location and shrink only body excerpts.
         page_text_limit = 160
         section_text_limit = 800
-        min_page_text_limit = 80
-        min_section_text_limit = 80
+        # The corpus now has enough section records that 80-byte excerpts alone
+        # can push the uncompressed mobile search payload beyond the hard budget.
+        # Keep every searchable location/title, but allow body excerpts to shrink
+        # all the way to zero as the corpus grows. Search still matches titles and
+        # page titles at the floor, while body text is retained whenever budget permits.
+        min_page_text_limit = 0
+        min_section_text_limit = 0
         target_bytes = 1_700_000
 
         while True:
