@@ -23,7 +23,7 @@ symbols:
 depends_on:
   - emulator-exceptions
   - x86-64-memory-privilege
-  - paging-virtual-memory
+  - virtual-memory
 related:
   - chrisvm-memory-map
   - chrisvm-chriscpu
