@@ -501,6 +501,10 @@ Deve ser tratado como experimental emulation code, não hardened sandbox para bi
 
 Bounds, explicit translation, malformed-ELF tests e fuzzing reduzem risco acidental, mas não estabelecem isolation formal entre malicious guest e host.
 
+## Guest state versus host state
+
+Registers, page tables, exceptions e device-visible values pertencem ao estado guest modelado. Ponteiros de `calloc`, buffers internos, callbacks e estruturas C pertencem ao host process. O emulator precisa manter essa fronteira: guest physical address nunca deve ser tratado como host pointer bruto. Toda passagem entre os domínios deve ocorrer pelas rotinas de physical/virtual access e pelos device callbacks declarados.
+
 ## Concurrency model
 
 O machine path atual cria somente CPU 0.
