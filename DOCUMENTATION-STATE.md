@@ -1,8 +1,8 @@
 # ChrisOS Documentation — Operational State Memory
 
-Snapshot date: 2026-10-04  
+Snapshot date: 2026-10-05  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0`
+Baseline documentation commit: `39308596b5d7a81dc907033f93c87e41d89d4a3d`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -38,7 +38,16 @@ A previous snapshot incorrectly treated four Volume 17 route filenames as if the
 
 The 2026-10-05 completion pass added the final genuinely missing IDs, `source-policy` and `documentation-schema`. The validated content commit `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0` produced `coverage planned=221 authored_pairs=442` and passed the complete documentation workflow through Pages.
 
-Structural completeness does **not** mean every page is technically final. Depth-floor state and source-review state remain separate generated signals. Use the generated coverage report and review queue after `scripts/build_all.py`; word floors are editorial guardrails, and stale-source entries require reconciliation rather than automatic prose changes.
+Structural completeness is now accompanied by a clean generated maintenance state for the validated baseline `39308596b5d7a81dc907033f93c87e41d89d4a3d`:
+
+- `coverage planned=221 authored_pairs=442`;
+- `curriculum: 13 levels; 221 chapters; DAG validated`;
+- `stale=0`;
+- `invalid_revision=0`;
+- `validated 489 page/language identities; depth_warnings=0`;
+- full workflow passed through `mkdocs build --strict`, SEO/discovery checks, reader smoke tests and Pages artifact upload.
+
+The temporary completion campaign has therefore closed its structural, source-reconciliation and configured editorial-depth backlogs. Future work should be driven by real source changes, runtime/browser defects, new architectural capabilities or deliberate quality audits rather than by missing/depth counters.
 
 ## Missing chapters by volume
 
@@ -66,7 +75,7 @@ Structural completeness does **not** mean every page is technically final. Depth
 
 The 2026-10-04/05 completion campaign structurally closed the remaining validation, specification, history and maintenance gaps, including `driver-compatibility`, `host-tests`, `qemu-gates`, `hardware-gates`, `fault-injection`, `fuzzing`, `performance-measurement`, `chrisvm-spec`, `chrisvm-boot-spec`, `chriso-spec`, `chrisfs-spec`, `clvm-spec`, `shader-spec`, `bibliography`, `graphics-history`, `toolchain-history`, `chrisvm-history`, `source-policy` and `documentation-schema`.
 
-There is no remaining structural chapter gap. The next maintenance work should be selected from generated **Needs expansion** and **review queue** entries, not by creating new manifest chapters.
+There is no remaining structural chapter gap, stale-source queue item or configured depth-floor warning at the validated baseline. New maintenance work should now originate from actual ChrisOS source changes, runtime/site defects, specification drift, browser QA findings or explicit technical-quality audits—not from artificial chapter creation.
 
 For the current curriculum state, run:
 
@@ -92,7 +101,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline for the validated content snapshot: `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0`.
+Last known successful reader/deploy baseline for the validated content snapshot: `39308596b5d7a81dc907033f93c87e41d89d4a3d`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
