@@ -466,6 +466,22 @@ Sem esse artifact bundle, uma falha rara pode ficar indistinguível de ruído da
 
 Determinismo também permite medir a correção: depois do fix, o mesmo ponto anteriormente defeituoso deve passar antes de retomar exploração randômica mais ampla.
 
+## Composição de múltiplas falhas
+
+Experimentos com uma única fault normalmente devem preceder cenários compostos.
+
+Se allocation failure, block-device error e interrupt delay forem habilitados ao mesmo tempo, a falha pode ser realista, porém difícil de atribuir. Uma campanha disciplinada primeiro estabelece o invariant para cada estímulo isoladamente e depois adiciona combinações que representam dependency chains plausíveis.
+
+Um experimento composto útil registra um vetor ordenado, por exemplo:
+
+    allocation falha na chamada 7
+    depois filesystem write retorna I/O error
+    enquanto recovery path está ativo
+
+O oracle precisa definir quais estados continuam legais após cada estágio. Se a primeira condição já impedir a operação posterior, a campanha deve registrar o segundo ponto como não alcançado em vez de afirmar que as duas faults foram exercitadas.
+
+Essa abordagem staged permite reproduzir interaction bugs sem perder failure localization.
+
 ## Nota de revisão
 
 Este capítulo foi reconciliado contra ChrisOS `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
