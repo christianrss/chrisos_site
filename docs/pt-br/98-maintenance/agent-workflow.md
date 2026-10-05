@@ -10,436 +10,414 @@ symbols: []
 depends_on: []
 related:
   - validation-evidence
-  - source-policy
   - documentation-schema
+  - source-policy
 ---
 
 # Manutenção documental de baixo contexto
 
-## Objetivo
+## Propósito
 
-O corpus do ChrisOS foi desenhado para crescer muito além do que uma única tarefa de manutenção deveria carregar em contexto.
+O corpus foi desenhado para crescer além da quantidade de material que um revisor humano ou um agente de IA deveria carregar em uma tarefa comum.
 
-O modelo não presume que um agente precise reler todos os capítulos, todos os source files ou o repositório inteiro antes de atualizar uma página.
+A estratégia não é comprimir o projeto inteiro em um único resumo. É fazer cada página autoral declarar dependências suficientes para que um contexto estreito e reproduzível possa ser montado automaticamente.
 
-A unidade normal de trabalho é:
+O modelo operacional é:
 
-    uma página autoral
-    + seus sources declarados
-    + o diff relevante
-    + pequeno resumo de dependencies
-    + comandos explícitos de validação
+1. identificar uma página ou uma mudança de source;
+2. resolver o conjunto de dependências declarado;
+3. inspecionar apenas source e diff afetados;
+4. reconciliar a interpretação autoral;
+5. executar validação determinística global;
+6. publicar somente quando os contratos do corpus continuarem passando.
 
-Assim o custo cresce com a boundary alterada, não com o tamanho total do corpus.
+Isso mantém reasoning local bounded sem perder consistência global.
 
-## Princípio central
+## Dois repositórios, duas autoridades
 
-A regra principal é:
+O workflow atravessa dois repositories.
 
-> O contexto deve ser selecionado por dependency declarada e evidência de revisão, não por busca semântica ampla em todo o corpus.
+O repositório ChrisOS é autoridade para comportamento de implementação, build targets, executable gates e source history.
 
-Semantic search continua útil quando a dependency é realmente desconhecida.
+O repositório de documentação é autoridade para corpus técnico bilíngue, curriculum, specifications, architecture history, interpretação de validação e source atlas gerado.
 
-Mas não deve ser default quando o frontmatter já identifica o contract relevante.
+A CI faz checkout dos dois.
 
-Isso reduz custo e diminui o risco de misturar assumptions de subsystems não relacionados.
+Logo o agente precisa distinguir:
 
-## Identidade canônica
+- implementation evidence do ChrisOS;
+- comportamento das ferramentas documentais no chrisos_site;
+- fatos gerados;
+- interpretação autoral.
 
-Ferramentas de manutenção usam `id` e `lang` do frontmatter como identidade canônica.
+O field `sources` aponta para paths no checkout do ChrisOS. Páginas de manutenção que descrevem a própria infraestrutura documental podem legitimamente ter `sources: []`.
 
-Filename não define sozinho a identidade.
+## Identidade de página
 
-Exemplo:
+Toda página autoral possui `id` e `lang`.
 
-    linux-development-environment.md
+O par:
 
-pode representar:
+    (id, lang)
 
-    id: development-environment-linux
+é a identidade usada pela validação.
 
-A mesma regra vale para source map, curriculum, coverage e bilingual pairing.
+Conteúdo bilíngue deve existir com o mesmo `id` em:
 
-Antes de concluir que um capítulo está ausente, o agente precisa ler o frontmatter.
+- `en`;
+- `pt-br`.
 
-## Grafo de dependências
+O validator rejeita identidade autoral que exista em apenas uma língua.
 
-Os campos principais são:
+Isso evita que English evolua e Portuguese desapareça silenciosamente do corpus mantido.
+
+## Frontmatter como grafo de dependências
+
+Frontmatter não é metadata decorativa.
+
+Fields relevantes:
+
+- `id` — identidade conceitual estável;
+- `lang` — idioma;
+- `type` — classe editorial/depth;
+- `reviewed_revision` — revisão ChrisOS reconciliada;
+- `sources` — files concretos do ChrisOS que sustentam a página;
+- `symbols` — identifiers importantes em sources grandes;
+- `depends_on` — prerequisites documentais;
+- `related` — relações conceituais não obrigatórias.
+
+Esses fields formam um grafo entre source e interpretação e outro entre páginas.
+
+## Invariantes bilíngues
+
+`validate_docs.py` exige igualdade de alguns metadados entre EN/PT-BR.
+
+Para uma mesma identidade, os dois idiomas precisam concordar em:
 
 - `sources`;
-- `symbols`;
 - `depends_on`;
-- `related`;
 - `reviewed_revision`.
 
-Cada um responde a uma pergunta diferente.
+A estrutura linguística pode variar, mas evidence boundary e prerequisite graph precisam ser os mesmos.
 
-### sources
+Assim uma tradução não descreve outra revisão do projeto sem que isso seja detectado.
 
-Paths concretos no repository ChrisOS cujo implementation suporta materialmente a página.
+## IDs estáveis importam mais que filenames
 
-### symbols
+Uma página pode ser movida ou renomeada preservando o mesmo conceito.
 
-Identifiers importantes dentro dos sources. Ajudam a reduzir large-file context.
+O `id` estável permite ao curriculum e aos links conceituais referirem-se ao conceito em vez do path incidental.
 
-### depends_on
+Trocar `id` pode afetar:
 
-Prerequisites conceituais no curriculum DAG.
+- curriculum;
+- `depends_on`;
+- `related`;
+- generated metadata;
+- navigation.
 
-### related
+Por isso mudança de ID deve ser tratada como schema migration, não cosmetic rename.
 
-Páginas adjacentes úteis, mas não prerequisites.
+## Stale detection
 
-### reviewed_revision
+`scripts/stale_docs.py` compara cada página com o HEAD atual do ChrisOS.
 
-Commit do ChrisOS contra o qual a página foi reconciliada.
+Para páginas que possuem `sources` e `reviewed_revision`, o script pergunta ao Git quais declared files mudaram entre:
 
-Juntos, esses campos formam o bounded maintenance graph.
+    reviewed_revision .. HEAD
 
-## Reverse source map
+Somente os paths declarados participam.
 
-`scripts/source_map.py` lê authored pages e gera duas estruturas determinísticas:
+Se nenhum mudou, a página não fica stale apenas porque outras partes do source foram alteradas.
 
-    page path -> metadata
-    source path -> affected pages
+Se algum mudou, a página entra na review queue com:
 
-Se:
+- path da página;
+- revisão revisada;
+- sources alteradas.
 
-    kernel/mm/pmm.c
+Esse é o mecanismo principal de baixo contexto.
 
-muda, o tooling identifica as páginas que declararam esse source sem pedir a um modelo que adivinhe quais títulos "parecem relacionados".
+## Revisão inválida
 
-Isso é mais confiável que filename similarity.
+O detector também verifica se `reviewed_revision` resolve para um commit no checkout de source.
 
-## Por que dependencies explícitas importam
+Se não resolve, a página entra numa seção separada de invalid revision.
 
-Sem metadata explícita, as opções seriam ruins:
+Baseline inválida não pode ser interpretada como "source unchanged".
 
-1. reler o corpus inteiro após cada mudança; ou
-2. depender de guesses semânticos.
+Sem um ancestor válido, não há prova de que as sources declaradas foram reconciliadas.
 
-O metadata graph permite uma terceira opção:
+## Reconciliação de source
 
-> revisar exatamente as páginas que declararam o contract alterado.
+Página stale não deve ser corrigida apenas substituindo o hash.
 
-A metadata pode estar incompleta, mas a incompletude se torna visível e corrigível.
+A tarefa é:
 
-## Detecção de stale pages
+1. ler o diff;
+2. determinar se o documented contract mudou;
+3. atualizar prose quando necessário;
+4. preservar statements históricos quando continuam historicamente verdadeiros;
+5. avançar `reviewed_revision` somente após a revisão.
 
-`scripts/stale_docs.py` compara cada página source-backed com o HEAD atual.
+Às vezes o diff muda implementação interna sem alterar o contrato.
 
-Conceitualmente:
+Nesse caso a prose pode permanecer e apenas a revisão avança.
 
-    reviewed revision R
-        |
-        +-- source A
-        +-- source B
-        |
-        v
-    git diff R..HEAD -- A B
-
-Se nenhum source declarado mudou, a página não fica stale apenas porque código não relacionado mudou.
-
-Se algum source mudou, a página entra na generated review queue.
-
-## Stale não significa incorreto
-
-Uma página stale significa:
-
-> alguma dependency declarada mudou desde a revisão analisada.
-
-Não significa automaticamente:
-
-> o prose está errado.
-
-Refactor pode alterar linhas sem mudar contract.
-
-Bug fix pode fortalecer behavior sem exigir rewrite.
-
-Interface change pode exigir revisão grande.
-
-O agente precisa ler o diff antes de decidir.
-
-## Baseline indisponível
-
-Stale detection e context pack dependem do `reviewed_revision` antigo existir no checkout.
-
-Se o commit não puder ser resolvido, o estado correto é:
-
-    unavailable-baseline
-
-Nunca "unchanged".
-
-Nesse caso, opções corretas incluem:
-
-- obter Git history mais profunda;
-- ler integralmente os sources atuais;
-- fazer full reconciliation;
-- atualizar reviewed revision somente depois.
-
-Bumpar SHA apenas para limpar queue destrói o valor da ferramenta.
-
-## Invalid revision
-
-`stale_docs.py` separa páginas com revision inválida.
-
-Isso importa porque:
-
-    stale
-    !=
-    invalid baseline
-
-Stale possui old point conhecido e diff conhecido.
-
-Invalid baseline não possui anchor histórica suficiente.
+Essa decisão exige análise técnica.
 
 ## Context packs
 
-`scripts/context_pack.py` cria um package bounded para uma página.
+`scripts/context_pack.py` cria um working directory bounded para uma página.
 
-Inclui:
+O pack contém:
 
-- `PAGE.md`;
-- source material declarado;
-- `DIFF.patch`;
-- `META.json`;
-- `DEPENDENCIES.json`;
-- `INSTRUCTIONS.md`.
-
-Esse package é o input preferencial para uma manutenção focada.
-
-## Metadata do context pack
-
-`META.json` registra:
-
-- page path;
-- ID;
-- reviewed revision;
-- source HEAD;
-- sources;
-- symbols;
+- cópia da página;
+- declared source material;
+- Git diff desde o baseline;
+- metadata;
 - source hashes;
-- dependencies;
-- related IDs;
-- diff status;
-- packing mode.
+- dependency summaries;
+- instruções de manutenção.
 
-Assim o agente consegue verificar provenance antes de interpretar o conteúdo.
+Esse é o unit normal de contexto para um agente trabalhando em uma página.
 
-O primeiro passo deve ser olhar `diff_status`.
+## Sources grandes
 
-## Full source versus symbol context
+O context pack não precisa copiar todo source grande.
 
-Large files podem ultrapassar um contexto útil.
+A implementação atual usa threshold de 24.000 characters.
 
-Quando source é pequeno, o file completo é copiado.
+Acima disso, `symbols` pode direcionar extraction para trechos em torno dos identifiers relevantes.
 
-Quando é grande e existem symbols, `context_pack.py` extrai janelas bounded ao redor desses identifiers.
+O extractor mantém regiões bounded em torno de hits e une ranges sobrepostos.
 
-O implementation atual usa aproximadamente 100 lines de contexto ao redor de cada hit e combina intervals sobrepostos.
+Isso reduz custo sem esconder o fato de que o arquivo foi parcialmente empacotado.
 
-Isso preserva locality sem copiar file inteiro.
+Se o excerpt não resolver a questão, o maintainer pode solicitar pack completo.
 
-## Quando symbol context basta
+Truncation precisa ser explícita, nunca silenciosa.
 
-Symbol-centered context costuma bastar quando o claim depende de:
+## Resumo de dependencies
 
-- initializer específico;
-- parser;
-- state transition;
-- error path;
-- resource lifecycle function.
+O pack não copia recursivamente todo o documentation graph.
 
-Se semantics dependem de macros, tables, file-wide invariants ou helpers distantes, leia o source completo.
+Para `depends_on` e `related`, ele registra summaries no mesmo idioma com:
 
-Bounded context é otimização, não proibição.
-
-## Escape hatch --full
-
-`context_pack.py --full` força sources completos.
-
-Use quando:
-
-- symbol windows omitiram helper necessário;
-- file-level invariant importa;
-- macro distante altera semantics;
-- global table define comportamento;
-- existe contradição não resolvida pelo pack estreito.
-
-Não use `--full` automaticamente.
-
-Isso anularia a arquitetura de baixo contexto.
-
-## Dependency summaries
-
-Context pack não copia recursivamente todo prerequisite e related page.
-
-Ele grava summaries com:
-
-- dependency ID;
+- id;
 - path;
 - reviewed revision;
 - headings.
 
-Isso evita explosão recursiva.
+Assim uma página não arrasta o transitive closure inteiro do corpus para cada task.
 
-Se um heading indicar que determinada definição é necessária, então leia explicitamente aquela page.
+Se uma dependency estiver ausente, o state é registrado explicitamente.
 
-## Generated source atlas
+## Diff status
 
-`scripts/inventory.py` indexa textual source do ChrisOS.
+O pack registra se o diff está:
 
-Para cada file registra:
+- changed;
+- unchanged;
+- unavailable por falta de baseline válida;
+- not applicable quando não há source dependency.
+
+Unavailable baseline não equivale a unchanged.
+
+Essa distinção evita confiança falsa quando a revisão não existe no checkout.
+
+## Source hashes
+
+Cada source empacotada recebe SHA-256 no metadata.
+
+O hash identifica exatamente os bytes analisados.
+
+Isso ajuda quando o mesmo path muda várias vezes ou quando o review artifact é retido fora do checkout.
+
+Git revision continua sendo a identidade global; hash fornece file-level identity.
+
+## Inventário de source
+
+`scripts/inventory.py` varre textual files do ChrisOS e produz o source atlas.
+
+O scanner ignora directories de trabalho como:
+
+- `.git`;
+- `build`;
+- `site`;
+- virtual environments;
+- Python cache.
+
+Para candidates textuais ele registra:
 
 - path;
 - line count;
 - byte count;
 - SHA-256;
 - includes detectados;
-- C-like symbols;
-- source textual completo.
+- C-like function definitions detectadas;
+- conteúdo textual completo.
 
-O atlas é deterministic source evidence.
+Isso é evidence determinística gerada, não architectural interpretation.
 
-Não é authored architecture.
+## Papel do source atlas
 
-## Por que o atlas reproduz source completo
+O atlas garante rastreabilidade para o conteúdo exato dos files.
 
-Authored docs devem interpretar.
+Ele deve responder:
 
-O atlas possui outra função: rastreabilidade exata.
+> O que exatamente existia neste arquivo nessa revisão?
 
-Por isso generated pages preservam o file textual completo em uma revisão conhecida.
+Não deve tentar responder sozinho:
 
-Não edite manualmente generated atlas pages.
+> Qual papel arquitetural esse arquivo possui?
 
-Corrija source ou generator.
+Ownership, invariants, concurrency, failure behavior e rationale ficam em authored chapters.
 
 ## Fatos gerados versus interpretação autoral
 
-Automation é boa para fatos como:
+A separação é central.
 
-- file existence;
-- path;
-- hash;
-- size;
-- include list;
-- symbol position;
-- manifest membership;
-- word count;
-- diff status.
+Automation é apropriada para:
 
-Mas invariants e architectural meaning continuam em authored chapters.
+- inventories;
+- hashes;
+- counts;
+- dependency tables;
+- symbol lists;
+- navigation;
+- stale queues;
+- coverage statistics.
 
-Eles precisam explicar:
+Authored pages continuam responsáveis por:
 
+- architectural boundaries;
 - ownership;
+- lifetime;
 - concurrency;
-- ABI;
-- failure semantics;
+- algorithms;
+- complexity;
 - security;
-- performance;
-- subsystem boundaries;
-- evidence limitations;
-- roadmap.
-
-## Coverage generation
-
-`scripts/coverage.py` mede duas dimensões.
-
-### Structural coverage
-
-Existe authored page com o planned ID naquele idioma?
-
-### Text-floor coverage
-
-A page atinge o minimum word target do seu type?
-
-O segundo indicador mede extensão textual, não correctness.
-
-Targets atuais:
-
-- concept: 1800;
-- technical-chapter: 1800;
-- subsystem: 2200;
-- specification: 1600;
-- source-commentary: 1200;
-- demais authored technical pages: 900.
-
-## Por que existe depth floor
-
-Páginas muito curtas costumam omitir dimensões importantes como:
-
-- ownership;
-- error paths;
-- validation;
+- failure/recovery;
+- validation meaning;
 - limitations;
-- performance;
-- concurrency.
+- roadmap separation.
 
-O floor serve como trigger de review.
+Gerar fatos economiza tokens e evita repetição.
 
-Não deve ser vencido com filler.
+Interpretação autoral impede o site de virar apenas source dump.
 
-Expanda technical dimensions faltantes.
+## Structural coverage
 
-## next_work
+`scripts/coverage.py` compara o corpus autoral com o chapter manifest.
 
-`scripts/next_work.py` percorre curriculum order e reporta pages missing ou abaixo do target.
+Structural coverage pergunta se cada planned chapter existe.
 
-Assim a seleção de trabalho é determinística.
+Não prova technical completeness.
 
-O script evita escolher sempre os chapters mais visíveis enquanto early curriculum permanece thin.
+Uma página curta pode satisfazer presença estrutural e ainda falhar no depth target.
 
-Também informa total restante.
+Por isso structural coverage e text-floor coverage são métricas distintas.
 
-## Curriculum versus source urgency
+## Pisos textuais
 
-Curriculum order é adequado para expansion work.
+O coverage script define thresholds por page type.
 
-Source staleness pode ser mais urgente.
+Exemplos atuais:
 
-Uma priority prática é:
+- concept: 1.800 palavras;
+- technical chapter: 1.800;
+- subsystem: 2.200;
+- specification: 1.600;
+- source commentary: 1.200;
+- outras authored technical pages: 900.
 
-1. invalid reviewed revision;
-2. stale page com implementation change;
-3. missing planned page;
-4. thin page em curriculum order;
-5. refinamento editorial opcional.
+O contador remove fenced code e HTML markup.
 
-## Manutenção bilíngue
+Esses valores são editorial signals.
 
-Identidades authored exigem EN e PT-BR.
+Atingir o piso não comprova correção nem completude técnica.
 
-Quando metadata source-backed muda, os pares devem permanecer equivalentes.
+## Código não conta como profundidade
 
-Campos técnicos importantes:
+Página não deve alcançar o target colando source ou command transcript.
 
-- `sources`;
-- `depends_on`;
-- `reviewed_revision`.
+O contador remove fenced code antes da contagem.
 
-O prose precisa ser idiomático em cada idioma, não uma tradução abreviada.
+Isso cria a separação correta:
 
-O par deve ser tratado como uma unidade técnica.
+- source integral pertence ao atlas;
+- excerpts ajudam a explicar;
+- prose depth precisa vir de technical reasoning.
 
-## CI intermediário
+É possível ter muito código e ainda ficar abaixo do piso quando o modelo explicativo é raso.
 
-Validator pode falhar em commit temporariamente EN-only.
+## Curriculum graph
 
-Workflow concurrency pode cancelar runs anteriores quando chega commit mais novo.
+`scripts/curriculum.py` valida o learning path planejado.
 
-Esses estados não são automaticamente content failures.
+O curriculum precisa particionar o manifest exatamente:
 
-O validation target importante é o commit mais novo que contém o pair completo.
+- todo planned chapter aparece;
+- nenhum chapter desconhecido aparece;
+- nenhum ID fica duplicado.
 
-Se esse run falhar, aí sim examine o erro real.
+O script também valida prerequisites e detecta cycles.
 
-## Build-all pipeline
+Assim `depends_on` participa de um learning DAG executável, não apenas de hyperlinks.
 
-`scripts/build_all.py` executa a cadeia determinística:
+## Estado de leitura
 
-- unit tests;
+O learning path gerado distingue:
+
+- chapter ausente;
+- presente mas requer expansão;
+- piso textual atingido, revisão técnica ainda necessária.
+
+A redação é intencional.
+
+Cruzar o word floor nunca muda automaticamente o estado para "complete".
+
+Editorial length e technical review continuam separados.
+
+## Validação documental
+
+`scripts/validate_docs.py` aplica os contratos estruturais.
+
+Ele verifica:
+
+- required frontmatter;
+- duplicate `id/lang`;
+- declared source paths;
+- placeholder tokens;
+- presença bilíngue;
+- metadata alignment entre idiomas.
+
+Também emite warning para technical body muito curto.
+
+Isso bloqueia várias formas de corruption antes do MkDocs.
+
+## Reverse source map
+
+`scripts/source_map.py` gera índice reverso de source paths para docs.
+
+Em vez de perguntar:
+
+> quais sources sustentam esta página?
+
+o map também permite responder:
+
+> quais páginas declararam dependência deste source file?
+
+Esse reverse index é base útil para impact analysis e future automation disparada por code changes.
+
+## Build orchestration
+
+`scripts/build_all.py` é o entry point principal da geração documental.
+
+A sequência atual inclui:
+
+- unit tests da documentação;
 - diagrams;
 - figures;
 - source inventory;
@@ -447,226 +425,249 @@ Se esse run falhar, aí sim examine o erro real.
 - curriculum;
 - reader navigation;
 - stale detection;
-- docs validation;
-- editorial style;
+- documentation validation;
+- editorial-style checks;
 - source map.
 
-Hosted CI adiciona checks adicionais e publication stages.
+Executar tudo sobre um único checkout torna o resultado coerente.
 
-Markdown committed ainda não significa published/validated.
+## CI como consistência global
 
-## Revision bump correto
+O GitHub Pages workflow roda em:
 
-Uma source-backed page deve avançar `reviewed_revision` somente após reconciliation.
+- pushes para `main`;
+- pull requests contra `main`;
+- manual dispatch;
+- schedule semanal.
 
-Sequência:
+Ele faz checkout da documentação e do ChrisOS, instala dependencies, executa o pipeline e depois vários verification scripts especializados.
 
-1. ler metadata;
-2. ler source diff;
-3. ler current source;
-4. decidir se prose muda;
-5. verificar tests/specs;
-6. atualizar page;
-7. atualizar reviewed revision;
-8. rodar validation;
-9. confirmar final bilingual workflow.
+No final executa:
 
-Bump cego destrói stale detection.
+- JavaScript syntax checks;
+- strict MkDocs build;
+- SEO/discovery checks;
+- generated-reader smoke;
+- Pages artifact upload;
+- deploy para runs que não são pull request.
 
-## Source hashes e cache
+Essa é a rede global de segurança depois da edição local.
 
-Context pack registra SHA-256 dos sources.
+## Concurrency do workflow
 
-Git também fornece content identity.
+Pages usa shared concurrency group com cancel-in-progress.
 
-Isso permite reutilizar análise de source não alterado.
+Quando vários commits chegam rapidamente, um run antigo pode ser cancelled pelo run mais novo.
 
-Um cache futuro pode usar hash como key.
+Cancellation intermediária não significa necessariamente content failure.
 
-Se content identity não mudou, normalmente não há motivo para repetir análise completa.
+O resultado autoritativo é o workflow mais novo que corresponde ao repository state final.
 
-## Modelo de custo
+Relatórios de manutenção devem registrar final commit SHA e final workflow conclusion.
 
-Considere:
+## Reasoning local, validation global
 
-- (D) = tamanho total da documentação;
-- (S) = tamanho total do source;
-- (k) = número de sources declarados;
-- (d) = tamanho do diff relevante.
+Low-context maintenance só é seguro porque a edição local é seguida por global deterministic checks.
 
-Workflow ingênuo tende a ler grande parte de (D + S).
+O modelo combina:
 
-Low-context workflow busca custo proporcional a:
+    contexto estreito para reasoning
+    +
+    contracts automáticos no corpus inteiro
 
-    page + k bounded sources + d + small dependency metadata
+Contexto estreito sem validação global pode esconder regressões cross-page.
 
-À medida que o corpus cresce, a diferença fica maior.
+Contexto global em toda tarefa desperdiça recursos e reduz precisão.
 
-## Evitando context explosion
+A combinação fornece escala e integridade.
 
-Causas comuns:
+## Algoritmo de atualização
 
-- ler recursivamente todas related pages;
-- copiar includes transitivos;
-- pedir full large file antes de checar symbols;
-- varrer repository inteiro para termos já mapeados;
-- regenerar prose não afetado.
+Um ciclo prático:
 
-O tooling existe justamente para evitar esses padrões.
+1. identificar source revision;
+2. gerar stale queue;
+3. escolher stale/thin page prioritária;
+4. montar ou emular context pack;
+5. ler diff e dependencies;
+6. atualizar EN/PT-BR;
+7. validar metadata e sources;
+8. executar pipeline;
+9. verificar final workflow;
+10. publicar somente com final state verde.
 
-## Quando busca ampla é apropriada
+Sem stale pages, o foco passa para missing chapters ou below-floor chapters.
 
-Metadata explícita não resolve tudo.
+Com structural coverage completa, manutenção vira reconciliação e aprofundamento.
 
-Busca mais ampla é justificável quando:
+## Workflow para página thin
 
-- page depende de code não declarado;
-- source move quebrou metadata;
-- novo subsystem não possui mapping;
-- diff revela hidden cross-subsystem dependency;
-- concept precisa de external primary references;
-- frontmatter está incompleto.
+Página below-floor não deve receber filler.
 
-Ao descobrir dependency durável, adicione-a ao metadata para reduzir custo futuro.
+Expansões úteis acrescentam:
 
-## Failure mode: metadata stale
+- prerequisites;
+- formal model;
+- source-backed implementation;
+- data structures;
+- algorithms;
+- complexity;
+- ownership/lifetime;
+- concurrency;
+- failure behavior;
+- security;
+- performance;
+- validation;
+- limitations;
+- history;
+- roadmap.
 
-Uma falha perigosa é dependency metadata incompleta.
+A boa expansão reduz ambiguidade para quem precisa implementar, depurar ou revisar.
 
-Se chapter depende de B mas declara apenas A, mudança em B não entra na queue.
+## Workflow para página stale
 
-Durante reconciliation substantiva, pergunte:
+Página stale exige source reconciliation, não rewrite automático.
 
-> Estes ainda são os menores sources completos necessários para os claims desta page?
+Classifique o diff.
 
-Metadata faz parte do technical contract.
+### Sem contract change
 
-## Failure mode: source set grande demais
+Implementation mudou internamente e a prose continua correta. Avance a revisão após conferir os dois idiomas.
 
-O extremo oposto é declarar muitos files irrelevantes.
+### Contract extension
 
-Isso marca page stale por qualquer mudança menor e aumenta context pack sem necessidade.
+Comportamento existente permanece, mas nova capability surgiu. Documente contrato e evidence novos.
 
-Prefira o menor source set que reconstrói o mecanismo.
+### Contract change
 
-Se contracts são independentes, considere pages menores e focadas.
+Regra existente mudou. Atualize current/normative prose e pages dependentes.
 
-## Generated versus authored ownership
+### Efeito apenas histórico
 
-Generated files não devem ser editados como authored source.
+Source atual mudou, mas o chapter é histórico. Preserve o historical statement e ajuste apenas o framing necessário para não parecer current behavior.
+
+Essa classificação evita apagar história ao atualizar hashes.
+
+## Workflow bilíngue
+
+EN/PT-BR devem ser tratados como uma transação conceitual.
+
+Sequência segura:
+
+1. reconciliar evidence uma vez;
+2. atualizar English;
+3. atualizar Portuguese com claims equivalentes;
+4. comparar frontmatter;
+5. rodar bilingual validation;
+6. tratar o commit do segundo idioma como estado final que precisa passar na CI.
+
+Commits intermediários de apenas um idioma podem falhar ou ser cancelled, porque o repository rejeita bilingual pairs incompletos.
+
+O final state precisa sempre restaurar equivalência.
+
+## Evitando pesquisa duplicada
+
+Se uma página possui reviewed revision válida e nenhuma source declarada mudou, não há motivo para repetir toda a investigação em uma atualização unrelated.
+
+Reuse o dependency graph.
+
+Reabra research quando:
+
+- source declarada muda;
+- dependency muda a interpretação;
+- validation failure contradiz a página;
+- a página está sendo aprofundada;
+- claim sobre standard externo precisa de refresh.
+
+Fora desses casos, o último estado reconciliado continua válido.
+
+## Controle de escopo
+
+Agent não deve corrigir tudo que perceber no caminho.
+
+Registre o problema e mantenha o patch ligado a um claim reviewable, salvo quando o defeito bloqueia validation.
+
+Scope control torna failures atribuíveis e evita que uma documentação simples vire refactor amplo.
+
+Em campaigns maiores, agrupe pages por uma mesma área de source ou objetivo editorial e valide cada lote coerente.
+
+## Tratamento de failures
+
+Quando CI falha, classifique antes de editar.
+
+Classes comuns:
+
+- malformed frontmatter;
+- bilingual metadata mismatch;
+- missing source;
+- curriculum/DAG error;
+- navigation generation;
+- contract verifier;
+- JavaScript syntax;
+- MkDocs strict-build;
+- discovery/reader smoke;
+- deployment/infrastructure.
+
+Não altere prose para "corrigir" outage de infraestrutura.
+
+Não ignore source-contract verifier como irrelevante se o chapter fez o claim verificado.
+
+## Generated files
+
+Generated outputs devem ser regenerados, não curados manualmente.
 
 Exemplos:
 
-- coverage;
-- review queue;
+- source inventory;
 - source atlas;
+- coverage status;
+- learning path;
+- review queue;
 - source map;
-- learning path.
+- diagrams/figures produzidos por scripts.
 
-Se generated output estiver errado, corrija:
+Editar output gerado cria drift porque o próximo build sobrescreve.
 
-- metadata;
-- manifest/curriculum;
-- generator;
-- underlying ChrisOS source.
+A correção pertence ao source data, generation script ou authored page, conforme a causa.
 
-Manual patch será sobrescrito.
+## Retenção de evidência
 
-## Decision record do agente
+Para batches importantes, retenha pelo menos:
 
-Para manutenção não trivial, o agente deve conseguir registrar:
+- final documentation commit;
+- ChrisOS source revision;
+- final workflow run ID;
+- build/deploy conclusion;
+- structural coverage;
+- stale count;
+- remaining thin-page count.
 
-- por que a page foi selecionada;
-- qual revision mudou;
-- qual source mudou;
-- que contract difference foi observada;
-- se prose precisou mudar;
-- limitations restantes;
-- validation executada.
+Esse registro compacto permite continuar outra sessão sem replay do campaign inteiro.
 
-O registro pode ser curto.
+Também reduz dependência de conversational memory quando o repository possui fatos autoritativos.
 
-Seu objetivo é traceability, não expor raciocínio interno.
+## Critérios de checkpoint
 
-## Review queue zero não significa finalidade
+Uma campaign não termina apenas porque files foram editados.
 
-Stale queue zerada significa:
+Um checkpoint forte exige:
 
-> toda source-backed page está reconciliada contra suas dependencies declaradas.
+- planned structural coverage satisfeita;
+- nenhuma stale page inesperada;
+- nenhuma invalid reviewed revision;
+- thin pages alvo acima do piso;
+- bilingual contracts passando;
+- curriculum/navigation gerados com sucesso;
+- strict site build verde;
+- discovery e reader smoke verdes;
+- final Pages deploy verde.
 
-Não significa:
+O corpus ainda pode continuar evoluindo.
 
-- dependency metadata perfeita;
-- todas pages acima do depth floor;
-- completude técnica absoluta;
-- hardware universalmente validado;
-- ausência de melhorias editoriais.
-
-Métricas são independentes.
-
-## Maintenance loop recomendado
-
-Fluxo source-driven:
-
-    atualizar ChrisOS
-        |
-        v
-    rodar build_all
-        |
-        v
-    inspecionar review queue
-        |
-        v
-    escolher stale page
-        |
-        v
-    criar context pack
-        |
-        v
-    reconciliar diff/source
-        |
-        v
-    atualizar par bilíngue
-        |
-        v
-    validar
-        |
-        v
-    repetir até stale=0
-
-Depois, use `next_work.py` para missing/thin work.
-
-## Expansion loop recomendado
-
-Para depth work:
-
-1. execute `next_work.py`;
-2. escolha a primeira thin page útil;
-3. leia frontmatter/body;
-4. reconcilie sources;
-5. adicione technical dimensions, não filler;
-6. atualize EN/PT-BR;
-7. meça com canonical word counter;
-8. execute pipeline;
-9. continue em curriculum order.
-
-## Invariantes de custo
-
-A arquitetura segue regras práticas:
-
-1. reutilizar análise de source unchanged por content identity;
-2. trabalhar por Git diff quando baseline existe;
-3. não regenerar authored prose não afetado;
-4. gerar indexes e source facts deterministicamente;
-5. ler full large files só quando bounded context não basta;
-6. manter dependency metadata explícita;
-7. validar bilingual pair como unidade;
-8. separar structural coverage, text depth e source freshness.
-
-Essas regras permitem o crescimento do site sem tornar cada atualização uma leitura global.
+Esses critérios definem um state estável de manutenção, não o fim da documentação técnica.
 
 ## Nota de revisão
 
-Este capítulo descreve o low-context documentation tooling atual de `chrisos_site` e usa ChrisOS `e05a17fd76333114a3fb5c2452f38ca747d4ac56` como baseline do projeto.
+Este workflow descreve a arquitetura atual de manutenção do site enquanto usa ChrisOS `e05a17fd76333114a3fb5c2452f38ca747d4ac56` como shared source baseline para authored technical pages.
 
-Como documenta o sistema de manutenção do repositório de documentação, e não um subsystem de implementation ChrisOS, declara `sources: []`. O tooling correspondente é propriedade do próprio documentation repository e é validado pelo CI dele.
+O princípio central é: **ler pouco e com precisão, declarar dependências, gerar fatos mecânicos deterministicamente, preservar boundaries bilíngues e validar o corpus inteiro antes de publicar.**
