@@ -201,6 +201,14 @@ The goal is not to avoid difficult work; it is to establish a reviewable feedbac
 
 Follow the repository security policy for vulnerabilities or reports that should not be disclosed through a normal public pull request. Do not publish sensitive exploit details merely to satisfy the ordinary contribution workflow.
 
+## Evidence should match patch scope
+
+The validation record should be proportional to the changed boundary.
+
+A documentation-only wording correction does not require pretending that the kernel was requalified on physical hardware. A storage-driver change should not stop at an unrelated compiler unit test. A format change should include compatibility or rejection evidence, not only a successful build.
+
+The goal is not to maximize the number of commands in a pull request. It is to select tests whose oracles directly exercise the invariant, interface or failure path that changed, then add broader gates as regression confirmation.
+
 ## Before opening the PR
 
 Run:
