@@ -493,16 +493,11 @@ Errors bloqueiam publication.
 
 ## Placeholder protection
 
-Authored pages não podem conter tokens unresolved como:
+Authored pages não podem conter scaffold ou replacement markers não resolvidos reconhecidos pelo validator.
 
-- `TODO`;
-- `TBD`;
-- `REPLACE_ID`;
-- `REPLACE_SOURCE`;
-- `REPLACE_REVISION`;
-- `lorem ipsum`.
+Isso impede que resíduos de template sejam publicados como prose final.
 
-Se future work precisa ser descrito, use roadmap/limitation prose explícito em vez de placeholder.
+Se future work precisa ser descrito, use roadmap ou limitation prose explícito em vez de deixar placeholder marker.
 
 ## Short-body warning
 
