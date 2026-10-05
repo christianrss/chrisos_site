@@ -545,6 +545,42 @@ SMP support would require explicit rules for:
 
 Those are future architecture questions, not hidden capabilities.
 
+## State-transition ownership
+
+ChrisCPU must preserve a clear boundary between instruction semantics and machine semantics.
+
+Instruction execution may change registers, flags, RIP and guest-visible memory. The machine layer owns device registration, physical backing, exit classification and the lifetime of the CPU object. A decoder therefore should not directly mutate machine-owned device state except through the execution helpers that implement the corresponding architectural operation.
+
+This separation matters for future backend equivalence. If instruction handlers secretly depend on host-only state that exists only inside the interpreter, ChrisHV cannot reproduce the same guest behavior through the shared backend contract.
+
+A useful review question for every new instruction is:
+
+1. which architectural fields does it read;
+2. which architectural fields does it write;
+3. whether it can access guest memory;
+4. whether it can trigger an exception;
+5. whether it can touch I/O/MMIO;
+6. whether it changes RIP explicitly;
+7. whether it can terminate machine execution.
+
+Keeping those effects explicit makes instruction semantics testable independently from the frontend.
+
+## Boundary-oriented regression tests
+
+Regression tests should target the boundary where one semantic class becomes another.
+
+Examples include:
+
+- an instruction fetch that crosses a page boundary;
+- a data access whose first page is valid and second page faults;
+- a control transfer that changes RIP while the generic loop would otherwise advance it;
+- an exception delivered with and without a usable IDT;
+- an interrupt pending across STI delay;
+- an MMIO access adjacent to ordinary RAM;
+- a step-limit exit immediately after otherwise valid execution.
+
+These cases are disproportionately useful because they test ownership between decoder, executor, MMU, exception machinery and machine model rather than only ordinary instruction results.
+
 ## Current limitations
 
 The current ChrisVM/ChrisCPU platform does not provide:
