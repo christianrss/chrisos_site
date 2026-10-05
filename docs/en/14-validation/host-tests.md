@@ -425,6 +425,22 @@ A broader stability run includes sanitizer coverage and, when QEMU is installed,
 
 Documentation should record the exact target used when citing evidence.
 
+## Fixture and artifact isolation
+
+A host test should own its temporary state instead of depending on developer-local files left by another run.
+
+For tests that create disk images, object files, logs or generated binaries, the fixture contract should identify:
+
+- who creates the artifact;
+- its initial state;
+- whether the test may mutate it;
+- how failure preserves diagnostic output;
+- how the next run returns to a clean state.
+
+This matters because stale artifacts can create both false positives and false negatives. A test can appear to pass by reading output produced by an earlier revision, or fail because a previous interrupted run left partially mutated state.
+
+Aggregate gates should therefore prefer deterministic fixture creation and explicit output paths under the build tree. Persistent artifacts are useful only when retention is intentional and the report identifies which run produced them.
+
 ## Revision note
 
 This chapter was reconciled against ChrisOS revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
