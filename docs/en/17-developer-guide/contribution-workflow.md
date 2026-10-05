@@ -215,6 +215,20 @@ Before merging a change to an ABI, serialized format, syscall, object format or 
 
 If compatibility changes, the pull request should identify the affected version, migration or rejection behavior and the tests that exercise old and new artifacts. Treating a compatibility change as an ordinary refactor makes future debugging substantially harder.
 
+## Keep compatibility changes explicit
+
+If a patch changes an on-disk format, bytecode image, ABI, boot contract or public resource semantics, state that fact separately from the implementation summary.
+
+Reviewers should be able to identify:
+
+- whether old artifacts remain readable;
+- whether new writers emit a new version;
+- whether migration is required;
+- whether unknown versions or flags fail closed;
+- which regression fixtures cover compatibility.
+
+Do not hide a compatibility change inside a broad refactor. The cost of an explicit version decision is much lower than diagnosing silent cross-revision breakage later.
+
 ## Before opening the PR
 
 Run:
