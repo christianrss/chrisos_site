@@ -498,6 +498,22 @@ Commit futuro deve entrar aqui quando mudar durable boundary como:
 
 Code cleanup e optimization isolada normalmente não precisam de top-level milestone.
 
+## Commit message é índice, não prova
+
+Commit messages ajudam a localizar milestones, mas a mensagem isolada não é a evidência arquitetural.
+
+Uma mensagem como "add", "fix" ou "support" precisa ser conferida contra:
+
+- files realmente alterados;
+- source diff;
+- tests adicionados ou modificados;
+- limitations preservadas no code/prose;
+- corrections posteriores que podem restringir o claim inicial.
+
+Isso é especialmente importante em repository experimental que muda rápido: um título curto pode descrever o objetivo pretendido de forma mais ampla que o subset efetivamente implementado.
+
+Architecture history deve usar commit message para localizar o evento e diff/tests para definir o que aquele evento realmente estabeleceu.
+
 ## Current architecture statement
 
 Na revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`, current behavior deve ser reconstruído de current source e current specifications.
