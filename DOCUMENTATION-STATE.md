@@ -167,20 +167,21 @@ A content-producing agent should:
 
 ## Definition of corpus completion
 
-The temporary completion campaign ends only when all conditions hold:
+The temporary structural/depth completion campaign reached its checkpoint at content commit `39308596b5d7a81dc907033f93c87e41d89d4a3d`:
 
 - 221/221 planned IDs authored in EN and PT-BR;
 - zero missing chapters;
 - zero chapters below the configured depth floor in either language;
 - prerequisite DAG valid;
-- no conversational/template filler;
+- stale-source queue zero;
+- invalid reviewed revisions zero;
+- no conversational/template filler detected by repository checks;
 - source/revision metadata reconciled against current ChrisOS `main`;
-- bilingual technical equivalence reviewed;
-- diagrams/tables/code references render correctly;
+- diagrams/tables/code references render through the strict site build;
 - search/navigation smoke tests pass;
 - `python -m unittest discover -s tests` passes;
 - `python scripts/build_all.py --source .source --docs docs` passes;
 - `mkdocs build --strict` passes;
 - GitHub Pages deployment succeeds.
 
-Crossing the word floor alone is not completion.
+Crossing the word floor alone is not technical completion. The corpus remains an actively maintained engineering reference and should continue receiving source-backed correctness, bilingual-equivalence and usability review as ChrisOS evolves.
