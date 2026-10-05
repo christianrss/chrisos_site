@@ -4,7 +4,7 @@ lang: en
 type: landing
 status: maintained
 description: Deep technical documentation of ChrisOS, an experimental x86-64 operating system covering kernel engineering, compilers, filesystems, graphics, networking, emulation and virtualization.
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - README.md
   - kernel/metal/start.c
@@ -15,7 +15,7 @@ sources:
 
 <div class="record">
 <span>Source branch: <b>main</b></span>
-<span>Documentation baseline: <code>da3df29cb397</code></span>
+<span>Documentation baseline: <code>e05a17fd7633</code></span>
 <span>Publication model: static / revision-bound</span>
 </div>
 
