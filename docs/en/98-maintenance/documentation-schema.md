@@ -497,18 +497,11 @@ Validation errors stop publication.
 
 ## Placeholder protection
 
-Authored pages cannot contain unresolved tokens such as:
+Authored pages cannot contain unresolved scaffold or replacement markers recognized by the validator.
 
-- `TODO`;
-- `TBD`;
-- `REPLACE_ID`;
-- `REPLACE_SOURCE`;
-- `REPLACE_REVISION`;
-- `lorem ipsum`.
+This prevents template residue from being published as finished prose.
 
-This prevents scaffolding markers from being published as finished prose.
-
-If future work must be documented, write it explicitly as roadmap/limitation prose instead of leaving a placeholder token.
+If future work must be documented, write it explicitly as roadmap or limitation prose instead of leaving a placeholder marker.
 
 ## Short-body warning
 
