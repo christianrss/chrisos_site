@@ -508,6 +508,22 @@ A future commit belongs in architecture history when it changes at least one dur
 
 Routine code cleanup, typo fixes and isolated implementation optimizations usually do not need a top-level historical milestone.
 
+## Commit messages are indexes, not proof
+
+Commit messages are useful entry points into history, but the message alone is not the architectural evidence.
+
+A message such as "add", "fix" or "support" must be checked against:
+
+- the changed files;
+- the actual source diff;
+- tests added or modified in the same change;
+- limitations preserved in code or prose;
+- later corrections that may narrow the original claim.
+
+This is especially important in a fast-moving experimental repository, where a concise commit title can describe the intended goal more broadly than the final implemented subset.
+
+Architecture history should therefore use commit messages to locate milestones and diffs/tests to define what the milestone actually established.
+
 ## Current architecture statement
 
 At reviewed revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`, current behavior must be reconstructed from current source and current specifications.
