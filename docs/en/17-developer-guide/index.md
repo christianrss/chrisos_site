@@ -132,6 +132,12 @@ make clean
 
 when a stale artifact is a plausible cause of a failure.
 
+## Baseline before modification
+
+Before changing a subsystem, record a known-good baseline for the narrowest relevant gate. This separates a pre-existing failure from a regression introduced by the patch.
+
+A useful baseline note includes the source revision, command and result. If the target already fails, preserve that evidence and do not describe the later patch as the cause until the failure is reproduced against both revisions.
+
 ## Scope discipline
 
 ChrisOS spans a kernel, memory manager, storage stack, filesystem, language/runtime components, graphics, desktop, networking, native tools and machine emulation. A contributor should identify the owning subsystem before changing code and avoid crossing architectural boundaries only to make a local symptom disappear.
