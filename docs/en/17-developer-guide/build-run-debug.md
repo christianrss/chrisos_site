@@ -184,6 +184,21 @@ A later rerun may change timing, regenerate a disk image or overwrite the serial
 
 If the failure disappears after `make clean`, record that fact. It may indicate stale generated state or an incomplete build dependency rather than a guest logic defect.
 
+## Re-run discipline
+
+After changing source in response to a failure, rerun the same narrow gate first. Do not jump directly to a broader suite, because a broad pass can hide whether the original failure condition was actually exercised.
+
+A useful debug sequence is:
+
+1. reproduce the original failure;
+2. preserve its artifact;
+3. apply the smallest change;
+4. rerun the identical command;
+5. confirm the previous failure point is now crossed;
+6. only then run wider regression gates.
+
+This keeps the causal link between defect and fix visible.
+
 ## Failure classification
 
 | Symptom | First layer to inspect |
