@@ -443,6 +443,35 @@ The next fault-injection work should prioritize:
 9. artifact retention for first failing seed/point;
 10. eventual physical fault experiments only with dedicated hardware/media.
 
+## Deterministic activation and failure artifacts
+
+A fault campaign is most useful when the same source revision and activation rule reproduce the same failing transition.
+
+Prefer deterministic controls such as:
+
+    fail operation X on call N
+    fail block request for LBA range R
+    exhaust allocation budget after K successful pages
+
+over unrecorded random failure.
+
+When randomization is valuable, the seed and generated case must be retained.
+
+The first failing run should preserve enough state to reproduce the experiment:
+
+- source revision;
+- injection-point identity;
+- activation count or seed;
+- machine/test configuration;
+- serial or host log;
+- mutated disk/image when relevant;
+- expected oracle;
+- observed exit status.
+
+Without this artifact bundle, a rare injected failure can become impossible to distinguish from unrelated test infrastructure noise.
+
+Determinism also makes regression repair measurable: after a fix, the exact previously failing point should pass before broader randomized exploration resumes.
+
 ## Revision note
 
 This chapter was reconciled against ChrisOS revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
