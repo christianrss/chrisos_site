@@ -145,6 +145,21 @@ git rev-parse HEAD
 
 Inclua também o target exato e o primeiro erro relevante. A última linha retornada por make normalmente contém menos informação que o primeiro erro de compilador, linker, xorriso ou QEMU.
 
+## Identidade das ferramentas e PATH
+
+Quando existem várias instalações de compiler, QEMU ou Python, registre qual executable o shell realmente seleciona.
+
+Checks úteis:
+
+~~~bash
+command -v gcc
+command -v ld
+command -v qemu-system-x86_64
+command -v python3
+~~~
+
+Não presuma que instalar um pacote alterou o executable usado pelo terminal atual. Diferenças de PATH explicam por que dois ambientes aparentemente iguais podem produzir diagnostics, capabilities de QEMU ou comportamento Python diferentes.
+
 ## Reprodutibilidade do host
 
 Evite alterar silenciosamente flags ou ferramentas para conseguir um passe local. O repositório utiliza warnings-as-errors em componentes importantes e targets determinísticos para vários subsistemas.
