@@ -196,6 +196,14 @@ O objetivo não é evitar trabalho difícil. É estabelecer um ciclo de revisão
 
 Use a política de segurança do repositório para vulnerabilidades ou relatórios que não devem ser publicados em PR público normal. Não exponha detalhes sensíveis apenas para seguir o fluxo comum de contribuição.
 
+## Evidência deve acompanhar o escopo do patch
+
+O registro de validação deve ser proporcional à boundary alterada.
+
+Correção apenas editorial não exige fingir que hardware físico foi requalificado. Mudança em storage driver não deve parar em unit test de compiler sem relação. Mudança de format precisa de evidence de compatibility/rejection, não apenas build bem-sucedido.
+
+O objetivo não é maximizar quantidade de comandos no pull request. É escolher tests cujos oracles exercitem diretamente invariant, interface ou failure path alterado e depois usar gates mais amplos como confirmação de regressão.
+
 ## Antes de abrir o PR
 
 Execute:
