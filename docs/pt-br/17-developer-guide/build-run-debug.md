@@ -3,7 +3,7 @@ id: build-run-debug
 lang: pt-br
 type: guide
 status: maintained
-reviewed_revision: 92fb561574bd929522ea005b9fd433138bea3236
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - docs/getting-started/build-and-run.md
   - makefile
@@ -196,6 +196,14 @@ Sequência útil:
 6. só então execute gates de regressão mais amplos.
 
 Isso preserva o vínculo causal entre defeito e correção.
+
+## Depure a partir do último milestone conhecido
+
+Quando a serial parar, não reinicie a análise pelo reset sem evidência de que o problema está ali. Use o último milestone confirmado para limitar o intervalo da falha.
+
+Por exemplo, se existem markers de memory initialization, storage discovery e filesystem mount, mas não existe o marker de desktop, investigue primeiro o código executado depois do mount. Isso reduz o conjunto de candidatos e evita gastar tempo em subsistemas de early boot que já demonstraram progresso.
+
+Ao adicionar instrumentation temporária, use markers específicos ao estado provado e remova-os ou formalize-os antes do merge.
 
 ## Classificação de falhas
 
