@@ -4,7 +4,7 @@ lang: en
 type: technical-chapter
 volume: 03-boot
 status: expanded
-reviewed_revision: da3df29cb397932c43d32373871fb9380e688ade
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - kernel/metal/start.c
   - kernel/metal/bootinfo.c
