@@ -522,6 +522,42 @@ SMP futuro precisaria definir:
 - CPU lifecycle;
 - deterministic scheduling.
 
+## Ownership das transições de estado
+
+ChrisCPU precisa manter uma fronteira clara entre instruction semantics e machine semantics.
+
+A execução de uma instruction pode alterar registers, flags, RIP e guest-visible memory. A machine layer possui device registration, physical backing, exit classification e lifetime do CPU object. O decoder não deve alterar device state diretamente fora dos helpers de execução que implementam a operação arquitetural correspondente.
+
+Essa separação é necessária para futura equivalência entre backends. Se instruction handlers dependerem de host-only state existente apenas no interpreter, ChrisHV não conseguirá reproduzir o mesmo guest behavior por meio do shared backend contract.
+
+Para cada instruction nova, a revisão deve responder:
+
+1. quais architectural fields ela lê;
+2. quais fields escreve;
+3. se acessa guest memory;
+4. se pode gerar exception;
+5. se toca I/O ou MMIO;
+6. se altera RIP explicitamente;
+7. se pode encerrar machine execution.
+
+Manter esses efeitos explícitos torna semantics testáveis sem acoplar tudo ao frontend.
+
+## Regression tests nas fronteiras
+
+Tests devem priorizar pontos onde uma classe semântica encontra outra.
+
+Casos úteis incluem:
+
+- instruction fetch atravessando page boundary;
+- data access com primeira page válida e segunda em fault;
+- control transfer que altera RIP enquanto o generic loop também poderia avançá-lo;
+- exception com e sem IDT válida;
+- pending interrupt atravessando o delay após STI;
+- MMIO adjacente a ordinary RAM;
+- step-limit imediatamente após execução válida.
+
+Esses casos são valiosos porque verificam ownership entre decoder, executor, MMU, exception machinery e machine model, em vez de testar apenas resultados comuns de instructions.
+
 ## Limitações atuais
 
 ChrisVM/ChrisCPU não fornece atualmente:
