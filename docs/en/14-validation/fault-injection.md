@@ -472,6 +472,22 @@ Without this artifact bundle, a rare injected failure can become impossible to d
 
 Determinism also makes regression repair measurable: after a fix, the exact previously failing point should pass before broader randomized exploration resumes.
 
+## Composing multiple faults
+
+Single-fault experiments should normally precede compound fault scenarios.
+
+If allocation failure, block-device error and interrupt delay are all enabled at once, a failure may be realistic but difficult to attribute. A disciplined campaign first establishes the invariant for each stimulus independently, then adds combinations that represent credible dependency chains.
+
+A useful compound experiment records an ordered vector such as:
+
+    allocation fails on call 7
+    then filesystem write returns I/O error
+    while recovery path is active
+
+The oracle must specify which state remains legal after each stage. If the first injected condition already prevents the later operation from occurring, the campaign should report the later point as not reached rather than pretending both faults were exercised.
+
+This staged approach makes interaction bugs reproducible while preserving failure localization.
+
 ## Revision note
 
 This chapter was reconciled against ChrisOS revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
