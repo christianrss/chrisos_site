@@ -156,6 +156,12 @@ command -v python3
 
 Do not assume that installing a package changed the executable used by the current terminal. PATH differences can explain why two developers with apparently identical packages observe different compiler diagnostics, QEMU capabilities or Python behavior.
 
+## Environment snapshot for bug reports
+
+For environment-sensitive failures, capture the host state before changing packages or PATH. A minimal snapshot should include the selected compiler, linker, QEMU and Python executables, their versions, the source revision and the exact failing target.
+
+This preserves the evidence needed to distinguish a project defect from a host-only configuration difference. If a package reinstall changes the result, keep both snapshots. The before/after comparison is usually more useful than a final statement that reinstalling "fixed" the issue.
+
 ## Host reproducibility
 
 Avoid silently changing flags or tools to obtain a local pass. The repository intentionally uses warnings as errors in important host builds and deterministic test targets for many subsystems. If a local host requires a change, determine whether it is a configuration issue or a portability defect worth fixing in the project.
