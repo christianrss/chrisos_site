@@ -160,6 +160,12 @@ command -v python3
 
 Não presuma que instalar um pacote alterou o executable usado pelo terminal atual. Diferenças de PATH explicam por que dois ambientes aparentemente iguais podem produzir diagnostics, capabilities de QEMU ou comportamento Python diferentes.
 
+## Snapshot do ambiente para bug reports
+
+Em falhas sensíveis ao ambiente, capture o estado do host antes de alterar packages ou PATH. Um snapshot mínimo deve incluir executables selecionados de compiler, linker, QEMU e Python, suas versões, source revision e o target exato que falhou.
+
+Isso preserva a evidência necessária para separar defeito do projeto de diferença local de configuração. Se reinstalar um pacote mudar o resultado, mantenha os dois snapshots. A comparação antes/depois costuma ser mais útil que apenas afirmar que a reinstalação "corrigiu" o problema.
+
 ## Reprodutibilidade do host
 
 Evite alterar silenciosamente flags ou ferramentas para conseguir um passe local. O repositório utiliza warnings-as-errors em componentes importantes e targets determinísticos para vários subsistemas.
