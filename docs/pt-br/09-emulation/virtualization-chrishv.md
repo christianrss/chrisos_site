@@ -518,6 +518,48 @@ A evidência mais forte do ChrisHV atual é negativa e intencional:
 
 Isso prova que ChrisHV não se apresenta falsamente como acceleration funcional.
 
+## VM entry e exit como transação
+
+Uma execução hardware-backed de vCPU deve ser tratada como transação de estado.
+
+Antes da entry, ChrisHV precisa estabelecer guest state e execution controls consumidos pelo processador. Após exit, precisa recuperar os fields necessários pelo ChrisVM antes de qualquer machine-level observer assumir que `ChrisArchitectureState` está atualizado.
+
+Conceitualmente:
+
+~~~text
+machine state
+    -> backend import
+    -> hardware control state
+    -> VM entry
+    -> guest execution
+    -> VM exit
+    -> backend export
+    -> coherent machine state
+~~~
+
+A transação também precisa definir entry failure. Nesse caso não houve guest execution válida, mas resources parcialmente preparados ainda podem exigir cleanup.
+
+Esse modelo evita estado intermediário ambíguo em que alguns registers estão em `ChrisArchitectureState` e outros já mudaram dentro de VMCS/VMCB.
+
+## Observabilidade do backend
+
+Hardware acceleration não deve tornar failures menos diagnosticáveis que o interpreter.
+
+ChrisHV futuro deve fornecer diagnostics estruturados para:
+
+- capability detection;
+- virtualization-enable failure;
+- control-structure validation;
+- VM-entry failure;
+- VM-exit reason;
+- second-level translation violation;
+- event-injection failure;
+- teardown failure.
+
+O diagnostic deve identificar backend e stage sem expor host-privileged state desnecessariamente.
+
+Para equivalence testing, também é útil preservar trace bounded ao redor da última entry/exit quando possível. O objetivo não é registrar toda native guest instruction, mas tornar cada backend transition atribuível a machine state e exit reason específicos.
+
 ## Limitações atuais
 
 Na revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56`, faltam:
