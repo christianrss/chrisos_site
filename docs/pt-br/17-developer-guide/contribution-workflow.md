@@ -210,6 +210,20 @@ Antes de mergear mudança em ABI, serialized format, syscall, object format ou b
 
 Se a compatibilidade mudar, o PR deve identificar version afetada, migration ou rejection behavior e os tests que exercitam artifacts antigos e novos. Tratar compatibility change como refactor comum torna debugging futuro muito mais difícil.
 
+## Mantenha mudanças de compatibilidade explícitas
+
+Se o patch altera on-disk format, bytecode image, ABI, boot contract ou semantics públicas de resource, registre isso separadamente do resumo de implementação.
+
+O reviewer deve conseguir identificar:
+
+- se artifacts antigos continuam legíveis;
+- se writers novos emitem nova version;
+- se migration é necessária;
+- se unknown versions ou flags falham de forma fechada;
+- quais regression fixtures cobrem a compatibilidade.
+
+Não esconda mudança de compatibilidade dentro de refactor amplo. Decidir version explicitamente custa menos que diagnosticar cross-revision breakage silencioso depois.
+
 ## Antes de abrir o PR
 
 Execute:
