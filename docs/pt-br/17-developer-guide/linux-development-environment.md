@@ -3,7 +3,7 @@ id: development-environment-linux
 lang: pt-br
 type: guide
 status: maintained
-reviewed_revision: 92fb561574bd929522ea005b9fd433138bea3236
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - docs/getting-started/environment.md
   - scripts/check-dev-env.sh
