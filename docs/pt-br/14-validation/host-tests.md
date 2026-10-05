@@ -425,6 +425,22 @@ Uma execução mais ampla de estabilidade inclui sanitizers e, quando QEMU está
 
 A documentação deve registrar o target exato usado quando citar evidência.
 
+## Isolamento de fixtures e artifacts
+
+Host test deve possuir seu temporary state em vez de depender de arquivos locais deixados por outra execução.
+
+Quando tests criam disk images, object files, logs ou binaries gerados, o fixture contract deve registrar:
+
+- quem cria o artifact;
+- estado inicial;
+- se o test pode mutá-lo;
+- como failure preserva diagnostic output;
+- como a próxima execução volta a um estado limpo.
+
+Isso importa porque stale artifacts produzem false positives e false negatives. Um test pode parecer aprovado ao ler output de revisão anterior ou falhar porque run interrompida deixou state parcialmente modificado.
+
+Aggregate gates devem preferir fixture creation determinística e paths explícitos dentro do build tree. Artifact persistente só é útil quando retention é intencional e o report identifica qual run o produziu.
+
 ## Nota de revisão
 
 Este capítulo foi reconciliado contra a revisão `e05a17fd76333114a3fb5c2452f38ca747d4ac56` do ChrisOS.
