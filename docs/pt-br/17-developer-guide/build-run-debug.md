@@ -174,6 +174,14 @@ build/disk.img e imagens temporárias dos gates são artefatos descartáveis. In
 
 Pare o QEMU antes de modificar offline uma imagem ChrisFS.
 
+## Preserve o primeiro artifact de falha
+
+Quando um run falhar, preserve o primeiro log ou image que demonstra a falha antes de alterar flags ou rebuildar repetidamente.
+
+Uma nova execução pode mudar timing, regenerar disk image ou sobrescrever serial log. Preservar o primeiro artifact permite comparar o último marker bem-sucedido, o primeiro marker de falha e a source revision correspondente.
+
+Se a falha desaparecer após `make clean`, registre isso. Pode indicar stale generated state ou dependency incompleta de build, não necessariamente defeito lógico do guest.
+
 ## Classificação de falhas
 
 | Sintoma | Primeira camada |
