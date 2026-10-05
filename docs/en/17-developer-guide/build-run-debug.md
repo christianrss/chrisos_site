@@ -176,6 +176,14 @@ build/disk.img and the temporary images created by QEMU gates are disposable dev
 
 Stop QEMU before performing offline modifications to the workspace image. Use the repository-provided host or live transfer mechanisms according to the current build guide.
 
+## Preserve the first failing artifact
+
+When a run fails, keep the first log or image that demonstrates the failure before repeatedly changing flags or rebuilding.
+
+A later rerun may change timing, regenerate a disk image or overwrite the serial log. Preserving the first artifact makes it possible to compare the last successful marker, the first failing marker and the source revision that produced them.
+
+If the failure disappears after `make clean`, record that fact. It may indicate stale generated state or an incomplete build dependency rather than a guest logic defect.
+
 ## Failure classification
 
 | Symptom | First layer to inspect |
