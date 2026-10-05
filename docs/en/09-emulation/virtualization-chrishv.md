@@ -543,6 +543,48 @@ That evidence is useful.
 
 It proves that selecting ChrisHV does not silently masquerade as successful hardware acceleration.
 
+## Entry and exit as a transaction
+
+A hardware-backed vCPU run should be treated as a state transaction.
+
+Before entry, ChrisHV must establish the guest state and execution controls that the processor will consume. After exit, it must recover the fields needed by ChrisVM before any machine-level observer assumes that `ChrisArchitectureState` is current.
+
+Conceptually:
+
+~~~text
+machine state
+    -> backend import
+    -> hardware control state
+    -> VM entry
+    -> guest execution
+    -> VM exit
+    -> backend export
+    -> coherent machine state
+~~~
+
+The transaction must also define what happens when entry itself fails. In that case there is no valid guest execution interval, but partially prepared backend resources may still require cleanup.
+
+This model avoids an ambiguous middle state in which some registers live in `ChrisArchitectureState` while others have already changed in VMCS/VMCB state.
+
+## Backend observability
+
+Hardware acceleration should not make failures less diagnosable than the interpreter.
+
+A future ChrisHV implementation should expose structured diagnostics for at least:
+
+- capability detection;
+- virtualization-enable failure;
+- control-structure validation failure;
+- VM-entry failure;
+- VM-exit reason;
+- second-level translation violation;
+- event-injection failure;
+- teardown failure.
+
+The diagnostic must identify the backend and stage without leaking host-privileged state unnecessarily.
+
+For equivalence testing, the project should also preserve a bounded trace around the final entry/exit boundary when practical. The goal is not to log every native guest instruction, but to make backend transitions attributable to a specific machine state and exit reason.
+
 ## Current limitations
 
 At revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56`, ChrisHV lacks:
