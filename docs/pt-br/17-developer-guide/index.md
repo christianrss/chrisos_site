@@ -132,6 +132,12 @@ make clean
 
 quando artefatos antigos forem uma causa plausível.
 
+## Baseline antes da modificação
+
+Antes de alterar um subsistema, registre um baseline conhecido para o gate mais estreito relevante. Isso separa falha preexistente de regressão introduzida pelo patch.
+
+Um registro útil inclui source revision, comando e resultado. Se o target já falha, preserve essa evidência e não atribua a falha ao patch até reproduzi-la nas duas revisões.
+
 ## Disciplina de escopo
 
 ChrisOS inclui kernel, memória, storage, filesystem, linguagens/runtime, gráficos, desktop, rede, ferramentas nativas e emulação. Antes de alterar código, identifique o subsistema proprietário do comportamento e evite cruzar fronteiras arquiteturais apenas para fazer um sintoma local desaparecer.
