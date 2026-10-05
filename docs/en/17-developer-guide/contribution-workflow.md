@@ -209,6 +209,12 @@ A documentation-only wording correction does not require pretending that the ker
 
 The goal is not to maximize the number of commands in a pull request. It is to select tests whose oracles directly exercise the invariant, interface or failure path that changed, then add broader gates as regression confirmation.
 
+## Compatibility review
+
+Before merging a change to an ABI, serialized format, syscall, object format or boot contract, explicitly answer whether existing producers and consumers remain compatible.
+
+If compatibility changes, the pull request should identify the affected version, migration or rejection behavior and the tests that exercise old and new artifacts. Treating a compatibility change as an ordinary refactor makes future debugging substantially harder.
+
 ## Before opening the PR
 
 Run:
