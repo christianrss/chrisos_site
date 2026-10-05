@@ -3,7 +3,7 @@ id: build-run-debug
 lang: en
 type: guide
 status: maintained
-reviewed_revision: 92fb561574bd929522ea005b9fd433138bea3236
+reviewed_revision: e05a17fd76333114a3fb5c2452f38ca747d4ac56
 sources:
   - docs/getting-started/build-and-run.md
   - makefile
@@ -198,6 +198,14 @@ A useful debug sequence is:
 6. only then run wider regression gates.
 
 This keeps the causal link between defect and fix visible.
+
+## Debugging from the last known milestone
+
+When serial output stops, do not restart analysis from reset unless the evidence points there. Use the last confirmed milestone to bound the search interval.
+
+For example, if memory initialization, storage discovery and filesystem mount markers are present but the desktop marker is absent, investigate the code executed after mount first. This narrows the candidate set and prevents unrelated early-boot subsystems from consuming debugging time.
+
+After adding temporary instrumentation, keep marker names specific to the state being proven and remove or formalize them before merge.
 
 ## Failure classification
 
