@@ -204,6 +204,12 @@ Correção apenas editorial não exige fingir que hardware físico foi requalifi
 
 O objetivo não é maximizar quantidade de comandos no pull request. É escolher tests cujos oracles exercitem diretamente invariant, interface ou failure path alterado e depois usar gates mais amplos como confirmação de regressão.
 
+## Review de compatibilidade
+
+Antes de mergear mudança em ABI, serialized format, syscall, object format ou boot contract, responda explicitamente se producers e consumers existentes continuam compatíveis.
+
+Se a compatibilidade mudar, o PR deve identificar version afetada, migration ou rejection behavior e os tests que exercitam artifacts antigos e novos. Tratar compatibility change como refactor comum torna debugging futuro muito mais difícil.
+
 ## Antes de abrir o PR
 
 Execute:
