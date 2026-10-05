@@ -141,6 +141,21 @@ git rev-parse HEAD
 
 Also include the exact make target and the first relevant error. The final make exit line usually contains less information than the first compiler, linker, image-construction or QEMU failure.
 
+## Tool identity and PATH discipline
+
+When several compiler, QEMU or Python installations coexist, record which executable is actually selected by the shell.
+
+Useful checks include:
+
+~~~bash
+command -v gcc
+command -v ld
+command -v qemu-system-x86_64
+command -v python3
+~~~
+
+Do not assume that installing a package changed the executable used by the current terminal. PATH differences can explain why two developers with apparently identical packages observe different compiler diagnostics, QEMU capabilities or Python behavior.
+
 ## Host reproducibility
 
 Avoid silently changing flags or tools to obtain a local pass. The repository intentionally uses warnings as errors in important host builds and deterministic test targets for many subsystems. If a local host requires a change, determine whether it is a configuration issue or a portability defect worth fixing in the project.
