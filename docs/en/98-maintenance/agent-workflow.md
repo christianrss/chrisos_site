@@ -10,698 +10,674 @@ symbols: []
 depends_on: []
 related:
   - validation-evidence
-  - source-policy
   - documentation-schema
+  - source-policy
 ---
 
 # Low-context documentation maintenance
 
-## Objective
+## Purpose
 
-The ChrisOS documentation corpus is designed to grow far beyond what one maintenance task should read into context.
+The documentation corpus is designed to scale beyond the amount of material that a human reviewer or an AI agent should load for one ordinary maintenance task.
 
-The maintenance model therefore does **not** assume that an agent scans every chapter, every source file or the complete repository before making one update.
+The strategy is not to compress the entire project into one summary. It is to make each authored page declare enough dependency information that a narrow, reproducible context can be assembled automatically.
 
-Instead, the corpus stores machine-readable dependencies in frontmatter and generates repository facts deterministically.
+The operating model is:
 
-The normal maintenance unit is:
+1. identify one documentation page or one source change;
+2. resolve the declared dependency set;
+3. inspect only the affected source/diff;
+4. reconcile the authored interpretation;
+5. run deterministic repository-wide validation;
+6. publish only after the global contracts still pass.
 
-    one authored page
-    + its declared ChrisOS sources
-    + relevant source diff
-    + a small dependency summary
-    + explicit validation commands
+This keeps local reasoning bounded while preserving global consistency.
 
-This keeps maintenance cost proportional to the changed boundary rather than to total corpus size.
+## Two repositories, two kinds of authority
 
-## Core principle
+The maintenance workflow spans two repositories.
 
-The workflow is based on one rule:
+The ChrisOS source repository is authoritative for implementation behavior, build targets, executable gates and source history.
 
-> Context should be selected by declared dependency and revision evidence, not by broad semantic search over the entire corpus.
+The documentation repository is authoritative for the long-form bilingual technical corpus, curriculum, specifications, architecture history, validation interpretation and generated source atlas.
 
-Semantic search can still help when a dependency is genuinely unknown.
+The documentation pipeline checks out both repositories during CI.
 
-It should not be the default when frontmatter already identifies the relevant source contract.
+This split means a documentation agent must distinguish:
 
-This reduces both token cost and the risk of mixing unrelated subsystem assumptions into a focused update.
+- implementation evidence from ChrisOS;
+- documentation-tool behavior from chrisos_site;
+- generated facts from authored interpretation.
 
-## Canonical page identity
+The `sources` frontmatter field refers to files in the ChrisOS source checkout. Maintenance pages about the documentation machinery itself may intentionally have no ChrisOS `sources`.
 
-The maintenance tools use frontmatter `id` and `lang` as canonical document identity.
+## Page identity
 
-Filename similarity is not enough.
+Every authored page has an `id` and `lang`.
 
-For example:
+The pair:
 
-    linux-development-environment.md
+    (id, lang)
 
-can represent:
+is the page identity used by validation.
 
-    id: development-environment-linux
+For authored bilingual material, the same `id` must exist in:
 
-The same rule applies to source mapping, curriculum, coverage and bilingual pairing.
+- `en`;
+- `pt-br`.
 
-Agents must therefore read frontmatter before assuming that a missing filename implies a missing chapter.
+The validator rejects an authored identity that exists in only one language.
 
-## Frontmatter dependency graph
+This avoids a common failure mode in which English evolves while Portuguese silently disappears from the maintained corpus.
 
-The key fields are:
+## Frontmatter as dependency metadata
+
+Frontmatter is not decorative metadata. It drives maintenance automation.
+
+Important fields include:
+
+- `id` — stable conceptual page identity;
+- `lang` — language identity;
+- `type` — editorial/depth class;
+- `reviewed_revision` — ChrisOS revision used for source reconciliation;
+- `sources` — concrete ChrisOS files that materially support the page;
+- `symbols` — high-value identifiers inside large source files;
+- `depends_on` — prerequisite documentation identities;
+- `related` — non-prerequisite conceptual links.
+
+The metadata creates a graph from source files to authored interpretation and from authored pages to conceptual dependencies.
+
+## Bilingual metadata invariants
+
+`validate_docs.py` checks selected bilingual metadata for equality.
+
+For one page identity, English and Portuguese must agree on:
 
 - `sources`;
-- `symbols`;
 - `depends_on`;
-- `related`;
 - `reviewed_revision`.
 
-They answer different questions.
+This is important because two translations should not claim to describe different source revisions or different prerequisite graphs.
 
-### sources
+Language-specific prose can differ in sentence structure, but the evidence boundary must remain shared.
 
-Concrete ChrisOS repository paths whose implementation materially supports the page.
+## Stable IDs matter more than filenames
 
-### symbols
+A page may be renamed or moved while preserving its conceptual identity.
 
-Important identifiers inside declared sources. They help context extraction focus large files.
+The stable `id` lets curriculum and dependency tooling refer to the concept rather than to an incidental path.
 
-### depends_on
+This reduces coupling between navigation layout and documentation semantics.
 
-Conceptual prerequisites in the curriculum DAG.
+Changing an ID is therefore more significant than changing a filename. It can affect:
 
-### related
+- curriculum entries;
+- `depends_on`;
+- `related`;
+- generated metadata;
+- cross-page navigation.
 
-Useful adjacent pages that are not prerequisites.
-
-### reviewed_revision
-
-The ChrisOS source commit against which the page was last reconciled.
-
-Together, these fields form a bounded maintenance graph.
-
-## Reverse source map
-
-`scripts/source_map.py` reads every authored page and builds two deterministic structures:
-
-    page path -> metadata
-    source path -> affected pages
-
-The reverse map makes impact analysis cheap.
-
-If:
-
-    kernel/mm/pmm.c
-
-changes, the tool can identify pages that explicitly declare that source without asking a language model to guess which chapter names "sound related."
-
-This is more reliable than filename similarity because one source file can affect pages in different volumes and one page can depend on several source files.
-
-## Why explicit dependencies matter
-
-Without declared dependencies, the maintenance choices are poor:
-
-1. scan the entire documentation corpus after every source change; or
-2. rely on semantic guesses that can miss indirect but important pages.
-
-Explicit dependency metadata allows the project to choose a third option:
-
-> review exactly the pages that declared the changed contract.
-
-This does not guarantee that the metadata is perfect.
-
-It makes dependency quality inspectable and correctable.
+ID changes should be treated as schema migrations, not cosmetic edits.
 
 ## Stale detection
 
-`scripts/stale_docs.py` compares each source-backed page against current ChrisOS HEAD.
+`scripts/stale_docs.py` compares each authored page against the current ChrisOS HEAD.
 
-Conceptually:
+For pages that declare `sources` and a `reviewed_revision`, the script asks Git which declared source files changed between:
 
-    reviewed revision R
-        |
-        +-- declared source A
-        +-- declared source B
-        |
-        v
-    git diff R..HEAD -- A B
+    reviewed_revision .. HEAD
 
-If no declared source changed, the page is not marked stale merely because unrelated repository code changed.
+Only those declared files are considered.
 
-If at least one declared source changed, the page enters the generated review queue.
+If none changed, the page is not marked stale merely because unrelated source changed elsewhere.
 
-This is the main mechanism that prevents a large corpus from requiring full rereads after every commit.
+If at least one changed, the page is added to the generated review queue with:
 
-## Stale does not mean wrong
+- page path;
+- reviewed revision;
+- changed source paths.
 
-A stale page means:
+This is the core low-context mechanism.
 
-> one of the source dependencies changed after the page's reviewed revision.
+## Invalid revision handling
 
-It does not mean:
+Stale detection also verifies that `reviewed_revision` resolves to a commit in the source checkout.
 
-> the prose is definitely incorrect.
+If it does not, the page is reported separately as having an invalid revision.
 
-A refactor may alter lines without changing the documented contract.
+An invalid baseline must not be interpreted as "unchanged."
 
-A bug fix may strengthen implementation without requiring prose changes.
+Without a valid baseline, the system cannot prove that the declared sources were reconciled.
 
-A major interface change may require extensive rewriting.
+## Source reconciliation
 
-The agent must inspect the actual diff before deciding.
+A stale page should not be updated by mechanically replacing the revision hash.
 
-## Unavailable baseline
+The maintenance task is:
 
-Stale detection and context packing require the old `reviewed_revision` to exist in the source checkout.
+1. inspect the source diff;
+2. determine whether the documented contract actually changed;
+3. update prose if necessary;
+4. preserve historical statements when they remain historical;
+5. advance `reviewed_revision` only after reconciliation.
 
-If that commit cannot be resolved, the correct state is not "unchanged."
+Sometimes the correct result is a prose change.
 
-It is:
+Sometimes the source changed in a way that does not alter the documented contract, and only the reviewed revision needs advancement.
 
-    unavailable-baseline
-
-An unavailable baseline means the agent cannot use a normal bounded diff to prove what changed.
-
-Possible responses include:
-
-- fetch deeper Git history;
-- inspect the full current declared source set;
-- perform a fresh reconciliation;
-- reset the reviewed revision only after that reconciliation.
-
-Never advance the revision merely because the old commit is inconvenient to retrieve.
-
-## Invalid revision queue
-
-`stale_docs.py` separately tracks pages whose reviewed revision cannot be resolved.
-
-This distinction matters because:
-
-    stale
-    !=
-    invalid baseline
-
-A stale page has a known old point and a known diff.
-
-An invalid baseline lacks the historical anchor needed to construct that diff.
-
-Maintenance reports should keep those cases separate.
+The distinction requires technical review.
 
 ## Context packs
 
-`scripts/context_pack.py` creates a bounded directory for one page.
+`scripts/context_pack.py` creates a bounded working directory for one page.
 
 The pack contains:
 
-- the target `PAGE.md`;
+- a copy of the target page;
 - declared source material;
-- `DIFF.patch`;
-- `META.json`;
-- `DEPENDENCIES.json`;
-- `INSTRUCTIONS.md`.
-
-This package is the preferred input for a focused maintenance agent.
-
-The goal is to make the context sufficient without copying unrelated repository areas.
-
-## Context-pack metadata
-
-`META.json` records fields such as:
-
-- page path;
-- page ID;
-- old reviewed revision;
-- source HEAD;
-- declared sources;
-- declared symbols;
+- the Git diff from the page baseline to current source HEAD;
+- metadata;
 - source hashes;
-- dependency IDs;
-- related IDs;
-- diff status;
-- packing mode for each source.
+- dependency summaries;
+- maintenance instructions.
 
-This lets an agent reason about provenance before reading prose.
+This is intended to be the normal unit of context for an agent working on one page.
 
-A good first step is always to inspect `diff_status`.
+## Large-source handling
 
-## Full source versus symbol-centered source
+Context packs do not always copy every large source file in full.
 
-Large source files can exceed a useful context budget.
+The current implementation uses a full-file threshold of 24,000 characters.
 
-The context pack therefore uses a threshold.
+For larger files, declared `symbols` can be used to extract context around relevant identifiers.
 
-When a declared source is small enough, the full file is copied.
+The extractor keeps bounded regions around symbol hits and merges overlapping regions.
 
-When it is large and symbols are available, `context_pack.py` extracts bounded line windows around important symbols.
+This reduces context cost while still showing the code most likely to support the page.
 
-The current implementation uses approximately 100 lines of context around each matched symbol and merges overlapping windows.
+If the excerpt is insufficient, the maintainer can explicitly request a full pack.
 
-This reduces context while preserving implementation locality.
-
-## When symbol-centered context is enough
-
-Symbol extraction is usually sufficient when the documentation claim concerns a narrow function or data structure, such as:
-
-- one initializer;
-- one parser;
-- one state transition;
-- one error path;
-- one resource lifecycle function.
-
-If the claim depends on global file invariants, macros, tables or interactions not visible near the symbol, the agent should request the full source.
-
-The bounded pack is an optimization, not a prohibition against reading necessary context.
-
-## The --full escape hatch
-
-`context_pack.py --full` forces complete declared source files into the pack.
-
-Use it when:
-
-- symbol windows omit a required helper;
-- file-level invariants matter;
-- macro definitions outside the window affect semantics;
-- global tables define behavior;
-- an unresolved contradiction remains after narrow inspection.
-
-Do not use `--full` automatically for every page.
-
-That would defeat the bounded-context architecture.
+The important rule is that truncation is visible, not silent.
 
 ## Dependency summaries
 
-The context pack does not recursively copy every prerequisite and related page.
+A context pack does not recursively copy the entire documentation graph.
 
-Instead it records small summaries including:
+For `depends_on` and `related`, it records compact same-language summaries containing page identity, path, reviewed revision and headings.
 
-- dependency ID;
+This prevents one page from pulling an unbounded transitive closure of the corpus into every task.
+
+If a dependency is missing, the pack records that state explicitly.
+
+## Diff status
+
+The context pack records whether the source diff is:
+
+- changed;
+- unchanged;
+- unavailable because no valid baseline exists;
+- not applicable when no source dependencies are declared.
+
+An unavailable baseline is not equivalent to unchanged source.
+
+This distinction prevents a missing Git ancestor or invalid revision from creating false confidence.
+
+## Source hashes
+
+Each packed source file receives a SHA-256 value in the pack metadata.
+
+The hash identifies the exact bytes inspected.
+
+This is useful when the same logical file path changes repeatedly or when a review artifact is retained outside the live checkout.
+
+The Git revision remains the project-wide identity; the content hash provides file-level identity.
+
+## Generated source inventory
+
+`scripts/inventory.py` scans textual ChrisOS source files and builds the source atlas.
+
+The scanner skips generated or non-source working directories such as:
+
+- `.git`;
+- `build`;
+- `site`;
+- virtual environments;
+- Python cache directories.
+
+For textual candidates it records:
+
 - path;
-- reviewed revision;
-- headings.
-
-This is intentional.
-
-A maintenance task should not recursively explode into the full curriculum unless the changed contract genuinely requires it.
-
-If a dependency heading shows that a specific prerequisite definition matters, read that page explicitly.
-
-## Generated source atlas
-
-`scripts/inventory.py` scans textual ChrisOS files and generates the source atlas.
-
-For each indexed file it records:
-
-- repository path;
 - line count;
 - byte count;
 - SHA-256;
 - detected includes;
-- detected C-like function symbols;
-- complete textual source.
+- detected C-like function definitions;
+- complete textual content.
 
-The atlas is deterministic source evidence.
+This output is deterministic repository evidence, not authored architectural interpretation.
 
-It is not authored architecture.
+## Source atlas role
 
-## Why the atlas reproduces complete source
+The generated source atlas guarantees traceability from documentation to exact source content.
 
-Normal authored documentation should summarize and interpret.
+It is intentionally verbose because generated material does not consume authoring effort the way hand-written prose does.
 
-The source atlas has a different job: exact traceability.
+The atlas should answer:
 
-Its generated file pages intentionally preserve the full textual source at a known revision.
+> What exactly was in this file at the indexed revision?
 
-This makes it possible to inspect the source through the documentation site without pretending the generated page is a human-authored explanation.
+It should not answer:
 
-Do not manually rewrite generated atlas pages.
+> What architectural role does this file play?
 
-Change the generator or source instead.
+Ownership, invariants, concurrency, failure behavior and rationale belong in authored chapters.
 
 ## Generated facts versus authored interpretation
 
-Automation is good at facts such as:
+This separation is central.
 
-- file exists;
-- path;
-- hash;
-- size;
-- include list;
-- detected symbol position;
-- manifest membership;
-- word count;
-- source-diff status.
+Automation is good at producing:
 
-Automation cannot infer every architectural meaning safely.
+- file inventories;
+- hashes;
+- counts;
+- dependency tables;
+- symbol lists;
+- navigation structures;
+- stale lists;
+- coverage statistics.
 
-Authored chapters remain responsible for:
+Authored pages remain responsible for:
 
-- invariants;
+- architectural boundaries;
 - ownership;
+- memory/lifetime rules;
 - concurrency;
-- ABI meaning;
-- failure semantics;
-- security interpretation;
-- performance implications;
-- subsystem boundaries;
-- evidence limitations;
+- algorithms;
+- complexity;
+- security;
+- failure/recovery;
+- validation meaning;
+- limitations;
 - roadmap separation.
 
-This division of labor is deliberate.
+Generating facts prevents agents from spending tokens repeatedly rediscovering mechanical information.
 
-## Coverage generation
+Authored interpretation prevents the site from becoming a source-code dump with no technical model.
 
-`scripts/coverage.py` measures two different things.
+## Structural coverage
 
-### Structural coverage
+`scripts/coverage.py` compares the authored corpus with the planned chapter manifest.
 
-Does an authored page with the planned frontmatter ID exist in the language?
+Structural coverage asks whether each planned chapter identity exists.
 
-### Text-floor coverage
+It does not claim technical completeness.
 
-Does the page meet the editorial word floor for its type?
+A file with a title and a few sentences can satisfy structural presence while still failing the editorial depth target.
 
-The second metric is a length signal only.
+That is why the project tracks structural and text-floor coverage separately.
 
-It does not prove technical completeness.
+## Text-depth floors
 
-The current type-specific floors include:
-
-- concept: 1800 words;
-- technical-chapter: 1800;
-- subsystem: 2200;
-- specification: 1600;
-- source-commentary: 1200;
-- other authored technical pages: 900.
-
-## Why word floors exist
-
-Very short pages in a technical corpus often omit important dimensions such as:
-
-- ownership;
-- error paths;
-- validation;
-- limitations;
-- performance;
-- concurrency.
-
-The floor is therefore a useful review trigger.
-
-It must never be optimized mechanically by adding empty prose.
-
-When a page is below its floor, expand the missing technical dimensions.
-
-If the topic is genuinely smaller than the floor, that may indicate the page type or manifest design deserves review.
-
-## next_work selection
-
-`scripts/next_work.py` walks the curriculum in order and reports pages that are missing or below their type-specific depth target.
-
-This keeps work selection deterministic.
-
-It avoids repeatedly choosing visually prominent pages while leaving earlier thin chapters untouched.
-
-The script reports the total remaining count after applying optional language and volume filters.
-
-## Curriculum order versus source urgency
-
-Curriculum order is useful for general expansion work.
-
-Stale-source work can be more urgent.
-
-A practical priority model is:
-
-1. invalid reviewed revision;
-2. stale page caused by changed implementation contract;
-3. missing planned page;
-4. below-floor page in curriculum order;
-5. optional editorial refinement.
-
-This prevents a purely editorial expansion from delaying correction of a page whose underlying source contract changed.
-
-## Bilingual maintenance
-
-Authored technical identities require EN and PT-BR counterparts.
-
-When source-backed metadata changes, paired pages should remain technically equivalent.
-
-Important paired fields include:
-
-- `sources`;
-- `depends_on`;
-- `reviewed_revision`.
-
-The prose should be idiomatic in each language, not a mechanically shortened translation.
-
-An agent should therefore treat the bilingual pair as one technical maintenance unit even if repository commits temporarily land one language first.
-
-## Intermediate CI behavior
-
-The validator can fail an intermediate EN-only commit because the PT-BR pair is temporarily incomplete.
-
-Repository workflow concurrency can also cancel earlier runs when a later commit arrives.
-
-These states should not be mistaken for final content failure.
-
-The meaningful validation target is the newest commit containing the complete bilingual pair.
-
-If that final run fails, inspect the actual failure.
-
-## Build-all pipeline
-
-`scripts/build_all.py` runs the deterministic documentation generation and validation chain.
-
-It includes:
-
-- unit tests;
-- diagrams;
-- figures;
-- source inventory;
-- coverage;
-- curriculum generation;
-- reader navigation checks;
-- stale detection;
-- documentation validation;
-- editorial-style checks;
-- source map generation.
-
-Hosted CI adds additional checks and static-site publication stages.
-
-A page is not fully published merely because Markdown was committed.
-
-## Validation before revision bump
-
-A source-backed page should move its `reviewed_revision` only after reconciliation.
-
-Correct sequence:
-
-1. inspect page metadata;
-2. inspect source diff;
-3. inspect current source;
-4. decide whether prose changes;
-5. verify tests/specifications relevant to the claim;
-6. update page;
-7. update reviewed revision;
-8. run documentation validation;
-9. verify final bilingual workflow.
-
-Blindly bumping the SHA destroys stale-detection value.
-
-## Source hashes and caching
-
-The context pack records SHA-256 for declared source files.
-
-Git itself also provides content identity.
-
-These identities allow maintenance systems to reuse analysis for unchanged source rather than rereading it.
-
-A long-term cache can key technical source summaries by content hash.
-
-If a file's content identity is unchanged, re-analysis should normally be unnecessary.
-
-## Token-cost model
-
-Let:
-
-- (D) = total documentation size;
-- (S) = total source size;
-- (k) = number of declared source dependencies for the target page;
-- (d) = size of the relevant source diff.
-
-A naive workflow tends toward reading a large fraction of (D + S).
-
-The low-context workflow aims for work proportional to:
-
-    page + k bounded sources + d + small dependency metadata
-
-As the corpus grows, this difference becomes increasingly important.
-
-## Avoiding context explosion
-
-Common causes of unnecessary context growth include:
-
-- recursively reading every related page;
-- copying every include transitively;
-- requesting complete large files before checking symbols;
-- scanning the full repository for terms already represented in frontmatter;
-- regenerating unaffected prose.
-
-The maintenance tools are designed to prevent these patterns.
-
-An agent should preserve that discipline.
-
-## When semantic search is appropriate
-
-Explicit metadata cannot solve every case.
-
-Semantic or broader search is justified when:
-
-- a page clearly depends on implementation not declared in `sources`;
-- a source move broke metadata;
-- a new subsystem has no established documentation mapping;
-- the diff reveals a previously hidden cross-subsystem dependency;
-- a concept needs external primary references;
-- the current frontmatter is known to be incomplete.
-
-When broader discovery identifies a durable dependency, add it to metadata so future updates become cheaper.
-
-## Failure mode: stale metadata
-
-The most dangerous maintenance failure is often not stale prose but stale dependency metadata.
-
-If a chapter depends on file B but declares only file A, changes to B will never place the page in the review queue.
-
-Reviewers should therefore ask during substantive reconciliation:
-
-> Are these still the smallest complete source dependencies for the claims on this page?
-
-Metadata is part of the technical contract.
-
-## Failure mode: oversized source sets
-
-The opposite failure is declaring an entire subsystem directory through many unrelated paths.
-
-That causes every minor code change to mark the page stale and makes context packs unnecessarily large.
-
-Prefer the smallest source set that reconstructs the documented mechanism.
-
-Use multiple focused pages rather than one giant page when contracts are independent.
-
-## Failure mode: generated/authored ownership confusion
-
-Generated files should not be edited as if they were source prose.
+The coverage script currently defines minimum word signals by page type.
 
 Examples include:
 
-- coverage reports;
-- review queues;
-- source atlas;
-- generated source map;
-- generated learning path.
+- concept: 1,800 words;
+- technical chapter: 1,800 words;
+- subsystem: 2,200 words;
+- specification: 1,600 words;
+- source commentary: 1,200 words;
+- other authored technical pages: 900 words.
 
-If a generated result is wrong, fix:
+The word count excludes fenced code and HTML markup.
 
-- source metadata;
-- manifest/curriculum data;
-- generator logic;
-- underlying ChrisOS source.
+These thresholds are editorial signals only.
 
-Manual patching will be overwritten on the next build.
+Crossing the floor does not prove technical correctness or completeness.
 
-## Agent decision record
+## Why code blocks do not count toward depth
 
-For nontrivial maintenance, an agent should be able to state:
+A documentation page should not meet its prose target by pasting large source files or command transcripts.
 
-- why the page was selected;
-- which revision changed;
-- which declared source changed;
-- what contract difference was observed;
-- whether prose changed;
-- which limitations remain;
-- which validation passed.
+The word counter removes fenced code before measuring depth.
 
-This record can be concise.
+This creates the desired incentive:
 
-Its purpose is traceability, not narration of hidden reasoning.
+- generated source belongs in the atlas;
+- focused code excerpts can support explanation;
+- prose depth must come from actual technical reasoning.
 
-## Review queue zero is not finality
+A page can therefore contain extensive code while still being classified as thin if its explanatory model is insufficient.
 
-A generated queue with zero stale pages means:
+## Curriculum graph
 
-> every source-backed page is reconciled against its declared dependencies at the current source revision.
+`scripts/curriculum.py` validates the planned learning path.
 
-It does not mean:
+The curriculum must partition the manifest exactly:
 
-- every dependency declaration is perfect;
-- every page is above depth floor;
-- every technical claim is complete;
-- hardware support is fully validated;
-- no editorial improvements remain.
+- every planned chapter appears;
+- no unknown chapter appears;
+- no duplicate chapter identity appears.
 
-The maintenance metrics are independent.
+The script also validates prerequisite relationships and detects dependency cycles.
 
-## Recommended maintenance loop
+This makes `depends_on` more than a hyperlink field: it participates in an executable learning DAG.
 
-A normal source-driven loop is:
+## Reading state
 
-    update ChrisOS source
-        |
-        v
-    run build_all
-        |
-        v
-    inspect review queue
-        |
-        v
-    choose one stale page
-        |
-        v
-    build context pack
-        |
-        v
-    reconcile against diff/source
-        |
-        v
-    update bilingual pair
-        |
-        v
-    run validation
-        |
-        v
-    repeat until stale queue is empty
+The generated learning path distinguishes:
 
-After the stale queue reaches zero, use `next_work.py` for thin or missing curriculum work.
+- missing chapter;
+- present but requiring expansion;
+- text floor met, technical review still required.
 
-## Recommended expansion loop
+This wording is deliberate.
 
-For corpus-depth work:
+A page that reaches the word floor is not labeled "complete."
 
-1. run `next_work.py`;
-2. select the first useful thin page;
-3. inspect its current frontmatter and body;
-4. reconcile declared sources before expanding;
-5. add missing technical dimensions, not filler;
+The system preserves the difference between editorial length and technical review.
+
+## Documentation validation
+
+`scripts/validate_docs.py` enforces repository contracts.
+
+It checks:
+
+- required frontmatter fields;
+- duplicate `id/lang` identities;
+- declared ChrisOS source paths;
+- placeholder tokens;
+- bilingual presence;
+- bilingual metadata alignment.
+
+It also emits warnings for very short authored technical bodies.
+
+These checks prevent several classes of silent documentation corruption before MkDocs runs.
+
+## Source-to-doc reverse map
+
+`scripts/source_map.py` emits a machine-readable reverse index from ChrisOS source paths to documentation pages.
+
+This supports impact analysis in the opposite direction.
+
+Instead of asking:
+
+> Which source files support this page?
+
+the reverse map answers:
+
+> Which pages declare that they depend on this source file?
+
+That map is useful for code-review automation and future change-triggered maintenance.
+
+## Build orchestration
+
+`scripts/build_all.py` is the central documentation generation entry point.
+
+Its sequence includes:
+
+- documentation unit tests;
+- diagram generation;
+- figure generation;
+- source inventory;
+- coverage;
+- curriculum;
+- reader-navigation checks;
+- stale detection;
+- documentation validation;
+- editorial-style checks;
+- source-map generation.
+
+A local or CI pass is meaningful because these steps run together against one checked-out documentation state.
+
+## CI as global consistency check
+
+The GitHub Pages workflow runs on:
+
+- pushes to `main`;
+- pull requests targeting `main`;
+- manual dispatch;
+- a weekly schedule.
+
+It checks out both documentation and ChrisOS main, installs dependencies, runs the documentation pipeline and then executes many specialized verification scripts.
+
+After those checks it performs:
+
+- JavaScript syntax validation;
+- strict MkDocs build;
+- SEO/discovery checks;
+- generated-reader smoke tests;
+- Pages artifact upload;
+- deployment for non-pull-request runs.
+
+This is the global safety net after local low-context editing.
+
+## Concurrency behavior
+
+The Pages workflow uses a shared concurrency group with cancellation enabled.
+
+When several commits are pushed rapidly, an older in-progress workflow may be cancelled by a newer one.
+
+That cancellation is not automatically a content failure.
+
+The authoritative validation result is the newest workflow for the final repository state.
+
+Maintenance reports should therefore identify the final commit SHA and final workflow conclusion rather than treating every intermediate cancellation as an error.
+
+## Local reasoning, global validation
+
+Low-context maintenance is safe only because local editing is followed by global deterministic checks.
+
+The workflow intentionally combines:
+
+    narrow context for reasoning
+    +
+    repository-wide automated contracts
+
+Using narrow context without global validation risks hidden cross-page breakage.
+
+Loading the whole corpus into every task wastes resources and makes source reconciliation less precise.
+
+The combination provides both scalability and integrity.
+
+## Update algorithm
+
+A practical update cycle is:
+
+1. identify changed ChrisOS revision;
+2. run stale detection;
+3. select the highest-priority stale or thin page;
+4. create or emulate its context pack;
+5. inspect source diff and declared dependencies;
 6. update both languages;
-7. measure with the same canonical word counter;
-8. run the full documentation pipeline;
-9. continue in curriculum order.
+7. validate source paths and metadata;
+8. run the documentation pipeline;
+9. inspect the final workflow;
+10. publish only after the latest state is green.
 
-This prevents word-count work from drifting away from source truth.
+If no page is stale, move to planned missing chapters or below-floor chapters.
 
-## Cost-control invariants
+If structural coverage is complete, maintenance becomes reconciliation and depth work rather than creation.
 
-The maintenance architecture follows several practical rules:
+## Thin-page workflow
 
-1. reuse unchanged source analysis by content identity;
-2. work from Git diffs whenever a valid baseline exists;
-3. do not regenerate unaffected authored prose;
-4. generate indexes and source facts deterministically;
-5. read full large files only when bounded context is insufficient;
-6. keep dependency metadata explicit;
-7. validate the bilingual pair as one technical unit;
-8. distinguish structural coverage, text depth and source freshness.
+A thin page is present but below its type-specific text floor.
 
-These rules let the site grow while ordinary maintenance remains bounded.
+Expansion should not consist of filler.
+
+A useful expansion should add one or more of:
+
+- prerequisites;
+- formal model;
+- source-backed implementation detail;
+- data structures;
+- algorithm steps;
+- complexity;
+- ownership/lifetime;
+- concurrency;
+- failure behavior;
+- security;
+- performance;
+- validation;
+- limitations;
+- historical context;
+- roadmap.
+
+The best additions reduce ambiguity for a reader who needs to implement, debug or review the subsystem.
+
+## Stale-page workflow
+
+A stale page requires source reconciliation, not automatic rewriting.
+
+The diff should be classified:
+
+### No contract change
+
+Implementation changed internally but the documented behavior remains accurate. Advance the review revision after checking both languages.
+
+### Contract extension
+
+Existing behavior remains while new capability appears. Add the new contract and evidence.
+
+### Contract change
+
+An existing rule changed. Update normative/current prose and any dependent pages.
+
+### Historical-only effect
+
+Current source changed, but the page is a history chapter describing a past revision. Preserve the historical statement and update only the framing needed to prevent it from being read as current behavior.
+
+This classification prevents revision updates from erasing valid history.
+
+## Bilingual workflow
+
+English and Portuguese should be maintained as one conceptual transaction.
+
+A safe sequence is:
+
+1. reconcile evidence once;
+2. update English;
+3. update Portuguese with equivalent technical claims;
+4. compare frontmatter;
+5. run bilingual validation;
+6. treat the final second-language commit as the state that must pass CI.
+
+Intermediate one-language commits may fail or be cancelled because the repository intentionally rejects missing bilingual pairs.
+
+That is expected during a tightly controlled sequential update, but the final state must always restore equivalence.
+
+## Avoiding duplicated research
+
+Once a page has a valid reviewed revision and unchanged declared sources, do not repeatedly re-research it during unrelated updates.
+
+Reuse the dependency graph.
+
+This is the main cost-control rule of the project.
+
+Research should be reopened when:
+
+- a declared source changes;
+- a dependency changes in a way that alters interpretation;
+- a validation failure contradicts the page;
+- the page is intentionally being deepened;
+- an external standard claim requires refreshed verification.
+
+Otherwise, the last reconciled state remains usable.
+
+## Scope control
+
+A maintenance agent should not fix unrelated source or documentation merely because it notices it.
+
+Record the issue and keep the current patch aligned with one reviewable claim unless the discovered defect blocks validation.
+
+Scope control makes failures attributable and prevents a simple documentation update from turning into an unreviewable refactor.
+
+For broader campaigns, group pages by one coherent source area or editorial objective and validate after each meaningful batch.
+
+## Failure handling
+
+If CI fails, classify the failure before editing.
+
+Typical classes include:
+
+- malformed frontmatter;
+- bilingual metadata mismatch;
+- missing source path;
+- curriculum/DAG error;
+- generated navigation error;
+- specialized contract-check failure;
+- JavaScript syntax error;
+- MkDocs strict-build failure;
+- discovery/reader smoke failure;
+- deployment/infrastructure failure.
+
+Do not change prose to fix an infrastructure outage.
+
+Do not dismiss a source-contract verifier as "documentation only" if the page made the claim being checked.
+
+## Generated files
+
+Generated outputs should be regenerated, not manually curated.
+
+Examples include:
+
+- source inventory;
+- source atlas pages;
+- coverage status;
+- learning path;
+- review queue;
+- source map;
+- diagrams/figures produced by scripts.
+
+Hand-editing generated output creates drift because the next build will overwrite it.
+
+Changes belong in:
+
+- source data;
+- generation script;
+- authored page;
+
+depending on what is actually wrong.
+
+## Evidence retention
+
+For important maintenance batches, retain at least:
+
+- final documentation commit;
+- ChrisOS source revision;
+- final workflow run ID;
+- build/deploy conclusion;
+- structural coverage count;
+- stale count;
+- remaining thin-page count.
+
+This compact record is enough to continue a later session without replaying the entire campaign.
+
+It also prevents an agent from relying on conversational memory when repository state can provide authoritative facts.
+
+## Completion criteria
+
+A documentation campaign is not complete merely because files were edited.
+
+A strong completion condition is:
+
+- planned structural coverage is satisfied;
+- no unexpected stale pages remain;
+- no invalid reviewed revisions remain;
+- intended thin pages meet their depth floor;
+- bilingual contracts pass;
+- generated curriculum and navigation pass;
+- strict site build succeeds;
+- discovery and reader smoke tests succeed;
+- the final Pages deployment succeeds.
+
+The corpus can still improve after those conditions.
+
+They define a stable maintenance checkpoint, not the end of technical documentation.
 
 ## Revision note
 
-This chapter describes the current low-context documentation tooling in `chrisos_site` and uses ChrisOS revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56` as the reviewed project baseline.
+This workflow describes the documentation-maintenance architecture at the current site implementation while using ChrisOS revision `e05a17fd76333114a3fb5c2452f38ca747d4ac56` as the shared source baseline for authored technical pages.
 
-Because the page documents the documentation-maintenance system rather than a ChrisOS implementation subsystem, it intentionally declares `sources: []`. The relevant tooling is owned by the documentation repository and is validated by its own CI pipeline.
+The central principle is simple: **read narrowly, declare dependencies explicitly, generate mechanical facts deterministically, preserve bilingual evidence boundaries and validate the entire corpus before publication.**
