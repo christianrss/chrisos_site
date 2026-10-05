@@ -2,7 +2,7 @@
 
 Snapshot date: 2026-10-04  
 Current reconciled ChrisOS source revision: `e05a17fd76333114a3fb5c2452f38ca747d4ac56`  
-Baseline documentation commit: `1856fe0d75c2a22f4499c71f30dbc048d746529c`
+Baseline documentation commit: `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0`
 
 This file is the persistent handoff memory for humans and AI agents working on the ChrisOS documentation corpus. It records what is already implemented, what is incomplete, and the completion rules. It is a snapshot, not the canonical coverage calculator: always regenerate coverage before updating the numbers below.
 
@@ -22,19 +22,23 @@ Never treat this memory file as stronger evidence than those sources.
 Planned chapters: **221**.
 
 Authored chapters:
-- EN: **215 present**
-- PT-BR: **215 present**
-- structurally bilingual authored pairs: **215**
-- structural coverage: **97.3%**
-- missing chapters in both languages: **6**
+- EN: **221 present**
+- PT-BR: **221 present**
+- structurally bilingual authored pairs: **221**
+- structural coverage: **100.0%**
+- missing chapters in both languages: **0**
 
-The structural count above was recomputed directly from `data/documentation-manifest.yml` against the current EN/PT-BR source tree after the validated 2026-10-04 batch.
+The structural count above is computed by the same canonical identity rule used by `scripts/coverage.py`: planned chapter IDs from `data/documentation-manifest.yml` are joined to authored pages by frontmatter `id` and `lang`. Filenames are not chapter identities.
 
-Depth-floor state is intentionally not duplicated here because it is a generated metric and changes as chapters are expanded. Use the generated `docs/*/98-maintenance/coverage.md` output after `scripts/build_all.py` for the current depth-floor report. The word floor remains only an editorial length guardrail, not a technical-completeness claim.
+A previous snapshot incorrectly treated four Volume 17 route filenames as if they were canonical IDs. The pages already existed:
+- `docs/*/17-developer-guide/index.md` carries `id: developer-guide`;
+- `linux-development-environment.md` carries `id: development-environment-linux`;
+- `windows-wsl-development-environment.md` carries `id: development-environment-windows`;
+- `troubleshooting.md` carries `id: development-troubleshooting`.
 
-The remaining chapter IDs, in curriculum order, are:
+The 2026-10-05 completion pass added the final genuinely missing IDs, `source-policy` and `documentation-schema`. The validated content commit `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0` produced `coverage planned=221 authored_pairs=442` and passed the complete documentation workflow through Pages.
 
-`developer-guide`, `development-environment-linux`, `development-environment-windows`, `development-troubleshooting`, `source-policy`, `documentation-schema`.
+Structural completeness does **not** mean every page is technically final. Depth-floor state and source-review state remain separate generated signals. Use the generated coverage report and review queue after `scripts/build_all.py`; word floors are editorial guardrails, and stale-source entries require reconciliation rather than automatic prose changes.
 
 ## Missing chapters by volume
 
@@ -56,13 +60,15 @@ The remaining chapter IDs, in curriculum order, are:
 | 14-validation | 0 |
 | 15-specifications | 0 |
 | 16-history | 0 |
-| 17-developer-guide | 4 |
-| 98-maintenance | 2 |
-| **Total** | **6** |
+| 17-developer-guide | 0 |
+| 98-maintenance | 0 |
+| **Total** | **0** |
 
-The 2026-10-04/05 completion campaign has validated `driver-compatibility`, `host-tests`, `qemu-gates`, `hardware-gates`, `fault-injection`, `fuzzing`, `performance-measurement`, `chrisvm-spec`, `chrisvm-boot-spec`, `chriso-spec`, `chrisfs-spec`, `clvm-spec`, `shader-spec`, `bibliography`, `graphics-history`, `toolchain-history` and `chrisvm-history`. Volumes 14 — Validation, 15 — Specifications and 16 — History are structurally complete. The next structural gap is `developer-guide`.
+The 2026-10-04/05 completion campaign structurally closed the remaining validation, specification, history and maintenance gaps, including `driver-compatibility`, `host-tests`, `qemu-gates`, `hardware-gates`, `fault-injection`, `fuzzing`, `performance-measurement`, `chrisvm-spec`, `chrisvm-boot-spec`, `chriso-spec`, `chrisfs-spec`, `clvm-spec`, `shader-spec`, `bibliography`, `graphics-history`, `toolchain-history`, `chrisvm-history`, `source-policy` and `documentation-schema`.
 
-For the exact ordered list, run:
+There is no remaining structural chapter gap. The next maintenance work should be selected from generated **Needs expansion** and **review queue** entries, not by creating new manifest chapters.
+
+For the current curriculum state, run:
 
 ```bash
 python scripts/next_work.py --lang en --limit 221
@@ -86,7 +92,7 @@ Implemented and merged:
 - GitHub Pages build and deploy pipeline.
 - CI explicitly runs `python -m unittest discover -s tests` before generated build and publication gates.
 
-Last known successful reader/deploy baseline for the validated content snapshot: `1856fe0d75c2a22f4499c71f30dbc048d746529c`.
+Last known successful reader/deploy baseline for the validated content snapshot: `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0`.
 
 Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
