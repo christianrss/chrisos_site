@@ -437,6 +437,35 @@ Prioridade recomendada:
 9. retenção automática do primeiro seed/point que falha;
 10. somente depois fault experiments físicos em mídia/hardware dedicados.
 
+## Ativação determinística e artifacts de falha
+
+Uma campanha de faults é mais útil quando a mesma source revision e a mesma regra de ativação reproduzem a mesma transition defeituosa.
+
+Prefira controles determinísticos como:
+
+    falhar operação X na chamada N
+    falhar block request em uma faixa de LBA
+    esgotar allocation budget após K pages bem-sucedidas
+
+em vez de failure randômica sem registro.
+
+Quando randomização for útil, seed e caso gerado precisam ser retidos.
+
+A primeira execução que falha deve preservar contexto suficiente para reprodução:
+
+- source revision;
+- identidade do injection point;
+- activation count ou seed;
+- machine/test configuration;
+- serial ou host log;
+- disk/image mutada quando aplicável;
+- oracle esperado;
+- exit status observado.
+
+Sem esse artifact bundle, uma falha rara pode ficar indistinguível de ruído da infraestrutura de teste.
+
+Determinismo também permite medir a correção: depois do fix, o mesmo ponto anteriormente defeituoso deve passar antes de retomar exploração randômica mais ampla.
+
 ## Nota de revisão
 
 Este capítulo foi reconciliado contra ChrisOS `e05a17fd76333114a3fb5c2452f38ca747d4ac56`.
