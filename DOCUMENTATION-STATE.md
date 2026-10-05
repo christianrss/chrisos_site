@@ -27,6 +27,9 @@ Authored chapters:
 - structurally bilingual authored pairs: **221**
 - structural coverage: **100.0%**
 - missing chapters in both languages: **0**
+- chapters below configured text floor: **0 in EN / 0 in PT-BR**
+- source-stale pages: **0**
+- invalid reviewed revisions: **0**
 
 The structural count above is computed by the same canonical identity rule used by `scripts/coverage.py`: planned chapter IDs from `data/documentation-manifest.yml` are joined to authored pages by frontmatter `id` and `lang`. Filenames are not chapter identities.
 
@@ -36,7 +39,7 @@ A previous snapshot incorrectly treated four Volume 17 route filenames as if the
 - `windows-wsl-development-environment.md` carries `id: development-environment-windows`;
 - `troubleshooting.md` carries `id: development-troubleshooting`.
 
-The 2026-10-05 completion pass added the final genuinely missing IDs, `source-policy` and `documentation-schema`. The validated content commit `7b03fb1c9fa75472bded8acf1739f2a1876ea3f0` produced `coverage planned=221 authored_pairs=442` and passed the complete documentation workflow through Pages.
+The 2026-10-05 completion pass added the final genuinely missing IDs, `source-policy` and `documentation-schema`, reconciled the source-stale queue, and expanded every chapter that remained below its configured editorial depth floor. The validated content commit `39308596b5d7a81dc907033f93c87e41d89d4a3d` produced `coverage planned=221 authored_pairs=442`, `stale=0 invalid_revision=0`, `depth_warnings=0`, and passed the complete documentation workflow through Pages.
 
 Structural completeness is now accompanied by a clean generated maintenance state for the validated baseline `39308596b5d7a81dc907033f93c87e41d89d4a3d`:
 
@@ -107,6 +110,20 @@ Still required for the reader:
 - continued real-browser QA across Android/mobile, desktop and narrow tablet widths;
 - fix any runtime defect found in the deployed site before adding cosmetic features;
 - keep search and navigation runtime contracts covered by smoke tests.
+
+## Completion milestone — 2026-10-05
+
+The mechanical completion gates are closed at the validated baseline:
+
+- 221/221 planned IDs authored in both languages;
+- 442 authored chapter/language pairs;
+- curriculum DAG valid;
+- zero generated depth warnings;
+- zero source-stale pages;
+- zero invalid reviewed revisions;
+- static site, SEO/discovery, reader smoke and Pages artifact all successful.
+
+The remaining completion criterion is qualitative rather than numerical: continue reviewing bilingual technical equivalence and technical completeness, and perform real-browser QA on the deployed reader. A later ChrisOS source change can legitimately reopen the stale queue.
 
 ## Content completion order
 
