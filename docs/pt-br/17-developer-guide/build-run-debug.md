@@ -182,6 +182,21 @@ Uma nova execução pode mudar timing, regenerar disk image ou sobrescrever seri
 
 Se a falha desaparecer após `make clean`, registre isso. Pode indicar stale generated state ou dependency incompleta de build, não necessariamente defeito lógico do guest.
 
+## Disciplina de rerun
+
+Depois de alterar source em resposta a uma falha, execute primeiro o mesmo gate estreito. Não pule direto para suite ampla, pois um pass amplo pode esconder se a condição original foi realmente exercitada.
+
+Sequência útil:
+
+1. reproduza a falha original;
+2. preserve o artifact;
+3. aplique a menor mudança;
+4. repita o mesmo comando;
+5. confirme que o ponto anterior agora é ultrapassado;
+6. só então execute gates de regressão mais amplos.
+
+Isso preserva o vínculo causal entre defeito e correção.
+
 ## Classificação de falhas
 
 | Sintoma | Primeira camada |
