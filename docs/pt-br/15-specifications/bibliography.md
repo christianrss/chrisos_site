@@ -45,6 +45,15 @@ A especificação VirtIO, por exemplo, define o device protocol. O source do Chr
 
 Nenhuma dessas camadas substitui as outras.
 
+
+## Fronteira de escopo de source desta bibliografia
+
+Este capítulo declara intencionalmente `sources: []` porque seu objeto é o catálogo de referências externas e as regras para utilizá-lo, não o estado de implementação de um subsistema do ChrisOS.
+
+Essa fronteira tem uma consequência concreta: esta página não deve congelar afirmações dependentes de revisão como "o ChrisOS atualmente usa a feature X" ou "o driver atual suporta Y" sem também declarar e manter as dependências de source correspondentes. Estado de implementação pertence ao chapter do subsistema, à especificação, ao source map gerado ou ao registro de validação vinculado à revisão do código pertinente.
+
+A bibliografia ainda pode explicar como um standard externo se relaciona ao ChrisOS. Essa redação deve permanecer condicional ou metodológica: pode indicar qual autoridade consultar, qual evidência um chapter de implementação precisa apresentar e como descrever compliance parcial. A presença de um standard neste catálogo nunca é evidência de que o ChrisOS implementa esse standard ou uma feature específica dele.
+
 ## Regra de fonte primária
 
 Quando uma tecnologia externa possui especificação normativa, a bibliografia deve preferir essa especificação em vez de:
@@ -147,7 +156,7 @@ Use para:
 - `satp`;
 - Sv39 e regras associadas.
 
-O bring-up RISC-V atual do ChrisOS cobre superfície menor que o kernel x86-64. Os manuals definem a arquitetura; não provam que toda feature RISC-V está implementada no ChrisOS.
+Quando o ChrisOS documenta bring-up RISC-V, estes manuals definem o contrato arquitetural. O chapter de implementação correspondente deve registrar a superfície de execução realmente implementada e sua evidência; uma feature definida pelo standard não comprova que o ChrisOS a implemente.
 
 ## Firmware e boot
 
@@ -188,7 +197,7 @@ A documentação deve dizer exatamente quais tabelas e fields o kernel consome.
 
 Organização: projeto Limine.
 
-O caminho principal x86-64 do ChrisOS usa Limine para dados importantes de boot-time handoff.
+Os chapters de boot do ChrisOS usam a especificação do Limine para separar respostas definidas pelo bootloader do tratamento controlado pelo kernel. Cabe ao chapter de implementação, e não a esta bibliografia, registrar quais requests e responses são usados em uma revisão específica do source.
 
 Use a referência do Limine para requests/responses como:
 
@@ -274,7 +283,7 @@ Organização: PCI-SIG.
 
 Use para PCIe configuration space, capability structures, BARs, bus/device/function addressing, transaction requirements e conceitos de MSI/MSI-X.
 
-O implementation do ChrisOS pode ser mais estreito que o modelo PCIe completo. Um helper limitado a bus 0, por exemplo, é limitação do implementation e não propriedade de PCIe.
+Uma implementação PCI do ChrisOS pode ser mais estreita que o modelo PCIe completo. Um helper limitado a bus 0, por exemplo, seria limitação da implementação e não propriedade de PCIe.
 
 ### VirtIO
 
@@ -292,7 +301,7 @@ Use para:
 - MMIO/PCI transport;
 - device-specific configuration.
 
-ChrisOS usa paths VirtIO para múltiplos devices virtualizados. Cada driver chapter deve identificar transport e feature subset negociado.
+Para qualquer driver VirtIO do ChrisOS, o chapter de implementação deve identificar transport e feature subset negociado. A presença de VirtIO nesta bibliografia não comprova que um device path específico exista no source atual.
 
 ## Storage
 
@@ -447,7 +456,7 @@ Organização: Khronos Group.
 
 Use GLSL como referência externa para comparar syntax/semantics com o shader frontend do ChrisOS.
 
-O compiler ChrisOS implementa um subset GLSL-like com bounds explícitos.
+Quando um shader frontend do ChrisOS aceita sintaxe GLSL-like, a especificação de shaders e o chapter de implementação vinculado à revisão devem definir o subset suportado.
 
 Um source iniciado com `#version 330` não torna o ChrisOS conformant com GLSL 3.30.
 
@@ -459,7 +468,7 @@ O contract real está em `shader-spec`.
 
 Organização: Mesa.
 
-Use para interpretar o IR externo esperado no path Mesa/VirGL em que o ChrisOS gera TGSI text.
+Use para interpretar o IR externo esperado em qualquer path Mesa/VirGL no qual uma implementação do ChrisOS gere TGSI text.
 
 TGSI não é o mesmo representation que CSIR.
 
@@ -561,7 +570,7 @@ Exemplo:
 
 ## Compliance versus subset implementation
 
-ChrisOS frequentemente implementa subsets deliberadamente pequenos.
+Chapters de implementação do ChrisOS podem definir deliberadamente subsets pequenos de standards externos maiores.
 
 A documentação deve distinguir pelo menos:
 
