@@ -45,6 +45,15 @@ For example, the VirtIO specification defines the device protocol. ChrisOS sourc
 
 None of those three can replace the other two.
 
+
+## Source-scope boundary for this bibliography
+
+This chapter intentionally declares `sources: []` because its subject is the external-reference catalogue and the rules for using it, not the implementation state of a ChrisOS subsystem.
+
+That boundary has a concrete consequence: this page must not freeze revision-specific statements such as "ChrisOS currently uses feature X" or "the current driver supports Y" unless the page also declares and maintains the relevant source dependencies. Implementation state belongs in the subsystem chapter, specification, generated source map or validation record that is revision-bound to the corresponding code.
+
+The bibliography may still explain how an external standard relates to ChrisOS. Such wording must remain conditional or methodological: it can state which authority should be consulted, what evidence an implementation chapter must provide, and how subset compliance should be described. The existence of a standard in this catalogue is never evidence that ChrisOS implements that standard or any particular feature within it.
+
 ## Primary-source rule
 
 When an external technology has a normative specification, the primary bibliography must prefer that specification over:
@@ -149,7 +158,7 @@ Use it for:
 - `satp`;
 - Sv39 and related virtual-memory rules.
 
-ChrisOS RISC-V bring-up currently represents a smaller execution surface than the x86-64 kernel. The manuals define the architecture; they do not prove that every documented RISC-V feature is implemented by ChrisOS.
+When ChrisOS documents RISC-V bring-up, these manuals define the architectural contract. The corresponding implementation chapter must state the execution surface actually implemented and the evidence for it; a standard-defined RISC-V feature is not evidence that ChrisOS implements that feature.
 
 ## Firmware and boot references
 
@@ -190,7 +199,7 @@ Documentation should state exactly which tables or fields the current kernel con
 
 Organization: Limine project.
 
-ChrisOS currently relies on Limine for important boot-time handoff data on its main x86-64 path.
+The ChrisOS boot chapters use the Limine specification to distinguish bootloader-defined responses from kernel-owned handling. The implementation chapter, rather than this bibliography, is responsible for stating which Limine requests and responses are used at a particular source revision.
 
 Use the Limine protocol reference for the contract around requests and responses such as:
 
@@ -276,7 +285,7 @@ Organization: PCI-SIG.
 
 Use it for PCIe configuration-space semantics, capability structures, BARs, bus/device/function addressing, transaction-level requirements and MSI/MSI-X-related concepts.
 
-The current ChrisOS PCI implementation can be narrower than the complete PCIe model. A bus-0-only helper, for example, is an implementation limitation rather than a property of PCIe.
+A ChrisOS PCI implementation may be narrower than the complete PCIe model. A bus-0-only helper, for example, would be an implementation limitation rather than a property of PCIe.
 
 ### VirtIO
 
@@ -296,7 +305,7 @@ Use the specification for:
 - MMIO or PCI transport behavior;
 - device-specific configuration.
 
-ChrisOS currently uses VirtIO-related paths for several virtualized devices. Each driver chapter should identify its transport and negotiated feature subset.
+For any ChrisOS VirtIO driver, the implementation chapter must identify its transport and negotiated feature subset. The presence of VirtIO in this bibliography does not establish that a particular device path exists in the current source.
 
 ## Storage references
 
@@ -451,7 +460,7 @@ Organization: Khronos Group.
 
 Use GLSL as the external language reference when comparing syntax or semantics with the ChrisOS shader frontend.
 
-The ChrisOS shader compiler implements a bounded GLSL-like subset.
+When a ChrisOS shader frontend accepts GLSL-like syntax, the shader specification and revision-bound implementation chapter must define the supported subset.
 
 A source beginning with `#version 330` does not make ChrisOS a conforming GLSL 3.30 implementation.
 
@@ -463,7 +472,7 @@ The `shader-spec` chapter defines the actual ChrisOS contract.
 
 Organization: Mesa.
 
-Use TGSI documentation for the intermediate representation expected by the Mesa/VirGL path where ChrisOS emits TGSI text.
+Use TGSI documentation for the intermediate representation expected by any Mesa/VirGL path in which a ChrisOS implementation emits TGSI text.
 
 TGSI is an external graphics IR, not the same representation as ChrisOS CSIR.
 
@@ -565,7 +574,7 @@ is a much stronger compatibility statement than "VirtIO supported".
 
 ## Standards compliance versus subset implementation
 
-ChrisOS frequently implements deliberately small subsets.
+ChrisOS implementation chapters may deliberately define small subsets of larger external standards.
 
 Documentation must distinguish at least four statements:
 
