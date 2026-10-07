@@ -319,15 +319,6 @@ Later electrical chapters use vectors for fields and complex numbers for phase a
 
 Those chapters must document actual ChrisOS types and symbols instead of assigning a textbook implementation by analogy.
 
-## Scope boundary and revision
-
-This chapter supplies the linear-algebra and complex-number machinery required by the curriculum. It does not replace full treatments of linear algebra, numerical analysis, Fourier analysis or control theory. Later chapters extend it with homogeneous coordinates, projection, interpolation, frequency-dependent circuit behavior and concrete ChrisOS numerical types.
-
-Mathematical truth, numerical representation and current implementation are separate evidence layers.
-
-Reviewed against ChrisOS `main` revision `da3df29cb397932c43d32373871fb9380e688ade`. `sources` and `symbols` are empty because no implementation claim is made here.
-
-
 ## Affine coordinates and translation
 
 Pure linear transformations preserve the origin: for a linear map `A`, `A0=0`. Translation does not preserve the origin and therefore cannot be represented by an ordinary 3 by 3 linear matrix acting on a three-component position. Graphics commonly introduces homogeneous coordinates so affine transformations can be composed uniformly. A position becomes `(x,y,z,1)`, while a direction can be represented as `(x,y,z,0)`. A 4 by 4 matrix can then carry a translation in its final row or column according to the chosen convention.
@@ -357,3 +348,11 @@ Orthonormal bases are especially convenient. If columns are mutually perpendicul
 Reduction order matters in finite arithmetic. A dot product accumulated left-to-right can differ from a tree reduction or SIMD implementation because rounding occurs after different intermediate sums. Parallel code may therefore produce numerically close but bitwise different answers even when every worker is correct.
 
 Systems validation must choose the required contract deliberately. Bitwise reproducibility demands fixed representation and operation order. Numerical equivalence instead permits bounded error and should specify absolute and relative tolerances. Tests should also include zero, near-zero, very large, very small, collinear, perpendicular and nearly singular inputs rather than only ordinary vectors.
+
+## Scope boundary and revision
+
+This chapter supplies the linear-algebra and complex-number machinery required by the curriculum. It does not replace full treatments of linear algebra, numerical analysis, Fourier analysis or control theory. Later chapters extend it with homogeneous coordinates, projection, interpolation, frequency-dependent circuit behavior and concrete ChrisOS numerical types.
+
+Mathematical truth, numerical representation and current implementation are separate evidence layers.
+
+Reviewed against ChrisOS `main` revision `da3df29cb397932c43d32373871fb9380e688ade`. `sources` and `symbols` are empty because no implementation claim is made here.
