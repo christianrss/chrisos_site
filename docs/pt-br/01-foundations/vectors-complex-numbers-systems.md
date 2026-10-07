@@ -319,15 +319,6 @@ Capítulos elétricos posteriores usam vetores para campos e números complexos 
 
 Esses capítulos precisam documentar os tipos e símbolos reais do ChrisOS em vez de atribuir uma implementação de livro-texto por analogia.
 
-## Limite de escopo e revisão
-
-Este capítulo fornece a álgebra linear e os números complexos necessários ao currículo. Não substitui tratamentos completos de álgebra linear, análise numérica, Fourier ou controle. Capítulos posteriores estendem a base com coordenadas homogêneas, projeção, interpolação, comportamento de circuitos dependente de frequência e tipos numéricos concretos do ChrisOS.
-
-Verdade matemática, representação numérica e implementação atual são camadas de evidência distintas.
-
-Revisado contra o `main` do ChrisOS na revisão `da3df29cb397932c43d32373871fb9380e688ade`. `sources` e `symbols` estão vazios porque não há afirmação de implementação neste capítulo.
-
-
 ## Coordenadas afins e translação
 
 Transformações lineares preservam a origem: para um mapa linear `A`, `A0=0`. Translação não preserva a origem e não pode ser representada por uma matriz linear 3 por 3 comum agindo sobre uma posição tridimensional. Gráficos introduzem coordenadas homogêneas para compor transformações afins uniformemente. Uma posição torna-se `(x,y,z,1)`, enquanto uma direção pode ser `(x,y,z,0)`. Uma matriz 4 por 4 passa a transportar a translação em sua última linha ou coluna, conforme a convenção.
@@ -357,3 +348,11 @@ Bases ortonormais são convenientes. Se as colunas são vetores unitários mutua
 A ordem de redução importa em aritmética finita. Um produto escalar acumulado sequencialmente pode diferir de uma redução em árvore ou SIMD porque o arredondamento ocorre após somas intermediárias diferentes. Código paralelo pode produzir respostas numericamente próximas, mas não idênticas bit a bit, mesmo quando os cálculos estão corretos.
 
 A validação precisa escolher o contrato deliberadamente. Reprodutibilidade bit a bit exige representação e ordem de operações fixas. Equivalência numérica permite erro limitado e deve especificar tolerâncias absolutas e relativas. Testes também precisam incluir entradas zero, quase zero, muito grandes, muito pequenas, colineares, perpendiculares e quase singulares, não apenas vetores ordinários.
+
+## Limite de escopo e revisão
+
+Este capítulo fornece a álgebra linear e os números complexos necessários ao currículo. Não substitui tratamentos completos de álgebra linear, análise numérica, Fourier ou controle. Capítulos posteriores estendem a base com coordenadas homogêneas, projeção, interpolação, comportamento de circuitos dependente de frequência e tipos numéricos concretos do ChrisOS.
+
+Verdade matemática, representação numérica e implementação atual são camadas de evidência distintas.
+
+Revisado contra o `main` do ChrisOS na revisão `da3df29cb397932c43d32373871fb9380e688ade`. `sources` e `symbols` estão vazios porque não há afirmação de implementação neste capítulo.
