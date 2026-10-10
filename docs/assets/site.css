@@ -73,6 +73,37 @@ kbd{
 .brand small{display:block;margin-top:.1rem;color:#555;font:.72rem/1.2 Arial,sans-serif}
 .header-links{display:flex;gap:1rem;font:.72rem Arial,sans-serif;white-space:nowrap}
 
+/* Cross-site links remain secondary to the reading interface. */
+.header-links a{text-underline-offset:2px}
+.sidebar-related{
+  display:grid;
+  gap:.2rem;
+  margin:0 0 .85rem;
+  padding:.52rem .6rem;
+  border:1px solid #b4b0a4;
+  background:#e9e6db;
+}
+.sidebar-related-title{
+  margin-bottom:.12rem;
+  color:#5d5b54;
+  font:700 .62rem/1.3 "Courier New",monospace;
+  letter-spacing:.06em;
+}
+.sidebar-related a{
+  display:block;
+  width:fit-content;
+  font:.72rem/1.4 Arial,sans-serif;
+  text-underline-offset:2px;
+}
+.site-footer-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.2rem 1.1rem;
+  margin-top:.55rem;
+  font:.7rem/1.45 Arial,sans-serif;
+}
+.site-footer-links a{text-underline-offset:2px}
+
 /* Reader bar */
 .reader-bar{
   position:sticky;

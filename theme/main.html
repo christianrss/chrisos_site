@@ -51,7 +51,9 @@
       </span>
     </a>
     <nav class="header-links" aria-label="{{ 'Projeto' if page and page.meta.lang == 'pt-br' else 'Project' }}">
-      <a href="https://github.com/christianrss/ChrisOS">Source</a>
+      <a href="https://manual.christiansoftware.org/">{{ 'Manual de Engenharia' if page and page.meta.lang == 'pt-br' else 'Engineering Manual' }}</a>
+      <a href="https://me.christiansoftware.org/" rel="author">{{ 'Sobre o autor' if page and page.meta.lang == 'pt-br' else 'About the author' }}</a>
+      <a href="https://github.com/christianrss/ChrisOS">{{ 'Código-fonte' if page and page.meta.lang == 'pt-br' else 'Source' }}</a>
       <a href="https://github.com/christianrss/chrisos_site">{{ 'Documentação' if page and page.meta.lang == 'pt-br' else 'Docs repo' }}</a>
     </nav>
   </div>
@@ -146,6 +148,12 @@
       <span>{{ 'Buscar na documentação' if page and page.meta.lang == 'pt-br' else 'Search documentation' }}</span>
       <kbd>/</kbd>
     </button>
+
+    <nav class="sidebar-related" aria-label="{{ 'Recursos relacionados' if page and page.meta.lang == 'pt-br' else 'Related resources' }}">
+      <span class="sidebar-related-title">{{ 'OUTRAS PUBLICAÇÕES' if page and page.meta.lang == 'pt-br' else 'OTHER PUBLICATIONS' }}</span>
+      <a href="https://manual.christiansoftware.org/">{{ 'Manual de Engenharia' if page and page.meta.lang == 'pt-br' else 'Engineering Manual' }}</a>
+      <a href="https://me.christiansoftware.org/" rel="author">{{ 'Perfil profissional' if page and page.meta.lang == 'pt-br' else 'Professional profile' }}</a>
+    </nav>
 
     <nav class="book-tree" aria-label="{{ 'Capítulos' if page and page.meta.lang == 'pt-br' else 'Chapters' }}">
       {% for edition in nav %}
@@ -343,6 +351,10 @@
     <span class="site-footer-byline">{{ 'Criado, projetado e documentado por' if page and page.meta.lang == 'pt-br' else 'Created, engineered and documented by' }}</span>
     <a class="site-footer-author" href="https://github.com/christianrss" rel="author">Christian Rafael de Souza Silva</a>
     <span class="site-footer-credentials">{{ 'Tecnólogo em Ciência de Dados · Especialista em Engenharia Eletrônica e Robótica' if page and page.meta.lang == 'pt-br' else 'Data Science Technologist · Specialist in Electronic Engineering & Robotics' }}</span>
+    <nav class="site-footer-links" aria-label="{{ 'Outros sites' if page and page.meta.lang == 'pt-br' else 'Other websites' }}">
+      <a href="https://manual.christiansoftware.org/">{{ 'Manual de Engenharia' if page and page.meta.lang == 'pt-br' else 'Engineering Manual' }}</a>
+      <a href="https://me.christiansoftware.org/" rel="author">{{ 'Perfil profissional' if page and page.meta.lang == 'pt-br' else 'Professional profile' }}</a>
+    </nav>
   </div>
   <p class="site-footer-record">Markdown · revision-bound documentation</p>
 </footer>
