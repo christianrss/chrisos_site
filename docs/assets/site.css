@@ -617,6 +617,7 @@ footer{
   gap:.1rem;
   max-width:760px;
 }
+.author-portrait{display:inline-block;width:64px;height:64px;margin-bottom:.5rem}.author-portrait img{display:block;width:64px;height:64px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
 .site-footer-project{
   color:var(--ink);
   font:700 .67rem/1.35 "Courier New",monospace;
